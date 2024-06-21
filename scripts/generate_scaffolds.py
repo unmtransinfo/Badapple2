@@ -11,10 +11,29 @@ badapple database.
 
 import argparse
 import csv
-import logging
 import sys
 
 import scaffoldgraph as sg
+from loguru import logger
+
+
+class HierSTopLevel(sg.HierS):
+    def _process_no_top_level(self, molecule):
+        """Private: Process molecules with no top-level scaffold.
+        Modified from original code so that molecules with no top-level
+        scaffold are still included in the graph.
+        Parameters
+        ----------
+        molecule : rdkit.Chem.rdchem.Mol
+            An rdkit molecule determined to have no top-level scaffold.
+        """
+        name = molecule.GetProp("_Name")
+        logger.info(f"No top level scaffold for molecule: {name}")
+        self.graph["num_linear"] = self.graph.get("num_linear", 0) + 1
+        self.add_molecule_node(
+            molecule,
+        )
+        return None
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -158,17 +177,20 @@ def write_outs(
     close_file(f_mol2scaf)
 
 
-# TODO: handle molecules with no rings
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scaffolds compare", epilog="")
     args = parse_args(parser)
-    logging.basicConfig(
-        filename=args.log_fname,
-        filemode="a",
-        format="%(levelname)s:%(message)s",
-        level=logging.DEBUG,
+    log_out = args.log_fname
+    if log_out is None:
+        log_out = sys.stdout
+    # Remove the default stdout handler
+    logger.remove()
+    logger.add(
+        log_out,
+        format="{time} {level} {message}",
+        level="INFO",
     )
-    network = sg.HierS.from_smiles_file(
+    network = HierSTopLevel.from_smiles_file(
         file_name=args.i,
         header=args.iheader,
         delimiter=args.idelim,
