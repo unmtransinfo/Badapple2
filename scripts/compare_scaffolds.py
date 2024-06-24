@@ -8,8 +8,10 @@ Used to help verify the correctness of RDKit code for badapple 2.0.
 """
 
 import argparse
+import sys
 
 import pandas as pd
+from loguru import logger
 from rdkit import Chem
 from tqdm import tqdm
 
@@ -36,6 +38,11 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument("--badapple_scaf_tsv_file", type=str, required=True)
     parser.add_argument("--rdkit_mol2scaf_tsv_file", type=str, required=True)
     parser.add_argument("--badapple_mol2scaf_tsv_file", type=str, required=True)
+    parser.add_argument(
+        "--log_fname",
+        help="File to save logs to. If not given will log to stdout.",
+        default=None,
+    )
     return parser.parse_args()
 
 
@@ -46,7 +53,7 @@ def canon_smiles(smiles: str):
 def print_duplicates(series: pd.Series, series_set: set):
     if len(series) != len(series_set):
         vc = series.value_counts()
-        print(vc[vc > 1])
+        logger.info(vc[vc > 1])
 
 
 def compare_smiles(
@@ -62,31 +69,31 @@ def compare_smiles(
     ba_smiles = ba_df[ba_col]
     rd_smiles_set = set(rd_smiles)  # from rdkit scaf net
     ba_smiles_set = set(ba_smiles)  # from badapple db
-    print(f"len(rd): {len(rd_smiles_set)}")
-    print(f"len(rd[id]): {len(set(rd_df[id_col]))}")
-    print(f"len(ba): {len(ba_smiles_set)}")
-    print("-" * 80)
-    print("RDKit duplicates:")
+    logger.info(f"len(rd): {len(rd_smiles_set)}")
+    logger.info(f"len(rd[id]): {len(set(rd_df[id_col]))}")
+    logger.info(f"len(ba): {len(ba_smiles_set)}")
+    logger.info("-" * 80)
+    logger.info("RDKit duplicates:")
     print_duplicates(rd_smiles, rd_smiles_set)
-    print("-" * 80)
-    print("Badapple duplicates:")
+    logger.info("-" * 80)
+    logger.info("Badapple duplicates:")
     print_duplicates(ba_smiles, ba_smiles_set)
-    print("-" * 80)
+    logger.info("-" * 80)
     if print_details:
         rd_minus_ba = rd_smiles_set - ba_smiles_set
         ba_minus_rd = ba_smiles_set - rd_smiles_set
-        print("rd_minus_ba length:", len(rd_minus_ba))
-        print("rd_minus_ba SMILES:")
+        logger.info("rd_minus_ba length:", len(rd_minus_ba))
+        logger.info("rd_minus_ba SMILES:")
         print_smis(rd_minus_ba)
-        print("-" * 80)
-        print("ba_minus_rd length:", len(ba_minus_rd))
-        print("ba_minus_rd SMILES:")
+        logger.info("-" * 80)
+        logger.info("ba_minus_rd length:", len(ba_minus_rd))
+        logger.info("ba_minus_rd SMILES:")
         print_smis(ba_minus_rd)
 
 
 def print_smis(smiles_list: list[str]):
     for smi in smiles_list:
-        print(smi)
+        logger.info(smi)
 
 
 def get_str_rep(smiles_list: list[str]):
@@ -200,18 +207,25 @@ def mol2scaf_check(
             diff_str += s
             rd_minus_ba_ovr_cnt += rd_minus_ba_cnt
             ba_minus_rd_ovr_cnt += ba_minus_rd_cnt
-    print(diff_str)
-    print(f"Total of {cnt} compounds had different scaffolds")
-    print("(RD - BA) Avg:", rd_minus_ba_ovr_cnt / cnt)
-    print("(BA - RD) Avg:", ba_minus_rd_cnt / cnt)
+    logger.info(diff_str)
+    logger.info(f"Total of {cnt} compounds had different scaffolds")
 
 
-# TODO: use logging or another method for saving output (don't just use stdout)
 def main():
     parser = argparse.ArgumentParser(description="Scaffolds compare", epilog="")
     args = parse_args(parser)
+    log_out = args.log_fname
+    if log_out is None:
+        log_out = sys.stdout
+    # Remove the default stdout handler
+    logger.remove()
+    logger.add(
+        log_out,
+        format="{message}",
+        level="INFO",
+    )
     # load dataframes mapping id to mol smiles
-    print("Loading/processing data...")
+    logger.info("Loading/processing data...")
     rd_mol_df = pd.read_csv(args.rdkit_mol_tsv_file, sep="\t")
     rd_mol_df.sort_values(by=RD_MOL_SMILES_COL, inplace=True)
     ba_mol_df = pd.read_csv(args.badapple_mol_tsv_file, sep="\t")
@@ -230,7 +244,7 @@ def main():
     rd_mol2scaf_df.sort_values(by=RD_MOL2SCAF_MOL_ID_COL, inplace=True)
     ba_mol2scaf_df = pd.read_csv(args.badapple_mol2scaf_tsv_file, sep="\t")
     ba_mol2scaf_df.sort_values(by=BA_MOL2SCAF_MOL_ID_COL, inplace=True)
-    print("Comparing Mols:")
+    logger.info("Comparing Mols:")
     compare_smiles(
         rd_mol_df,
         ba_mol_df,
@@ -239,8 +253,8 @@ def main():
         id_col=RD_MOL_ID_COL,
         print_details=True,
     )
-    print("*" * 80)
-    print("Comparing Scaffolds:")
+    logger.info("*" * 80)
+    logger.info("Comparing Scaffolds:")
     compare_smiles(
         rd_scaf_df,
         ba_scaf_df,
@@ -249,13 +263,11 @@ def main():
         id_col=RD_SCAF_ID_COL,
         print_details=False,
     )
-    """
-    print("*" * 80)
-    print("Comparing Mol2Scaf:")
+    logger.info("*" * 80)
+    logger.info("Comparing Mol2Scaf:")
     mol2scaf_check(
         rd_mol_df, ba_mol_df, rd_scaf_df, ba_scaf_df, rd_mol2scaf_df, ba_mol2scaf_df
     )
-    """
 
 
 if __name__ == "__main__":
