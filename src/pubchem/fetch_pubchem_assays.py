@@ -9,6 +9,7 @@ https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest-tutorial#section=Access-to-PubChe
 import argparse
 import io
 import os
+import time
 
 import pandas as pd
 import requests
@@ -57,10 +58,14 @@ if __name__ == "__main__":
         description="Fetch assay info using assay id (AID) file", epilog=""
     )
     args = parse_args(parser)
-    os.makedirs(args.out_dir)
+    os.makedirs(args.out_dir, exist_ok=True)
     assay_ids = read_aid_file(args.aid_file)
+    start = time.time()
     for aid in assay_ids:
         aid_df = fetch_csv_summary(aid)
         if aid_df is not None:
             save_path = os.path.join(args.out_dir, f"{aid}.csv")
             aid_df.to_csv(save_path)
+    end = time.time()
+    print("Num assay IDs:", len(assay_ids))
+    print("Time elapsed:", end - start)
