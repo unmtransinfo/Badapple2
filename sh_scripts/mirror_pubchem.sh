@@ -12,7 +12,7 @@ curlftpfs ftp.ncbi.nlm.nih.gov/pubchem/ ftp.ncbi.nlm.nih.gov/pubchem/ || { echo 
 
 # Check if the directory exists before rsync
 if [ -d "ftp.ncbi.nlm.nih.gov/pubchem/Bioassay/CSV/Data" ]; then
-    rsync -r -t -v --progress --bwlimit=500 --include='*/' --include='*.zip' --exclude='*' ftp.ncbi.nlm.nih.gov/pubchem/Bioassay/CSV/Data/ bioassay/
+    rsync -r -t -v --progress --bwlimit=5000 --include='*/' --include='*.zip' --exclude='*' ftp.ncbi.nlm.nih.gov/pubchem/Bioassay/CSV/Data/ bioassay/
 else
     echo "Source directory does not exist. Exiting."
     exit 1
