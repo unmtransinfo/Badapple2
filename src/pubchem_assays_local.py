@@ -127,7 +127,7 @@ def activity_to_code(activity_str: str) -> int:
         return 2
     elif activity_str == "Inconclusive":
         return 3
-    elif activity_str == "Unspecified":
+    elif activity_str == "Unspecified" or pd.isna(activity_str):
         return 4
     elif activity_str == "Probe":
         return 5
