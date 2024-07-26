@@ -127,6 +127,22 @@ def close_file(f):
         f.close()
 
 
+def _get_sub_scaffolds(scaffold_graph, scaf_id: int, scaf_smile: str, scaf_smile_to_id):
+    # note: parent scaffolds are sub scaffolds of scaf
+    sub_scafs = scaffold_graph.get_parent_scaffolds(scaf_smile, max_levels=1)
+    sub_scafs = list(filter(is_valid_scaf, sub_scafs))
+    scaf2scaf_str = str(scaf_id)
+    if len(sub_scafs) > 0:
+        scaf2scaf_str += ":("
+        for i, sub_scaf_smile in enumerate(sub_scafs):
+            sub_scaf_id = scaf_smile_to_id[sub_scaf_smile]
+            scaf2scaf_str += str(sub_scaf_id)
+            if i < (len(sub_scafs) - 1):
+                scaf2scaf_str += ","
+        scaf2scaf_str += ")"
+    return scaf2scaf_str
+
+
 def write_outs(
     scaffold_graph,
     o_mol: str,
@@ -139,7 +155,7 @@ def write_outs(
     scaf_writer, f_scaf = get_csv_writer(o_scaf, odelimeter)
     mol2scaf_writer, f_mol2scaf = get_csv_writer(o_mol2scaf, odelimeter)
     mol_writer.writerow(["mol_id", "smiles", "name"])
-    scaf_writer.writerow(["scaffold_id", "smiles", "hierarchy"])
+    scaf_writer.writerow(["scaffold_id", "smiles", "hierarchy", "scaf2scaf"])
     mol2scaf_writer.writerow(["mol_id", "scaffold_id"])
     seen_mols = {}
     seen_scafs = {}
@@ -170,7 +186,12 @@ def write_outs(
                 mol2scaf_writer.writerow([mol_id, scaf_id])
                 if scaf_id not in seen_scafs:
                     scaf_hierarchy = scaf_node[1]["hierarchy"]
-                    scaf_writer.writerow([scaf_id, scaf_smile, scaf_hierarchy])
+                    scaf2scaf_str = _get_sub_scaffolds(
+                        scaffold_graph, scaf_id, scaf_smile, scaf_smile_to_id
+                    )
+                    scaf_writer.writerow(
+                        [scaf_id, scaf_smile, scaf_hierarchy, scaf2scaf_str]
+                    )
                     seen_scafs[scaf_id] = True
     close_file(f_mol)
     close_file(f_scaf)
