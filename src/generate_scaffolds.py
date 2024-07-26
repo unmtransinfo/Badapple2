@@ -10,7 +10,6 @@ badapple database.
 """
 
 import argparse
-import sys
 
 import scaffoldgraph as sg
 from loguru import logger
@@ -202,5 +201,5 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scaffolds compare", epilog="")
     args = parse_args(parser)
-    logger = get_and_set_logger(args.log_out)
+    logger = get_and_set_logger(args.log_fname)
     main(args)
