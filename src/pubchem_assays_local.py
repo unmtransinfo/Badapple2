@@ -13,10 +13,14 @@ import argparse
 import csv
 import gzip
 import os
-import time
 import zipfile
 
 import pandas as pd
+from loguru import logger
+from tqdm import tqdm
+
+from utils.file_utils import close_file, get_csv_writer
+from utils.logging import get_and_set_logger
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -25,7 +29,7 @@ def parse_args(parser: argparse.ArgumentParser):
         type=str,
         required=True,
         default=argparse.SUPPRESS,
-        help="text file containing assays ids (one id/line)",
+        help="input text file containing assays ids (one id/line)",
     )
     parser.add_argument(
         "--zip_dir",
@@ -33,6 +37,25 @@ def parse_args(parser: argparse.ArgumentParser):
         required=True,
         default=argparse.SUPPRESS,
         help="path to directory containing assay .zip files",
+    )
+    parser.add_argument(
+        "--o_sid2cid",
+        type=str,
+        required=True,
+        default=argparse.SUPPRESS,
+        help="output TSV file which maps compound id (CID) to substance id (SID)",
+    )
+    parser.add_argument(
+        "--o_assaystats",
+        type=str,
+        required=True,
+        default=argparse.SUPPRESS,
+        help="output TSV file which maps between assay id (AID), substance id (SID), and activity outcome",
+    )
+    parser.add_argument(
+        "--log_fname",
+        help="File to save logs to. If not given will log to stdout.",
+        default=None,
     )
     return parser.parse_args()
 
@@ -96,8 +119,61 @@ def read_csv_files(
                     dfs.append(df)
     return dfs
 
-def write_to_sid2cid():
-    # append row to Compounds2Substances file
+
+def activity_to_code(activity_str: str) -> int:
+    if activity_str == "Inactive":
+        return 1
+    elif activity_str == "Active":
+        return 2
+    elif activity_str == "Inconclusive":
+        return 3
+    elif activity_str == "Unspecified":
+        return 4
+    elif activity_str == "Probe":
+        return 5
+    else:
+        raise ValueError("Unrecognized activity_str:", activity_str)
+
+
+def main(args):
+    assay_ids = read_aid_file(args.aid_file)
+
+    # create writers
+    sid2cid_writer, f_sid2cid = get_csv_writer(args.o_sid2cid, "\t")
+    astats_writer, f_astats = get_csv_writer(args.o_assaystats, "\t")
+    sid2cid_writer.writerow(["SID", "CID"])
+    astats_writer.writerow(["AID", "SID", "ACTIVITY_OUTCOME"])
+
+    # COL_TYPES = columns required for our output files
+    COL_TYPES = {
+        "PUBCHEM_SID": "Int64",
+        "PUBCHEM_CID": "Int64",
+        "PUBCHEM_EXT_DATASOURCE_SMILES": str,
+        "PUBCHEM_ACTIVITY_OUTCOME": str,
+    }
+    zip2aids = {}
+    logger.info("Creating map from zip file -> [assay ids]")
+    for aid in assay_ids:
+        zip_filename = get_zip_filename(aid)
+        zip2aids[zip_filename] = zip2aids.get(zip_filename, []) + [aid]
+
+    logger.info("Processing data by zip file...")
+    for zip_filename, assay_ids in tqdm(zip2aids.items()):
+        zip_filepath = os.path.join(args.zip_dir, zip_filename)
+        assay_dfs = read_csv_files(zip_filepath, assay_ids, COL_TYPES)
+        for assay_id, df in zip(assay_ids, assay_dfs):
+            df["AID"] = assay_id
+            df["PUBCHEM_ACTIVITY_OUTCOME"] = df["PUBCHEM_ACTIVITY_OUTCOME"].map(
+                activity_to_code
+            )
+            sid2cid_rows = df[["PUBCHEM_SID", "PUBCHEM_CID"]].values
+            astats_rows = df[["AID", "PUBCHEM_SID", "PUBCHEM_ACTIVITY_OUTCOME"]].values
+            sid2cid_writer.writerows(sid2cid_rows)
+            astats_writer.writerows(astats_rows)
+
+    close_file(f_sid2cid)
+    close_file(f_astats)
+    logger.info("Done!")
 
 
 if __name__ == "__main__":
@@ -105,27 +181,5 @@ if __name__ == "__main__":
         description="Show assay info using assay id (AID) file", epilog=""
     )
     args = parse_args(parser)
-    assay_ids = read_aid_file(args.aid_file)
-    COL_TYPES = {
-        "PUBCHEM_SID": "Int64",
-        "PUBCHEM_CID": "Int64",
-        "PUBCHEM_EXT_DATASOURCE_SMILES": str,
-        "PUBCHEM_ACTIVITY_OUTCOME": str,
-    }
-    start = time.time()
-    zip2aids = {}
-    for aid in assay_ids:
-        zip_filename = get_zip_filename(aid)
-        zip2aids[zip_filename] = zip2aids.get(zip_filename, []) + [aid]
-
-    for zip_filename, assay_ids in zip2aids.items():
-        zip_filepath = os.path.join(args.zip_dir, zip_filename)
-        assay_dfs = read_csv_files(zip_filepath, assay_ids, COL_TYPES)
-        for assay_id, df in zip(assay_ids, assay_dfs):
-            print("AID:", assay_id)
-            print(df.head())
-            print("-" * 80)
-
-    end = time.time()
-    print("Num assay IDs:", len(assay_ids))
-    print("Time elapsed:", end - start)
+    logger = get_and_set_logger(args.log_fname)
+    main(args)
