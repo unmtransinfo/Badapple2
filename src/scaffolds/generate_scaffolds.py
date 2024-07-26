@@ -129,7 +129,7 @@ def close_file(f):
 
 def _get_sub_scaffolds(scaffold_graph, scaf_id: int, scaf_smile: str, scaf_smile_to_id):
     # note: parent scaffolds are sub scaffolds of scaf
-    sub_scafs = scaffold_graph.get_parent_scaffolds(scaf_smile, max_levels=1)
+    sub_scafs = scaffold_graph.get_parent_scaffolds(scaf_smile)
     sub_scafs = list(filter(is_valid_scaf, sub_scafs))
     scaf2scaf_str = str(scaf_id)
     if len(sub_scafs) > 0:
