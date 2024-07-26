@@ -16,6 +16,7 @@ import scaffoldgraph as sg
 from loguru import logger
 
 from utils.file_utils import close_file, get_csv_writer
+from utils.logging import get_and_set_logger
 
 
 class HierSTopLevel(sg.HierS):
@@ -185,19 +186,7 @@ def write_outs(
     close_file(f_mol2scaf)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Scaffolds compare", epilog="")
-    args = parse_args(parser)
-    log_out = args.log_fname
-    if log_out is None:
-        log_out = sys.stdout
-    # Remove the default stdout handler
-    logger.remove()
-    logger.add(
-        log_out,
-        format="{time} {level} {message}",
-        level="INFO",
-    )
+def main(args):
     network = HierSTopLevel.from_smiles_file(
         file_name=args.i,
         header=args.iheader,
@@ -208,3 +197,10 @@ if __name__ == "__main__":
         progress=True,
     )
     write_outs(network, args.o_mol, args.o_scaf, args.o_mol2scaf, "\t")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Scaffolds compare", epilog="")
+    args = parse_args(parser)
+    logger = get_and_set_logger(args.log_out)
+    main(args)

@@ -13,6 +13,7 @@ import time
 
 import pandas as pd
 import requests
+from tqdm import tqdm
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -53,19 +54,22 @@ def fetch_csv_summary(aid: int) -> pd.DataFrame:
     return df
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Fetch assay info using assay id (AID) file", epilog=""
-    )
-    args = parse_args(parser)
+def main(args):
     os.makedirs(args.out_dir, exist_ok=True)
     assay_ids = read_aid_file(args.aid_file)
     start = time.time()
-    for aid in assay_ids:
+    for aid in tqdm(assay_ids):
         aid_df = fetch_csv_summary(aid)
         if aid_df is not None:
             save_path = os.path.join(args.out_dir, f"{aid}.csv")
             aid_df.to_csv(save_path)
     end = time.time()
-    print("Num assay IDs:", len(assay_ids))
     print("Time elapsed:", end - start)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Fetch assay info using assay id (AID) file", epilog=""
+    )
+    args = parse_args(parser)
+    main(args)
