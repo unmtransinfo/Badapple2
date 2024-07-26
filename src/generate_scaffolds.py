@@ -10,11 +10,12 @@ badapple database.
 """
 
 import argparse
-import csv
 import sys
 
 import scaffoldgraph as sg
 from loguru import logger
+
+from utils.file_utils import close_file, get_csv_writer
 
 
 class HierSTopLevel(sg.HierS):
@@ -111,20 +112,6 @@ def is_valid_scaf(can_smiles: str):
         # benzene excluded from scaffolds
         return False
     return True
-
-
-def get_csv_writer(file_path: str, delimiter: str):
-    if file_path is sys.stdout:
-        f = file_path
-    else:
-        f = open(file_path, "w")
-    csv_writer = csv.writer(f, delimiter=delimiter)
-    return csv_writer, f
-
-
-def close_file(f):
-    if f is not sys.stdout:
-        f.close()
 
 
 def _get_sub_scaffolds(scaffold_graph, scaf_id: int, scaf_smile: str, scaf_smile_to_id):

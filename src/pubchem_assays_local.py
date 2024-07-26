@@ -2,7 +2,9 @@
 @author Jack Ringer
 Date: 7/22/2024
 Description:
-Script to load assay data from local files.
+Script to load and process assay data from local files.
+Will generate the Compounds2Substances file (mapping compound id <=> substance id)
++ the Assay stats file (Maps between assay id, substance id, and activity outcome).
 These local files were mirrored from PubChem bioassays (https://ftp.ncbi.nlm.nih.gov/pubchem/Bioassay/CSV/Data/)
 via rsync (see sh_scripts/mirror_pubchem.sh).
 """
@@ -41,11 +43,12 @@ def read_aid_file(aid_file_path: str) -> list[int]:
     return aid_list
 
 
-def get_zip_filename(aid: int, file_per_zip: int = 1000, num_fill: int = 7) -> str:
+def get_zip_filename(
+    aid: int, first_aid: int = 1, file_per_zip: int = 1000, num_fill: int = 7
+) -> str:
     # <aid>.csv will be contained in file w/ name: <lower>_<upper>.zip
     # where lower <= aid <= upper
-    # assuming each .zip contains the same number of files, starting with aid 1
-    first_aid = 1
+    # assuming each .zip contains the same number of files, starting with aid=first_aid
     lower_idx = (aid - first_aid) // file_per_zip
     upper_idx = (aid + file_per_zip - first_aid) // file_per_zip
     lower = (lower_idx * file_per_zip) + first_aid
@@ -92,6 +95,9 @@ def read_csv_files(
                     )
                     dfs.append(df)
     return dfs
+
+def write_to_sid2cid():
+    # append row to Compounds2Substances file
 
 
 if __name__ == "__main__":
