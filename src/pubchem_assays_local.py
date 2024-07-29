@@ -16,7 +16,6 @@ import os
 import zipfile
 
 import pandas as pd
-from loguru import logger
 from tqdm import tqdm
 
 from utils.file_utils import close_file, get_csv_writer
@@ -57,6 +56,12 @@ def parse_args(parser: argparse.ArgumentParser):
         help="File to save logs to. If not given will log to stdout.",
         default=None,
     )
+    parser.add_argument(
+        "--process_by_batch",
+        help="Process given AID file by .zip rather than by AID. Faster, but requires more memory (process will be killed if OOM occurs).",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+    )
     return parser.parse_args()
 
 
@@ -94,29 +99,37 @@ def find_data_start_row(file) -> int:
 
 
 def read_csv_files(
-    zip_filepath: str, assay_ids: list[int], col_types: dict
+    zip_filepath: str,
+    assay_ids: list[int],
+    col_types: dict,
+    logger,
 ) -> list[pd.DataFrame]:
     zip_filename = os.path.splitext(os.path.basename(zip_filepath))[0]
     dfs = []
     cols = list(col_types.keys())
-    with zipfile.ZipFile(zip_filepath, "r") as zip_ref:
-        for aid in assay_ids:
-            csv_filename = f"{zip_filename}/{aid}.csv.gz"
-            with zip_ref.open(csv_filename, "r") as file:
-                # pubchem csv files have a variable number of metadata headers
-                start_row = find_data_start_row(file)
-                # reopen since find_data_start_row consumes the file
+    try:
+        with zipfile.ZipFile(zip_filepath, "r") as zip_ref:
+            for aid in assay_ids:
+                csv_filename = f"{zip_filename}/{aid}.csv.gz"
                 with zip_ref.open(csv_filename, "r") as file:
-                    df = pd.read_csv(
-                        file,
-                        compression="gzip",
-                        skiprows=range(1, start_row),
-                        delimiter=",",
-                        header=0,
-                        usecols=cols,
-                        dtype=col_types,
-                    )
-                    dfs.append(df)
+                    # pubchem csv files have a variable number of metadata headers
+                    start_row = find_data_start_row(file)
+                    # reopen since find_data_start_row consumes the file
+                    with zip_ref.open(csv_filename, "r") as file:
+                        df = pd.read_csv(
+                            file,
+                            compression="gzip",
+                            skiprows=range(1, start_row),
+                            delimiter=",",
+                            header=0,
+                            usecols=cols,
+                            dtype=col_types,
+                        )
+                        dfs.append(df)
+    except Exception as e:
+        logger.info(f"Assay id(s): {assay_ids}")
+        logger.info(f".zip file: {zip_filepath}")
+        raise e
     return dfs
 
 
@@ -135,7 +148,61 @@ def activity_to_code(activity_str: str) -> int:
         raise ValueError("Unrecognized activity_str:", activity_str)
 
 
+def write_dfs(
+    assay_dfs: list[pd.DataFrame], assay_ids: list[int], sid2cid_writer, astats_writer
+):
+    assert len(assay_dfs) == len(assay_ids)
+    for assay_id, df in zip(assay_ids, assay_dfs):
+        df["AID"] = assay_id
+        df["PUBCHEM_ACTIVITY_OUTCOME"] = df["PUBCHEM_ACTIVITY_OUTCOME"].map(
+            activity_to_code
+        )
+        sid2cid_rows = df[["PUBCHEM_SID", "PUBCHEM_CID"]].values
+        astats_rows = df[["AID", "PUBCHEM_SID", "PUBCHEM_ACTIVITY_OUTCOME"]].values
+        sid2cid_writer.writerows(sid2cid_rows)
+        astats_writer.writerows(astats_rows)
+
+
+def batch_process(
+    args,
+    assay_ids: list[int],
+    col_types: list[str],
+    sid2cid_writer,
+    astats_writer,
+    logger,
+):
+    # process assays by .zip file
+    # faster but more demanding memory-wise
+    zip2aids = {}
+    for aid in assay_ids:
+        zip_filename = get_zip_filename(aid)
+        zip2aids[zip_filename] = zip2aids.get(zip_filename, []) + [aid]
+
+    for zip_filename, zip_assay_ids in tqdm(zip2aids.items()):
+        zip_filepath = os.path.join(args.zip_dir, zip_filename)
+        assay_dfs = read_csv_files(zip_filepath, zip_assay_ids, col_types, logger)
+        write_dfs(assay_dfs, zip_assay_ids, sid2cid_writer, astats_writer)
+
+
+def single_process(
+    args,
+    assay_ids: list[int],
+    col_types: list[str],
+    sid2cid_writer,
+    astats_writer,
+    logger,
+):
+    # process assays by AID, one at a time
+    for aid in tqdm(assay_ids):
+        zip_filename = get_zip_filename(aid)
+        zip_filepath = os.path.join(args.zip_dir, zip_filename)
+        # singleton list
+        assay_dfs = read_csv_files(zip_filepath, [aid], col_types, logger)
+        write_dfs(assay_dfs, [aid], sid2cid_writer, astats_writer)
+
+
 def main(args):
+    logger = get_and_set_logger(args.log_fname)
     assay_ids = read_aid_file(args.aid_file)
 
     # create writers
@@ -151,25 +218,14 @@ def main(args):
         "PUBCHEM_EXT_DATASOURCE_SMILES": str,
         "PUBCHEM_ACTIVITY_OUTCOME": str,
     }
-    zip2aids = {}
-    logger.info("Creating map from zip file -> [assay ids]")
-    for aid in assay_ids:
-        zip_filename = get_zip_filename(aid)
-        zip2aids[zip_filename] = zip2aids.get(zip_filename, []) + [aid]
-
-    logger.info("Processing data by zip file...")
-    for zip_filename, assay_ids in tqdm(zip2aids.items()):
-        zip_filepath = os.path.join(args.zip_dir, zip_filename)
-        assay_dfs = read_csv_files(zip_filepath, assay_ids, COL_TYPES)
-        for assay_id, df in zip(assay_ids, assay_dfs):
-            df["AID"] = assay_id
-            df["PUBCHEM_ACTIVITY_OUTCOME"] = df["PUBCHEM_ACTIVITY_OUTCOME"].map(
-                activity_to_code
-            )
-            sid2cid_rows = df[["PUBCHEM_SID", "PUBCHEM_CID"]].values
-            astats_rows = df[["AID", "PUBCHEM_SID", "PUBCHEM_ACTIVITY_OUTCOME"]].values
-            sid2cid_writer.writerows(sid2cid_rows)
-            astats_writer.writerows(astats_rows)
+    if args.process_by_batch:
+        logger.info("Processing AID files (by .zip)...")
+        batch_process(args, assay_ids, COL_TYPES, sid2cid_writer, astats_writer, logger)
+    else:
+        logger.info("Processing AID files...")
+        single_process(
+            args, assay_ids, COL_TYPES, sid2cid_writer, astats_writer, logger
+        )
 
     close_file(f_sid2cid)
     close_file(f_astats)
@@ -181,5 +237,4 @@ if __name__ == "__main__":
         description="Show assay info using assay id (AID) file", epilog=""
     )
     args = parse_args(parser)
-    logger = get_and_set_logger(args.log_fname)
     main(args)
