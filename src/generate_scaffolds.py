@@ -141,9 +141,10 @@ def write_outs(
     mol_writer, f_mol = get_csv_writer(o_mol, odelimeter)
     scaf_writer, f_scaf = get_csv_writer(o_scaf, odelimeter)
     mol2scaf_writer, f_mol2scaf = get_csv_writer(o_mol2scaf, odelimeter)
-    mol_writer.writerow(["mol_id", "smiles", "name"])
+    # mol_name is from name of mol in input file (e.g., "CID")
+    mol_writer.writerow(["mol_id", "smiles", "mol_name"])
     scaf_writer.writerow(["scaffold_id", "smiles", "hierarchy", "scaf2scaf"])
-    mol2scaf_writer.writerow(["mol_id", "scaffold_id"])
+    mol2scaf_writer.writerow(["mol_id", "mol_name", "scaffold_id"])
     seen_mols = {}
     seen_scafs = {}
     seen_invalid_scafs = {}
@@ -170,7 +171,7 @@ def write_outs(
             if scaf_id in seen_invalid_scafs or not (is_valid_scaf(scaf_smile)):
                 seen_invalid_scafs[scaf_id] = True
             else:
-                mol2scaf_writer.writerow([mol_id, scaf_id])
+                mol2scaf_writer.writerow([mol_id, mol_name, scaf_id])
                 if scaf_id not in seen_scafs:
                     scaf_hierarchy = scaf_node[1]["hierarchy"]
                     scaf2scaf_str = _get_sub_scaffolds(
