@@ -13,7 +13,6 @@ import argparse
 
 import scaffoldgraph as sg
 from loguru import logger
-from rdkit import Chem
 
 from utils.file_utils import close_file, get_csv_writer
 from utils.logging import get_and_set_logger
@@ -146,7 +145,6 @@ def write_outs(
     mol_writer.writerow(["mol_id", "smiles", "mol_name"])
     scaf_writer.writerow(["scaffold_id", "smiles", "hierarchy", "scaf2scaf"])
     mol2scaf_writer.writerow(["mol_id", "mol_name", "scaffold_id"])
-    seen_mols = {}
     seen_scafs = {}
     seen_invalid_scafs = {}
     N = scaffold_graph.num_scaffold_nodes
@@ -158,10 +156,6 @@ def write_outs(
     for mol_node in scaffold_graph.get_molecule_nodes(data=True):
         mol_name = mol_node[0]
         mol_smiles = mol_node[1]["smiles"]
-        if mol_smiles in seen_mols:
-            # don't bother with duplicates
-            continue
-        seen_mols[mol_smiles] = True
         mol_scaffolds = scaffold_graph.get_scaffolds_for_molecule(mol_name, data=True)
         mol_id = cur_id
         mol_writer.writerow([mol_id, mol_smiles, mol_name])
