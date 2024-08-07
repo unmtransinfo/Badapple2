@@ -143,7 +143,7 @@ def write_outs(
     scaf_writer, f_scaf = get_csv_writer(o_scaf, odelimeter)
     mol2scaf_writer, f_mol2scaf = get_csv_writer(o_mol2scaf, odelimeter)
     # mol_name is from name of mol in input file (e.g., "CID")
-    mol_writer.writerow(["mol_id", "smiles", "isomeric_smiles", "mol_name"])
+    mol_writer.writerow(["mol_id", "smiles", "mol_name"])
     scaf_writer.writerow(["scaffold_id", "smiles", "hierarchy", "scaf2scaf"])
     mol2scaf_writer.writerow(["mol_id", "mol_name", "scaffold_id"])
     seen_mols = {}
@@ -158,16 +158,13 @@ def write_outs(
     for mol_node in scaffold_graph.get_molecule_nodes(data=True):
         mol_name = mol_node[0]
         mol_smiles = mol_node[1]["smiles"]
-        mol_iso_smiles = Chem.MolToSmiles(
-            Chem.MolFromSmiles(mol_smiles), isomericSmiles=True
-        )
         if mol_smiles in seen_mols:
             # don't bother with duplicates
             continue
         seen_mols[mol_smiles] = True
         mol_scaffolds = scaffold_graph.get_scaffolds_for_molecule(mol_name, data=True)
         mol_id = cur_id
-        mol_writer.writerow([mol_id, mol_smiles, mol_iso_smiles, mol_name])
+        mol_writer.writerow([mol_id, mol_smiles, mol_name])
         cur_id += 1
         for scaf_node in mol_scaffolds:
             scaf_smile = scaf_node[0]
