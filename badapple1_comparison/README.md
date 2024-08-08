@@ -23,7 +23,7 @@ gunzip pc_mlsmr_mlp_assaystats_act.csv.gz
 ```
 
 ### (2) Generate Scaffolds
-Run `bash sh_scripts/python/run_generate_scaffolds.sh`. This will generate 3 output files:
+Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will generate 3 output files:
 * `o_mol`: TSV file with all compounds and their CIDs
 * `o_scaf`: TSV file with all scaffolds and their IDs
 * `o_mol2scaf`: TSV file mapping compound CID to scaffold ID(s)
@@ -31,5 +31,5 @@ Run `bash sh_scripts/python/run_generate_scaffolds.sh`. This will generate 3 out
 ### (3) Initializing the DB
 1. Install postgresql with the RDKit cartridge (requires sudo):
 `apt install postgresql-14-rdkit`
-2. Run `bash badapple1_comparison/sh/db/create_db_compare.sh`
-3. Run `bash badapple1_comparison/sh/db/load_db_compare.sh`
+2. Run `bash badapple1_comparison/sh_scripts/create_db_compare.sh`
+3. Run `bash badapple1_comparison/sh_scripts/load_db_compare.sh`
