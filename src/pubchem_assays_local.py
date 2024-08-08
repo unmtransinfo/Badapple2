@@ -31,11 +31,18 @@ def parse_args(parser: argparse.ArgumentParser):
         help="input text file containing assays ids (one id/line)",
     )
     parser.add_argument(
-        "--zip_dir",
+        "--assay_zip_dir",
         type=str,
         required=True,
         default=argparse.SUPPRESS,
         help="path to directory containing assay .zip files",
+    )
+    parser.add_argument(
+        "--o_compound",
+        type=str,
+        required=True,
+        default=argparse.SUPPRESS,
+        help="output TSV file with all compound ids (CIDs) and their isomeric SMILES (from PubChem data). Will be the union of all CIDs present in the given assays.",
     )
     parser.add_argument(
         "--o_sid2cid",
@@ -149,7 +156,13 @@ def activity_to_code(activity_str: str) -> int:
 
 
 def write_dfs(
-    assay_dfs: list[pd.DataFrame], assay_ids: list[int], sid2cid_writer, astats_writer
+    assay_dfs: list[pd.DataFrame],
+    assay_ids: list[int],
+    compounds_writer,
+    sid2cid_writer,
+    astats_writer,
+    written_sid2cid_pairs: set,
+    written_cids: set,
 ):
     assert len(assay_dfs) == len(assay_ids)
     for assay_id, df in zip(assay_ids, assay_dfs):
@@ -157,9 +170,21 @@ def write_dfs(
         df["PUBCHEM_ACTIVITY_OUTCOME"] = df["PUBCHEM_ACTIVITY_OUTCOME"].map(
             activity_to_code
         )
+        compound_rows = df[["PUBCHEM_CID", "PUBCHEM_EXT_DATASOURCE_SMILES"]].values
         sid2cid_rows = df[["PUBCHEM_SID", "PUBCHEM_CID"]].values
         astats_rows = df[["AID", "PUBCHEM_SID", "PUBCHEM_ACTIVITY_OUTCOME"]].values
-        sid2cid_writer.writerows(sid2cid_rows)
+
+        # filter out duplicates
+        new_sid2cid_rows = [
+            row for row in sid2cid_rows if tuple(row) not in written_sid2cid_pairs
+        ]
+        new_cid_rows = [row for row in compound_rows if tuple(row) not in written_cids]
+        written_sid2cid_pairs.update(tuple(row) for row in new_sid2cid_rows)
+        written_cids.update(tuple(row) for row in new_cid_rows)
+
+        # write to files
+        compounds_writer.writerows(new_cid_rows)
+        sid2cid_writer.writerows(new_sid2cid_rows)
         astats_writer.writerows(astats_rows)
 
 
@@ -167,8 +192,11 @@ def batch_process(
     args,
     assay_ids: list[int],
     col_types: list[str],
+    compounds_writer,
     sid2cid_writer,
     astats_writer,
+    written_sid2cid_pairs: set,
+    written_cids: set,
     logger,
 ):
     # process assays by .zip file
@@ -179,35 +207,60 @@ def batch_process(
         zip2aids[zip_filename] = zip2aids.get(zip_filename, []) + [aid]
 
     for zip_filename, zip_assay_ids in tqdm(zip2aids.items()):
-        zip_filepath = os.path.join(args.zip_dir, zip_filename)
+        zip_filepath = os.path.join(args.assay_zip_dir, zip_filename)
         assay_dfs = read_csv_files(zip_filepath, zip_assay_ids, col_types, logger)
-        write_dfs(assay_dfs, zip_assay_ids, sid2cid_writer, astats_writer)
+        write_dfs(
+            assay_dfs,
+            zip_assay_ids,
+            compounds_writer,
+            sid2cid_writer,
+            astats_writer,
+            written_sid2cid_pairs,
+            written_cids,
+        )
 
 
 def single_process(
     args,
     assay_ids: list[int],
     col_types: list[str],
+    compounds_writer,
     sid2cid_writer,
     astats_writer,
+    written_sid2cid_pairs: set,
+    written_cids: set,
     logger,
 ):
     # process assays by AID, one at a time
     for aid in tqdm(assay_ids):
         zip_filename = get_zip_filename(aid)
-        zip_filepath = os.path.join(args.zip_dir, zip_filename)
+        zip_filepath = os.path.join(args.assay_zip_dir, zip_filename)
         # singleton list
         assay_dfs = read_csv_files(zip_filepath, [aid], col_types, logger)
-        write_dfs(assay_dfs, [aid], sid2cid_writer, astats_writer)
+        write_dfs(
+            assay_dfs,
+            [aid],
+            compounds_writer,
+            sid2cid_writer,
+            astats_writer,
+            written_sid2cid_pairs,
+            written_cids,
+        )
 
 
 def main(args):
     logger = get_and_set_logger(args.log_fname)
     assay_ids = read_aid_file(args.aid_file)
 
+    # keep track of already written SID-CID pairs and written CIDs
+    written_sid2cid_pairs = set()
+    written_cids = set()
+
     # create writers
+    compounds_writer, f_compounds = get_csv_writer(args.o_compound, "\t")
     sid2cid_writer, f_sid2cid = get_csv_writer(args.o_sid2cid, "\t")
     astats_writer, f_astats = get_csv_writer(args.o_assaystats, "\t")
+    compounds_writer.writerow(["CID", "ISOMERIC_SMILES"])
     sid2cid_writer.writerow(["SID", "CID"])
     astats_writer.writerow(["AID", "SID", "ACTIVITY_OUTCOME"])
 
@@ -220,13 +273,32 @@ def main(args):
     }
     if args.process_by_batch:
         logger.info("Processing AID files (by .zip)...")
-        batch_process(args, assay_ids, COL_TYPES, sid2cid_writer, astats_writer, logger)
+        batch_process(
+            args,
+            assay_ids,
+            COL_TYPES,
+            compounds_writer,
+            sid2cid_writer,
+            astats_writer,
+            written_sid2cid_pairs,
+            written_cids,
+            logger,
+        )
     else:
         logger.info("Processing AID files...")
         single_process(
-            args, assay_ids, COL_TYPES, sid2cid_writer, astats_writer, logger
+            args,
+            assay_ids,
+            COL_TYPES,
+            compounds_writer,
+            sid2cid_writer,
+            astats_writer,
+            written_sid2cid_pairs,
+            written_cids,
+            logger,
         )
 
+    close_file(f_compounds)
     close_file(f_sid2cid)
     close_file(f_astats)
     logger.info("Done!")
@@ -234,7 +306,8 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Show assay info using assay id (AID) file", epilog=""
+        description="Get results from all assays in given assay id (AID) file",
+        epilog="",
     )
     args = parse_args(parser)
     main(args)
