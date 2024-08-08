@@ -170,7 +170,11 @@ def write_dfs(
         df["PUBCHEM_ACTIVITY_OUTCOME"] = df["PUBCHEM_ACTIVITY_OUTCOME"].map(
             activity_to_code
         )
-        compound_rows = df[["PUBCHEM_CID", "PUBCHEM_EXT_DATASOURCE_SMILES"]].values
+        compound_rows = df[["PUBCHEM_CID", "PUBCHEM_EXT_DATASOURCE_SMILES"]]
+        compound_rows = (
+            compound_rows.drop_duplicates()
+        )  # there can be multiple CIDs/AID (same CID, different SID)
+        compound_rows = compound_rows.values
         sid2cid_rows = df[["PUBCHEM_SID", "PUBCHEM_CID"]].values
         astats_rows = df[["AID", "PUBCHEM_SID", "PUBCHEM_ACTIVITY_OUTCOME"]].values
 
