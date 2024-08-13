@@ -33,3 +33,5 @@ Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will 
 `apt install postgresql-14-rdkit`
 2. Run `bash badapple1_comparison/sh_scripts/create_db_compare.sh`
 3. Run `bash badapple1_comparison/sh_scripts/load_db_compare.sh`
+4. Run `bash badapple1_comparison/sh_scripts/annotate_db.sh`
+    * At the time of writing, this process takes several hours. I will work on making it faster.
