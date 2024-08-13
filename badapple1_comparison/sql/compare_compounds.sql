@@ -28,7 +28,7 @@ SELECT 'Only in badapple_comparison', cid, isosmi
 FROM compound;
 
 -- Output the results to a file
-\copy (SELECT * FROM comparison_results ORDER BY comparison_type, cid) TO 'compounds_compare.txt' WITH CSV HEADER;
+\copy (SELECT * FROM comparison_results ORDER BY comparison_type, cid) TO 'compounds_compare.csv' WITH CSV HEADER;
 
 -- Drop the temporary table
 DROP TABLE comparison_results;
