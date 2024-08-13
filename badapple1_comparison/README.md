@@ -33,5 +33,7 @@ Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will 
 `apt install postgresql-14-rdkit`
 2. Run `bash badapple1_comparison/sh_scripts/create_db_compare.sh`
 3. Run `bash badapple1_comparison/sh_scripts/load_db_compare.sh`
+    * (Optional) You can compare the sets of compounds and scaffolds between the original **badapple** DB and **badapple_comparison** using `psql -d badapple -f sql/compare_compounds.sql` and `psql -d badapple -f sql/compare_scaffolds.sql`
 4. Run `bash badapple1_comparison/sh_scripts/annotate_db.sh`
     * At the time of writing, this process takes several hours. I will work on making it faster.
+    * You can use `psql -d badapple -f sql/compare_compounds_stats.sql` and `psql -d badapple -f sql/compare_scaffold_stats.sql` to compare the two DB annotations.
