@@ -63,7 +63,7 @@ def main(args):
             else:
                 actual_count = badapple_count - comparison_count
 
-            if actual_count < expected_count:
+            if actual_count != expected_count:
                 print(f"Row {index} does not follow the expected pattern:")
                 print(row)
                 print(
