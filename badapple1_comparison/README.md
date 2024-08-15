@@ -1,8 +1,9 @@
 # About
-The steps outlined in this README provide information on how to generate a comparison DB to the Badapple1 DB using the updated code. These steps are different because Badapple1 uses compounds from [MLSMR](https://pubchem.ncbi.nlm.nih.gov/source/MLSMR), rather than the set of PubChem compounds found from a given list of AIDs (like Badapple2).
+The steps outlined in this README provide information on how to generate a comparison DB (badapple_comparison) to the Badapple1 DB (badapple) using the updated code. These steps are different because Badapple1 uses compounds from [MLSMR](https://pubchem.ncbi.nlm.nih.gov/source/MLSMR), rather than the set of PubChem compounds found from a given list of AIDs (like Badapple2).
 
 ## Requirements
-You will need ~3.5 GB of space to store the Badapple1 CSV files used to initialize the DB.
+You will need ~3.5 GB of space to store the Badapple1 CSV files used to initialize the DB. Additionally, the badapple_comparison DB will take
+~12 GB of space, although this is reduced if one drops the "activity" table after constructing the rest of the DB.
 
 ## Database (DB) Development Setup
 The steps below outline how one can re-create the Badapple1 DB on their own system, using the updated code within this repo (note that the HierS implementation has changed).
@@ -21,6 +22,7 @@ scp <your_username>@chiltepin:/home/data/Badapple/data/\{pc_mlsmr_compounds.smi,
 ```
 gunzip pc_mlsmr_mlp_assaystats_act.csv.gz
 ```
+4. (Optional) If you want to setup the original badapple database on your system so that you can run comparisons, see the steps in the Badapple repo [here](https://github.com/unmtransinfo/Badapple?tab=readme-ov-file#database-installation). This DB takes up ~800 MB. 
 
 ### (2) Generate Scaffolds
 Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will generate 3 output files:
@@ -33,7 +35,8 @@ Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will 
 `apt install postgresql-14-rdkit`
 2. Run `bash badapple1_comparison/sh_scripts/create_db_compare.sh`
 3. Run `bash badapple1_comparison/sh_scripts/load_db_compare.sh`
-    * (Optional) You can compare the sets of compounds and scaffolds between the original **badapple** DB and **badapple_comparison** using `psql -d badapple -f sql/compare_compounds.sql` and `psql -d badapple -f sql/compare_scaffolds.sql`
+    * (Optional) You can compare the sets of compounds and scaffolds between the original badapple DB and badapple_comparison using `psql -d badapple -f sql/compare_compounds.sql` and `psql -d badapple -f sql/compare_scaffolds.sql`. You can also compare the compound<->scaffold relationships using `psql -d badapple -f sql/compare_compound_scaf_relationships.sql`.
 4. Run `bash badapple1_comparison/sh_scripts/annotate_db.sh`
     * At the time of writing, this process takes several hours. I will work on making it faster.
-    * You can use `psql -d badapple -f sql/compare_compounds_stats.sql` and `psql -d badapple -f sql/compare_scaffold_stats.sql` to compare the two DB annotations.
+    * (Optional) You can use `psql -d badapple -f sql/compare_compounds_stats.sql` and `psql -d badapple -f sql/compare_scaffold_stats.sql` to compare the two DB annotations.
+    * (Optional) You can run `python src/check_scaf_diffs.py` to check that any differences in scaffold annotations are due only to differences in compound<->scaffold relationships.
