@@ -1,7 +1,15 @@
--- NOTE: will only compare CIDs contained in both databases
--- (use compare_compounds.sql to run this comparison)
--- Connect to the first database
-\c badapple
+/*
+Author: Jack Ringer (+copilot)
+Date: 8/15/2024
+Description:  
+Script to compare stats of shared compound between badapple and 
+badapple_comparison DB. 
+
+Usage: psql -d badapple -f compare_compounds_stats.sql
+
+NOTE: will only compare CIDs contained in both databases 
+    (use compare_compounds.sql to run this comparison)
+*/
 
 -- Enable the dblink extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS dblink;

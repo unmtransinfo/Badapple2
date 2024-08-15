@@ -1,5 +1,15 @@
--- Connect to the first database
-\c badapple
+/*
+Author: Jack Ringer (+copilot)
+Date: 8/15/2024
+Description:  
+Script to compare the sets of compounds (based on CID and isomeric SMILES)
+between the badapple and badapple_comparison DB. 
+Will output a CSV file with all rows that are present in one DB but not the other. 
+File will be empty if there are no differences.
+
+Usage: psql -d badapple -f compare_compounds.sql
+*/
+
 
 -- Enable the dblink extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS dblink;

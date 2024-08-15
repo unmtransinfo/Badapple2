@@ -1,9 +1,18 @@
--- NOTE: will only compare scaffolds contained in both databases
--- (based on canonical smiles, use compare_scaffolds.sql to run this comparison)
--- ASSUMES the "scafsmi" column in both DBs has been canonicalized!
+/*
+Author: Jack Ringer (+copilot)
+Date: 8/15/2024
+Description:  
+Script to compare the stats (n_cpd_total, ncpd_tested, etc) of the
+shared set of scaffolds between badapple and badapple_comparison.
+Scaffold SMILES ("scafsmi") are used to identify unique scaffolds for each DB.
+Will output a CSV file with all scaffolds that differ in one or more stats.
 
--- Connect to the first database
-\c badapple
+Usage: psql -d badapple -f compare_scaffold_stats.sql
+
+NOTE: will only compare scaffolds contained in both databases
+(based on canonical smiles, use compare_scaffolds.sql to run this comparison)
+ASSUMES the "scafsmi" column in both DBs has been canonicalized!
+*/
 
 -- Enable the dblink extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS dblink;
