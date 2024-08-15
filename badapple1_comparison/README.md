@@ -16,7 +16,7 @@ First we'll gather the data used for Badapple1.
 1. Change your directory to where you want to save the files.
 2. Copy over the input CSV files used for Badapple1:
 ```
-scp <your_username>@chiltepin:/home/data/Badapple/data/\{pc_mlsmr_compounds.smi,pc_mlsmr_mlp_assaystats_act.csv.gz,pc_mlsmr_sid2cid.csv} .
+scp <your_username>@chiltepin.health.unm.edu:/home/data/Badapple/data/\{pc_mlsmr_compounds.smi,pc_mlsmr_mlp_assaystats_act.csv.gz,pc_mlsmr_sid2cid.csv,drugcentral.smi} .
 ```
 3. Unzip the assaystats file:
 ```
@@ -40,3 +40,7 @@ Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will 
     * At the time of writing, this process takes several hours. I will work on making it faster.
     * (Optional) You can use `psql -d badapple -f sql/compare_compounds_stats.sql` and `psql -d badapple -f sql/compare_scaffold_stats.sql` to compare the two DB annotations.
     * (Optional) You can run `python src/check_scaf_diffs.py` to check that any differences in scaffold annotations are due only to differences in compound<->scaffold relationships.
+5. Run `bash badapple1_comparison/sh_scripts/in-drug_annotate_db.sh`
+
+## TODO:
+* Combine separate shell scripts into `load_db_compare.sh` + use command-line options to clean things up
