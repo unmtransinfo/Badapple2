@@ -40,7 +40,8 @@ Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will 
     * At the time of writing, this process takes several hours. I will work on making it faster.
     * (Optional) You can use `psql -d badapple -f sql/compare_compounds_stats.sql` and `psql -d badapple -f sql/compare_scaffold_stats.sql` to compare the two DB annotations.
     * (Optional) You can run `python src/check_scaf_diffs.py` to check that any differences in scaffold annotations are due only to differences in compound<->scaffold relationships.
-5. Run `bash badapple1_comparison/sh_scripts/in-drug_annotate_db.sh`
+5. Run `bash badapple1_comparison/sh_scripts/in_drug_annotate_db.sh`
+6. Run `bash badapple1_comparison/sh_scripts/score_rank_db.sh`
 
 ## TODO:
 * Combine separate shell scripts into `load_db_compare.sh` + use command-line options to clean things up
