@@ -104,7 +104,7 @@ INSERT INTO ${SCHEMA}.compound (cid, cansmi, isosmi) SELECT CID, SMILES, ISOMERI
 DROP TABLE temp_compound;
 DROP TABLE temp_compound2;
 EOF
-psql -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.compound IS 'From ${CPD_TSV_PATH} via ${HIERS_SCRIPT}, assaystats_db_annotate.py.'"
+psql -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.compound IS 'From ${CPD_TSV_PATH} via ${HIERS_SCRIPT}, annotate_db_assaystats.py.'"
 echo "Loaded compound table."
 
 

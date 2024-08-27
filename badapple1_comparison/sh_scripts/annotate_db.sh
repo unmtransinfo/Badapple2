@@ -16,7 +16,7 @@ psql -d $DB_NAME -c "ALTER TABLE $SCHEMA.compound ADD COLUMN nsub_total INTEGER"
 psql -d $DB_NAME -c "ALTER TABLE $SCHEMA.compound ADD COLUMN nsub_tested INTEGER"
 psql -d $DB_NAME -c "ALTER TABLE $SCHEMA.compound ADD COLUMN nsub_active INTEGER"
 psql -d $DB_NAME -c "UPDATE $SCHEMA.compound SET (nsub_total, nsub_tested, nsub_active)  = (NULL, NULL, NULL)"
-python src/assaystats_db_annotate.py \
+python src/annotate_db_assaystats.py \
 	--annotate_compounds \
 	--assay_id_tag $ASSAY_ID_TAG \
 	--host $DB_HOST \
@@ -52,7 +52,7 @@ psql -d $DB_NAME -c "ALTER TABLE $SCHEMA.scaffold ADD COLUMN in_drug BOOLEAN"
 psql -d $DB_NAME -c "UPDATE $SCHEMA.scaffold SET in_drug  = NULL"
 
 #(~5h but ~4h to 50%, since top scafs have more data.)
-python src/assaystats_db_annotate.py \
+python src/annotate_db_assaystats.py \
 	--annotate_scaffolds \
 	--assay_id_tag $ASSAY_ID_TAG \
 	--host $DB_HOST \

@@ -92,7 +92,7 @@ CREATE TEMP TABLE temp_compound (
 INSERT INTO ${SCHEMA}.compound (cid, cansmi, isosmi) SELECT mol_name, smiles, isomeric_smiles FROM temp_compound;
 DROP TABLE temp_compound;
 EOF
-psql -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.compound IS 'From ${CPD_TSV_PATH} via ${HIERS_SCRIPT}, badapple_assaystats_db_annotate.py.'"
+psql -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.compound IS 'From ${CPD_TSV_PATH} via ${HIERS_SCRIPT}, badapple_annotate_db_assaystats.py.'"
 echo "Loaded compound table."
 
 

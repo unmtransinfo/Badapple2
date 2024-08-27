@@ -1,7 +1,7 @@
 """
 @author: Jeremy Yang, Jack Ringer
 Date: 8/8/2024
-Description: (Based on: https://github.com/unmtransinfo/Badapple/blob/master/python/badapple_assaystats_db_annotate.py)
+Description: (Based on: https://github.com/unmtransinfo/Badapple/blob/master/python/badapple_annotate_db_assaystats.py)
 After badapple database has been otherwise fully populated, with:
    -> compound table (id, nass_tested, nass_active, nsam_tested, nsam_active )
    -> scaffold table (id, ... )
@@ -49,7 +49,6 @@ def AnnotateCompounds(
     no_write,
     n_max=0,
     n_skip=0,
-    verbose=0,
 ):
     """Loop over compounds. For each compound call AnnotateCompound()."""
     n_cpd_total = 0  # total compounds processed
@@ -59,11 +58,10 @@ def AnnotateCompounds(
     n_err = 0
     cur = db.cursor()
     sql = f"SELECT cid FROM {dbschema}.compound"
-    # if verbose > 2: print(f"DEBUG: sql=\"{sql}\"", file=sys.stderr)
     cur.execute(sql)
     cpd_rowcount = cur.rowcount  # use for progress msgs
-    if verbose > 2:
-        print(f"cpd rowcount={cpd_rowcount}", file=sys.stderr)
+    logger.debug(f"cpd rowcount={cpd_rowcount}")
+
     row = cur.fetchone()
     n = 0
     t0 = time.time()
@@ -74,8 +72,8 @@ def AnnotateCompounds(
             continue
         n_cpd_total += 1
         cid = row[0]
-        if verbose > 2:
-            print(f"CID={cid:4d}:", end=" ", file=sys.stderr)
+        logger.debug(f"CID={cid:4d}:")
+
         (
             sTotal,
             sTested,
@@ -94,20 +92,18 @@ def AnnotateCompounds(
             assay_id_tag,
             assay_ids,
             no_write,
-            verbose,
         )
         n_sub_total += sTotal
         n_res_total += wTested
         if ok_write:
             n_write += 1
         n_err += n_err_this
-        if (verbose > 0 and (n % 1000) == 0) or verbose > 2:
-            print(
+        if (n % 1000) == 0:
+            logger.info(
                 f"n_cpd: {n_cpd_total} ; elapsed time: {time.time() - t0} ({100.0 * n_cpd_total / cpd_rowcount:.1f}% done)",
-                file=sys.stderr,
             )
         row = cur.fetchone()
-        if n_cpd_total == n_max:
+        if n_cpd_total >= n_max:
             break
     cur.close()
     db.close()
@@ -116,138 +112,78 @@ def AnnotateCompounds(
 
 #############################################################################
 def AnnotateCompound(
-    cid, db, dbschema, dbschema_activity, assay_id_tag, assay_ids, no_write, verbose=0
+    cid, db, dbschema, dbschema_activity, assay_id_tag, assay_ids, no_write
 ):
-    """For this compound, loop over substances. For each substance, loop over assay outcomes.
-    Generate assay statistics. Update compound row.
-        sTotal    - substances containing scaffold
-        sTested   - tested substances containing scaffold
-        sActive   - active substances containing scaffold
-        aTested   - assays involving substances containing scaffold
-        aActive   - assays involving active substances containing scaffold
-        wTested   - samples (wells) involving substances containing scaffold
-        wActive   - active samples (wells) involving substances containing scaffold
-    """
-    sTotal = 0  # total substances, this compound
-    sTested = 0  # substances tested, this compound
-    sActive = 0  # substances active, this compound
-    aTested = 0  # assays tested, this compound
-    aActive = 0  # assays active, this compound
-    wTested = 0  # wells (samples) tested, this compound
-    wActive = 0  # wells (samples) active, this compound
-    ok_write = False  # flag true if write row update ok
-    n_err = 0
-    sql = f"SELECT DISTINCT sid FROM {dbschema}.sub2cpd WHERE {dbschema}.sub2cpd.cid=%s"
-    cur1 = db.cursor()
-    # if verbose > 2: print(f"DEBUG: sql=\"{sql}\"", file=sys.stderr)
-    cur1.execute(sql, (cid,))
-    sub_rowcount = cur1.rowcount
-    if verbose > 2:
-        print(f"sub rowcount={sub_rowcount}", file=sys.stderr)
-    row1 = cur1.fetchone()
-    assays = {}  # store unique assays for this compound
-    while row1 is not None:  # substance loop
-        sid = row1[0]
-        sTotal += 1
+    """Annotate compound with assay statistics."""
 
-        # Now get outcomes...
-        sql = f"""
-        SELECT
-            {assay_id_tag}, outcome
-        FROM
-            {dbschema_activity}.activity
-        WHERE
-            {dbschema_activity}.activity.sid=%s
-        """
-        # if verbose > 2: print(f"DEBUG: sql=\"{sql}\"", file=sys.stderr)
-        t0 = time.time()
-        cur2 = db.cursor()
-        cur2.execute(sql, (sid,))
-        res_rowcount = cur2.rowcount
-        # if verbose > 2: print(f"outcome rowcount={res_rowcount}", file=sys.stderr)
-        row2 = cur2.fetchone()
-        if row2 is None:  # no outcomes; not tested
-            if verbose > 2:
-                print(f'DEBUG: no outcomes; sql="{sql}"', file=sys.stderr)
-            row1 = cur1.fetchone()
-            continue
-        sTested += 1
-        nres_sub_this = 0
-        nres_sub_act_this = 0
-        nass_sub_this = 0
-        nass_sub_act_this = 0
-        while row2 is not None:  # outcome loop
-            aid, outcome = row2
-            if assay_ids and (aid not in assay_ids):  # custom selection
-                row2 = cur2.fetchone()
-                continue
-            wTested += 1
-            nres_sub_this += 1
-            if outcome in (2, 5):  # active or probe
-                nres_sub_act_this += 1
-                wActive += 1
-                if aid in assays:
-                    assays[aid] = True
-                else:
-                    assays[aid] = True
-                    nass_sub_this += 1
-                    nass_sub_act_this += 1
-            elif outcome in (1, 3):  # tested inactive
-                if aid in assays:
-                    assays[aid] |= False
-                else:
-                    assays[aid] = False
-                    nass_sub_this += 1
-            row2 = cur2.fetchone()
-        cur2.close()
-        row1 = cur1.fetchone()
-        if nres_sub_act_this > 0:
-            sActive += 1
-        if verbose > 2:
-            print(
-                f"\t{sTested:4d}. SID={sid:4d} n_res: {nres_sub_this:4d} ; n_res_act: {nres_sub_act_this:4d} ; n_ass: {nass_sub_this:4d} ; n_ass_act: {nass_sub_act_this:4d}",
-                file=sys.stderr,
-            )
-    cur1.close()
-    if verbose > 2:
-        print(f"n_sub: {sTested:4d} ; n_ass: {len(assays):4d}", file=sys.stderr)
-    for aid in assays.keys():
-        aTested += 1
-        if assays[aid]:
-            aActive += 1
-
-    # update compound row ...
+    # Fetch all relevant data in one query
     sql = f"""
-    UPDATE
-        {dbschema}.compound
-    SET
-        nsub_total = %s,
-        nsub_tested = %s,
-        nsub_active = %s,
-        nass_tested = %s,
-        nass_active = %s,
-        nsam_tested = %s,
-        nsam_active = %s
-    WHERE
-        cid=%s
+    SELECT s.sid, a.{assay_id_tag}, a.outcome
+    FROM {dbschema}.sub2cpd s
+    LEFT JOIN {dbschema_activity}.activity a ON a.sid = s.sid
+    WHERE s.cid = %s
     """
+
+    cur = db.cursor()
+    cur.execute(sql, (cid,))
+
+    substances = {}
+    assays = set()
+
+    for sid, aid, outcome in cur.fetchall():
+        if sid not in substances:
+            substances[sid] = {"tested": False, "active": False, "assays": set()}
+
+        if aid is not None:
+            substances[sid]["tested"] = True
+            if not assay_ids or aid in assay_ids:
+                substances[sid]["assays"].add((aid, outcome))
+                if outcome in (2, 5):  # active or probe
+                    substances[sid]["active"] = True
+                    assays.add(aid)
+
+    cur.close()
+
+    # Calculate statistics
+    sTotal = len(substances)
+    sTested = sum(1 for s in substances.values() if s["tested"])
+    sActive = sum(1 for s in substances.values() if s["active"])
+    aTested = len({aid for s in substances.values() for aid, _ in s["assays"]})
+    aActive = len(assays)
+    wTested = sum(len(s["assays"]) for s in substances.values())
+    wActive = sum(
+        sum(1 for _, outcome in s["assays"] if outcome in (2, 5))
+        for s in substances.values()
+    )
+
+    # Update compound row
     if not no_write:
+        sql = f"""
+        UPDATE {dbschema}.compound
+        SET nsub_total = %s, nsub_tested = %s, nsub_active = %s,
+            nass_tested = %s, nass_active = %s, nsam_tested = %s, nsam_active = %s
+        WHERE cid = %s
+        """
         try:
-            cur1 = db.cursor()
-            cur1.execute(
+            cur = db.cursor()
+            cur.execute(
                 sql, (sTotal, sTested, sActive, aTested, aActive, wTested, wActive, cid)
             )
             db.commit()
-            cur1.close()
+            cur.close()
             ok_write = True
         except Exception as e:
-            print(e, file=sys.stderr)
-            n_err += 1
-    if verbose > 1:
-        print(
-            f"CID={cid}, sTotal={sTotal}, sTested={sTested}, sActive={sActive}, aTested={aTested}, aActive={aActive}, wTested={wTested}, wActive={wActive}",
-            file=sys.stderr,
-        )
+            logger.error(e)
+            ok_write = False
+            n_err = 1
+    else:
+        ok_write = False
+        n_err = 0
+
+    logger.debug(
+        f"CID={cid}, sTotal={sTotal}, sTested={sTested}, sActive={sActive}, "
+        f"aTested={aTested}, aActive={aActive}, wTested={wTested}, wActive={wActive}"
+    )
 
     return sTotal, sTested, sActive, aTested, aActive, wTested, wActive, ok_write, n_err
 
@@ -262,7 +198,6 @@ def AnnotateScaffolds(
     no_write,
     n_max=0,
     n_skip=0,
-    verbose=0,
 ):
     """Loop over scaffolds.  For each scaffold call AnnotateScaffold().
     NOTE: This function presumes that the compound annotations have already been accomplished
@@ -279,8 +214,6 @@ def AnnotateScaffolds(
     sql = """SELECT id FROM {DBSCHEMA}.scaffold ORDER BY id""".format(DBSCHEMA=dbschema)
     cur.execute(sql)
     scaf_rowcount = cur.rowcount  # use for progress msgs
-    if verbose > 2:
-        print("\tscaf rowcount={}".format(scaf_rowcount), file=sys.stderr)
     row = cur.fetchone()
     n = 0
     t0 = time.time()
@@ -292,8 +225,7 @@ def AnnotateScaffolds(
             continue
         n_scaf_total += 1
         scaf_id = row[0]
-        if verbose > 2:
-            print("SCAFID={:4d}:".format(scaf_id), file=sys.stderr)
+        logger.debug("SCAFID={:4d}:".format(scaf_id))
         (
             nres_this,
             cTotal,
@@ -316,7 +248,6 @@ def AnnotateScaffolds(
             assay_id_tag,
             assay_ids,
             no_write,
-            verbose,
         )
         n_cpd_total += cTotal
         n_sub_total += sTotal
@@ -324,17 +255,16 @@ def AnnotateScaffolds(
         if ok_write:
             n_write += 1
         n_err += n_err_this
-        if (verbose > 0 and (n % 100) == 0) or verbose > 2:
-            print(
+        if (n % 1000) == 0:
+            logger.info(
                 "n_scaf: {} ; elapsed time: {} ({:.1f}% done)".format(
                     n_scaf_total,
                     time.strftime("%H:%M:%S", time.gmtime(time.time() - t0)),
                     100.0 * n_scaf_total / scaf_rowcount,
-                ),
-                file=sys.stderr,
+                )
             )
         row = cur.fetchone()
-        if n_scaf_total == n_max:
+        if n_scaf_total >= n_max:
             break
     cur.close()
     db.close()
@@ -350,7 +280,6 @@ def AnnotateScaffold(
     assay_id_tag,
     assay_ids,
     no_write,
-    verbose=0,
 ):
     """For this scaffold, loop over compounds.  For each compound, loop over assay outcomes.
     Generate assay statistics.  Update scaffold row.
@@ -381,156 +310,66 @@ def AnnotateScaffold(
     ok_write = False  # flag true if write row update ok
     n_err = 0
 
-    sql = """
-    SELECT
-        compound.cid,
-        compound.nsub_total,
-        compound.nsub_tested,
-        compound.nsub_active,
-        compound.nass_tested,
-        compound.nass_active,
-        compound.nsam_tested,
-        compound.nsam_active
-    FROM
-        {DBSCHEMA}.compound,
-        {DBSCHEMA}.scaf2cpd
-    WHERE
-        {DBSCHEMA}.scaf2cpd.scafid={SCAFID}
-        AND {DBSCHEMA}.scaf2cpd.cid={DBSCHEMA}.compound.cid
-    """.format(
-        DBSCHEMA=dbschema, SCAFID=scaf_id
-    )
+    # Fetch all relevant data in one query
+    sql = f"""
+    SELECT c.cid, c.nsub_total, c.nsub_tested, c.nsub_active, c.nass_tested, c.nass_active, c.nsam_tested, c.nsam_active,
+           s.sid, a.{assay_id_tag}, a.outcome
+    FROM {dbschema}.compound c
+    JOIN {dbschema}.scaf2cpd sc ON sc.cid = c.cid
+    JOIN {dbschema}.sub2cpd s2c ON s2c.cid = c.cid
+    LEFT JOIN {dbschema_activity}.activity a ON a.sid = s2c.sid
+    WHERE sc.scafid = %s
+    """
 
-    cur1 = db.cursor()
-    cur1.execute(sql)
-    cpd_rowcount = cur1.rowcount
-    if verbose > 2:
-        print("\tcpd rowcount={}".format(cpd_rowcount), file=sys.stderr)
-    row1 = cur1.fetchone()
-    assays = {}  # store unique assays for this scaffold
+    cur = db.cursor()
+    cur.execute(sql, (scaf_id,))
 
-    while row1 is not None:  # compound loop
+    assays = set()
+    compound_data = {}
+
+    for row in cur.fetchall():
         (
             cid,
-            c_sTotal,
-            c_sTested,
-            c_sActive,
-            c_aTested,
-            c_aActive,
-            c_wTested,
-            c_wActive,
-        ) = row1
-        cTotal += 1
-        if c_aTested > 0:
-            cTested += 1
-        if c_aActive > 0:
-            cActive += 1
-        sTotal += c_sTotal if c_sTotal else 0
-        sTested += c_sTested if c_sTested else 0
-        sActive += c_sActive if c_sActive else 0
-        wTested += c_wTested if c_wTested else 0
-        wActive += c_wActive if c_wActive else 0
+            nsub_total,
+            nsub_tested,
+            nsub_active,
+            nass_tested,
+            nass_active,
+            nsam_tested,
+            nsam_active,
+            sid,
+            aid,
+            outcome,
+        ) = row
 
-        ## Compound statistics are used to derive sTotal,sTested, sActive, wTested, and wActive.
-        ## However we cannot use the compound statistics to derive aTested and aActive
-        ## because we want to count assays per scaffold. So, for example, 2 compounds
-        ## (with this scaffold) active in the same assay should increment aActive by only 1, not 2.
+        if cid not in compound_data:
+            compound_data[cid] = {
+                "nsub_total": nsub_total,
+                "nsub_tested": nsub_tested,
+                "nsub_active": nsub_active,
+                "nass_tested": nass_tested,
+                "nass_active": nass_active,
+                "nsam_tested": nsam_tested,
+                "nsam_active": nsam_active,
+                "assays": set(),
+            }
 
-        # Now get substances...
-        sql = """
-        SELECT DISTINCT sid FROM {DBSCHEMA}.sub2cpd WHERE {DBSCHEMA}.sub2cpd.cid={CID}
-        """.format(
-            DBSCHEMA=dbschema, CID=cid
-        )
-        cur2 = db.cursor()
-        cur2.execute(sql)
-        sub_rowcount = cur2.rowcount
-        if verbose > 2:
-            print("\tsub rowcount={}".format(sub_rowcount), file=sys.stderr)
-        row2 = cur2.fetchone()
-        nres_cpd_this = 0  # outcome count, this compound
-        nres_cpd_act_this = 0  # active outcome count, this compound
-        nass_cpd_this = 0  # assay count, this compound
-        nass_cpd_act_this = 0  # active assay count, this compound
+        if aid is not None and (not assay_ids or aid in assay_ids):
+            compound_data[cid]["assays"].add((aid, outcome))
+            if outcome in (2, 5):  # active or probe
+                assays.add(aid)
 
-        while row2 is not None:  # substance loop
-            sid = row2[0]
-
-            # Now get outcomes...
-            sql = """
-            SELECT
-                activity.{ASSAY_ID_TAG}, activity.outcome
-            FROM
-                {DBSCHEMA_ACTIVITY}.activity
-            WHERE
-                {DBSCHEMA_ACTIVITY}.activity.sid={SID}
-            """.format(
-                ASSAY_ID_TAG=assay_id_tag, DBSCHEMA_ACTIVITY=dbschema_activity, SID=sid
-            )
-            t0 = time.time()
-            cur3 = db.cursor()
-            cur3.execute(sql)
-            res_rowcount = cur3.rowcount
-            if verbose > 2:
-                print("\toutcome rowcount={}".format(res_rowcount), file=sys.stderr)
-            row3 = cur3.fetchone()
-            if row3 is None:  # No outcomes; normal, untested substance.
-                row2 = cur2.fetchone()
-                continue
-            while row3 is not None:  # outcome loop
-                aid, outcome = row3
-                if assay_ids and (aid not in assay_ids):  # custom selection
-                    row3 = cur3.fetchone()
-                    continue
-                nres_total += 1
-                nres_cpd_this += 1
-                if outcome in (2, 5):  # active or probe
-                    nres_cpd_act_this += 1
-                    if aid in assays:
-                        assays[aid] = True
-                    else:
-                        assays[aid] = True
-                        nass_cpd_this += 1
-                        nass_cpd_act_this += 1
-                elif outcome in (1, 3):  # tested inactive
-                    if aid in assays:
-                        assays[aid] |= False
-                    else:
-                        assays[aid] = False
-                        nass_cpd_this += 1
-                row3 = cur3.fetchone()  # END of outcome loop
-            cur3.close()
-            row2 = cur2.fetchone()  # END of substance loop
-        cur2.close()
-        if verbose > 2:
-            print(
-                "\t{:4d}. CID={:4d} n_res: {:4d} ; n_res_act: {:4d} ; n_ass: {:4d} ; n_ass_act: {:4d}".format(
-                    cTotal,
-                    cid,
-                    nres_cpd_this,
-                    nres_cpd_act_this,
-                    nass_cpd_this,
-                    nass_cpd_act_this,
-                ),
-                file=sys.stderr,
-            )
-            print(
-                "\tcpd elapsed time: {} ({:.1f}% done this scaf)".format(
-                    time.strftime("%H:%M:%S", time.gmtime(time.time() - t0)),
-                    100.0 * cTotal / cpd_rowcount,
-                ),
-                file=sys.stderr,
-            )
-        row1 = cur1.fetchone()  # END of compound loop
-    cur1.close()
-    if verbose > 2:
-        print(
-            "\tn_cpd: {:4d} ; n_ass: {:4d}".format(cTotal, len(assays)), file=sys.stderr
-        )
-    for aid in assays.keys():
-        aTested += 1
-        if assays[aid]:
-            aActive += 1
+    # Process the collected data
+    cTotal = len(compound_data)
+    cTested = sum(1 for data in compound_data.values() if data["nass_tested"] > 0)
+    cActive = sum(1 for data in compound_data.values() if data["nass_active"] > 0)
+    sTotal = sum(data["nsub_total"] or 0 for data in compound_data.values())
+    sTested = sum(data["nsub_tested"] or 0 for data in compound_data.values())
+    sActive = sum(data["nsub_active"] or 0 for data in compound_data.values())
+    wTested = sum(data["nsam_tested"] or 0 for data in compound_data.values())
+    wActive = sum(data["nsam_active"] or 0 for data in compound_data.values())
+    aTested = len({aid for data in compound_data.values() for aid, _ in data["assays"]})
+    aActive = len(assays)
 
     # update scaffold row ...
     sql = """
@@ -571,25 +410,23 @@ def AnnotateScaffold(
             cur1.close()
             ok_write = True
         except Exception as e:
-            print(e, file=sys.stderr)
+            logger.error(e)
             n_err += 1
-    if verbose > 1:
-        print(
-            "SCAFID={},cTotal={},cTested={},cActive={},sTotal={},sTested={},sActive={},aTested={},aActive={},wTested={},wActive={}".format(
-                scaf_id,
-                cTotal,
-                cTested,
-                cActive,
-                sTotal,
-                sTested,
-                sActive,
-                aTested,
-                aActive,
-                wTested,
-                wActive,
-            ),
-            file=sys.stderr,
+    logger.debug(
+        "SCAFID={},cTotal={},cTested={},cActive={},sTotal={},sTested={},sActive={},aTested={},aActive={},wTested={},wActive={}".format(
+            scaf_id,
+            cTotal,
+            cTested,
+            cActive,
+            sTotal,
+            sTested,
+            sActive,
+            aTested,
+            aActive,
+            wTested,
+            wActive,
         )
+    )
     return (
         nres_total,
         cTotal,
@@ -710,7 +547,7 @@ def main(args):
             cursor_factory=psycopg2.extras.DictCursor,
         )
     except Exception as e:
-        print(e, file=sys.stderr)
+        logger.error(e)
         sys.exit(2)
 
     # Get the assay IDs if applicable
@@ -728,13 +565,12 @@ def main(args):
             args.no_write,
             args.nmax,
             args.nskip,
-            args.verbose,
         )
-        print(
+        logger.info(
             f"Compounds annotated: {n_cpd_total} ({n_sub_total} substances, {n_res_total} results), {n_write} rows updated"
         )
         if n_err > 0:
-            print(f"Errors encountered: {n_err}")
+            logger.info(f"Errors encountered: {n_err}")
     # Annotate scaffolds
     if args.annotate_scaffolds:
         n_scaf_total, n_cpd_total, n_sub_total, n_res_total, n_write, n_err = (
@@ -747,19 +583,18 @@ def main(args):
                 args.no_write,
                 args.nmax,
                 args.nskip,
-                args.verbose,
             )
         )
 
         # Print summary
-        print(
+        logger.info(
             f"Scaffolds annotated: {n_scaf_total} ({n_cpd_total} compounds, {n_sub_total} substances, {n_res_total} results), {n_write} rows updated"
         )
         if n_err > 0:
-            print(f"Errors encountered: {n_err}")
+            logger.info(f"Errors encountered: {n_err}")
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    logger = get_and_set_logger(args.log_fname)
+    logger = get_and_set_logger(args.log_fname, args.verbose)
     main(args)
