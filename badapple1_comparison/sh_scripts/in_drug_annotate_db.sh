@@ -36,5 +36,5 @@ python src/generate_scaffolds.py --log_fname $LOG_FILE --idelim ' ' --i $IFILE -
 echo "Done generating scaffolds from ${IFILE}"
 
 # Step 2) Load in_drug scaffold annotations.
-python src/in_drug_annotate.py --dbname $DB_NAME --user $DB_USR --password $DB_PW  --scaf_file_path $O_SCAF
+python src/annotate_db_in_drug.py --dbname $DB_NAME --user $DB_USR --password $DB_PW  --scaf_file_path $O_SCAF
 echo "in_drug annotations loaded into ${DB_NAME}"

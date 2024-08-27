@@ -12,10 +12,10 @@ import argparse
 
 import psycopg2
 from psycopg2 import sql
-from tqdm import tqdm
+
+from utils.logging import get_and_set_logger
 
 
-# Function to parse command-line arguments
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Annotate in_drug field in scaffold table."
@@ -32,34 +32,39 @@ def parse_args():
     parser.add_argument(
         "--dbschema", default="public", help="Database schema (default: public)"
     )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Increase verbosity (use -vv for more verbose)",
+    )
+    parser.add_argument(
+        "--log_fname",
+        help="File to save logs to. If not given will log to stdout.",
+        default=None,
+    )
     return parser.parse_args()
 
 
-def main():
-    args = parse_args()
-    # Database connection parameters
-    db_params = {
-        "dbname": args.dbname,
-        "user": args.user,
-        "password": args.password,
-        "host": args.host,
-    }
-
-    input_file_path = args.scaf_file_path
+def main(args):
     dbschema = args.dbschema
     try:
-        # Connect to the PostgreSQL database
-        conn = psycopg2.connect(**db_params)
-        cur = conn.cursor()
+        db_connection = psycopg2.connect(
+            dbname=args.dbname,
+            host=args.host,
+            user=args.user,
+            password=args.password,
+        )
+        cur = db_connection.cursor()
 
-        # Open the input file
-        with open(input_file_path, "r") as file:
+        with open(args.scaf_file_path, "r") as file:
             n_in = 0
             n_out = 0
 
             # Loop through each line in the input file
-            print("Updating in_drug...")
-            for line in tqdm(file, desc="Processing lines"):
+            logger.info("Updating in_drug...")
+            for line in file:
                 n_in += 1
 
                 # Skip header, empty lines, and comments
@@ -84,28 +89,30 @@ def main():
                 cur.execute(update_query)
                 n_out += 1
 
-            # Set in_drug to FALSE where it is NULL
             update_false_query = sql.SQL(
                 "UPDATE {dbschema}.scaffold SET in_drug=FALSE WHERE in_drug IS NULL"
             ).format(dbschema=sql.Identifier(dbschema))
             cur.execute(update_false_query)
 
-            # Commit the transaction
-            conn.commit()
+            db_connection.commit()
 
             # Print the summary
-            print(f"in_drug_annotate.sql: lines in: {n_in} ; converted to sql: {n_out}")
+            logger.info(
+                f"in_drug_annotate.sql: lines in: {n_in} ; converted to sql: {n_out}"
+            )
 
     except Exception as e:
-        print(f"Error: {e}")
-        if conn:
-            conn.rollback()
+        logger.error(e)
+        if db_connection:
+            db_connection.rollback()
     finally:
         if cur:
             cur.close()
-        if conn:
-            conn.close()
+        if db_connection:
+            db_connection.close()
 
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    logger = get_and_set_logger(args.log_fname, args.verbose)
+    main(args)
