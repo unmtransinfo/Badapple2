@@ -33,10 +33,10 @@ Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will 
 ### (3) Initializing the DB
 1. Install postgresql with the RDKit cartridge (requires sudo):
 `apt install postgresql-14-rdkit`
-2. Run `bash badapple1_comparison/sh_scripts/create_db_compare.sh`
+2. Run `bash badapple1_comparison/sh_scripts/create_and_load_db.sh`
 3. (Optional) Compare the badapple DB and badapple_comparison DB
-    * You can compare the sets of compounds and scaffolds between the original badapple DB and badapple_comparison using `psql -d badapple -f sql/compare_compounds.sql` and `psql -d badapple -f sql/compare_scaffolds.sql`. You can also compare the compound<->scaffold relationships using `psql -d badapple -f sql/compare_compound_scaf_relationships.sql`.
-    * You can use `psql -d badapple -f sql/compare_compounds_stats.sql` and `psql -d badapple -f sql/compare_scaffold_stats.sql` to compare the two DB activity annotations.
+    * You can compare the sets of compounds and scaffolds between the original badapple DB and badapple_comparison using `psql -d badapple -f src/sql/compare_compounds.sql` and `psql -d badapple -f src/sql/compare_scaffolds.sql`. You can also compare the compound<->scaffold relationships using `psql -d badapple -f src/sql/compare_compound_scaf_relationships.sql`.
+    * You can use `psql -d badapple -f src/sql/compare_compounds_stats.sql` and `psql -d badapple -f src/sql/compare_scaffold_stats.sql` to compare the two DB activity annotations.
     * You can run `python src/check_scaf_diffs.py` to check that any differences in scaffold annotations are due only to differences in compound<->scaffold relationships.
 4. (Optional) Drop the activity table to save storage: 
     
