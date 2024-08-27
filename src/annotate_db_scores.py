@@ -168,24 +168,19 @@ def parse_arguments():
         help="Database name (default: %(default)s)",
     )
     parser.add_argument(
-        "-s",
-        "--schema",
-        default="public",
-        help="Database schema (default: %(default)s)",
+        "--dbschema", default="public", help="Database schema (default: public)"
     )
     parser.add_argument(
-        "-H", "--host", default="localhost", help="Database host (default: %(default)s)"
+        "--host", default="localhost", help="Database host (default: %(default)s)"
     )
     parser.add_argument(
-        "-u",
         "--user",
         default=argparse.SUPPRESS,
         required=True,
         help="Database user",
     )
     parser.add_argument(
-        "-p",
-        "--pw",
+        "--password",
         default=argparse.SUPPRESS,
         required=True,
         help="Database password",
@@ -211,7 +206,7 @@ def main(args):
             dbname=args.dbname,
             host=args.host,
             user=args.user,
-            password=args.pw,
+            password=args.password,
             cursor_factory=psycopg2.extras.DictCursor,
         )
         cursor = db_connection.cursor()
@@ -219,11 +214,11 @@ def main(args):
         logger.error(e)
         sys.exit(2)
     try:
-        scafid_min, scafid_max = get_min_max_scaf_id(cursor, args.schema)
+        scafid_min, scafid_max = get_min_max_scaf_id(cursor, args.dbschema)
         n_scaf_done = annotate_scaffold_scores(
             db_connection,
             cursor,
-            args.schema,
+            args.dbschema,
             scafid_min,
             scafid_max,
             args.verbose,

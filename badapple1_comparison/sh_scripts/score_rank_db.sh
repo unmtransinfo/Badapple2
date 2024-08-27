@@ -38,12 +38,12 @@ bash ./badapple1_comparison/sh_scripts/metadata_update.sh $DB_NAME $SCHEMA $ASSA
 
 # Step 2a) Annotate scaffold table with computed scores, add column "pscore".
 psql -d $DB_NAME -c "ALTER TABLE $SCHEMA.scaffold ADD COLUMN IF NOT EXISTS pscore FLOAT NULL"
-python src/scores_db_annotate.py \
+python src/annotate_db_scores.py \
 	--host $DB_HOST \
 	--dbname $DB_NAME \
-	--schema $SCHEMA \
+	--dbschema $SCHEMA \
 	--user $DB_USR \
-	--pw $DB_PW \
+	--password $DB_PW \
 	-vvv
 
 # Step 2b) Annotate scaffold table with score rank, add column "prank".
