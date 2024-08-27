@@ -1,38 +1,25 @@
-#!/bin/sh
-#############################################################################
-### Go_badapple_CreateDB.sh
-### 
-### RDKit version
-### 
-### "CREATE SCHEMA IF NOT EXISTS" requires PG 9.3+.
-### 
-### *Note*: scaffold and scaf2scaf tables now created by HScaf process.
-###         May have only columns: id, scafsmi, scaftree
-### 
-### Jeremy Yang
-###  6 Feb 2017
-### Edited by Jack Ringer
-### 22 July 2024
-#############################################################################
-###   1 = inactive
-###   2 = active
-###   3 = inconclusive
-###   4 = unspecified
-###   5 = probe
-###   multiple & differing 1, 2 or 3 = discrepant
-###   not 4 = tested
-#############################################################################
-set -e
-DB="badapple_comparison"
-DBCOMMENT="Badapple Comparison DB (dev version, PubChem-based)"
-SCHEMA="public"
+# Author: Jack Ringer
+# Date: 8/27/2024
+# Description:
+# Initialize database. Based on: https://github.com/unmtransinfo/Badapple/blob/master/sh/Go_badapple_DbCreate.sh
 
-if [ ! `psql -P pager=off -Al | grep '|' | sed -e 's/|.*$//' | grep "^${DB}$"` ]; then
-	createdb $DB
+if [ $# -lt 4 ]; then
+	printf "Syntax: %s DB_NAME DB_HOST SCHEMA COMMENT\n" $0
+	exit
 fi
 
-psql -d $DB -c "COMMENT ON DATABASE ${DB} IS '$DBCOMMENT'"
-psql -d $DB <<__EOF__
+DB_NAME=$1
+DB_HOST=$2
+SCHEMA=$3
+COMMENT=$4
+
+
+if [ ! `psql -P pager=off -Al | grep '|' | sed -e 's/|.*$//' | grep "^${DB_NAME}$"` ]; then
+	createdb -h $DB_HOST $DB_NAME 
+fi
+
+psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON DATABASE ${DB_NAME} IS '$COMMENT'"
+psql -h $DB_HOST -d $DB_NAME <<EOF
 CREATE TABLE IF NOT EXISTS $SCHEMA.scaffold (
 	id INTEGER PRIMARY KEY,
 	scafsmi VARCHAR(512) NOT NULL,
@@ -90,5 +77,4 @@ CREATE TABLE $SCHEMA.metadata (
 	median_nsam_tested INTEGER,
 	nass_total INTEGER
 	);
-__EOF__
-#
+EOF

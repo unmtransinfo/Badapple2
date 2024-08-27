@@ -1,15 +1,26 @@
-DB_NAME="badapple_comparison"
-DB_HOST="localhost"
-SCHEMA="public"
-ASSAY_ID_TAG="aid"
-DB_USR="<your_usr>"
-DB_PW="<your_pw>"
+# Author: Jack Ringer
+# Date: 8/27/2024
+# Description:
+# Annotate compound and scaffold tables with activity stats. 
+# NOTE: This process can take several hours!
 
-# path to directory of this repo (Badapple2)
-REPO_DIR="/home/jack/unm_gra/Badapple2"
+if [ $# -lt 7 ]; then
+	printf "Syntax: %s DB_NAME DB_HOST SCHEMA ASSAY_ID_TAG DB_USER DB_PASSWORD REPO_DIR\n" $0
+	exit
+fi
+
+DB_NAME=$1
+DB_HOST=$2
+SCHEMA=$3
+ASSAY_ID_TAG=$4
+DB_USER=$5
+DB_PASSWORD=$6
+REPO_DIR=$7
+
+# cd to run scripts using relative path
 cd $REPO_DIR
 
-# Step 7) Generate compound activity statistics.  Populate/annotate
+# Step 1) Generate compound activity statistics.  Populate/annotate
 # compound table with calculated assay stats.
 # (sTotal,sTested,sActive,aTested,aActive,wTested,wActive)
 psql -d $DB_NAME -c "ALTER TABLE $SCHEMA.compound ADD COLUMN nsub_total INTEGER"
@@ -23,17 +34,16 @@ python src/annotate_db_assaystats.py \
 	--dbname $DB_NAME \
 	--schema $SCHEMA \
 	--activity $SCHEMA \
-	--user $DB_USR \
-	--password $DB_PW \
+	--user $DB_USER \
+	--password $DB_PASSWORD \
 	--v
 
 echo "Done annotating compounds."
 
 
-# Step 8) Generate scaf activity statistics.  Populate/annotate scaffold table with calculated assay stats.
+# Step 2) Generate scaf activity statistics.  Populate/annotate scaffold table with calculated assay stats.
 # Scaffold table must be ALTERed to contain activity statistics.
 # (cTotal,cTested,cActive,sTotal,sTested,sActive,aTested,aActive,wTested,wActive)
-#
 psql -d $DB_NAME -c "ALTER TABLE $SCHEMA.scaffold ADD COLUMN ncpd_total INTEGER"
 psql -d $DB_NAME -c "ALTER TABLE $SCHEMA.scaffold ADD COLUMN ncpd_tested INTEGER"
 psql -d $DB_NAME -c "ALTER TABLE $SCHEMA.scaffold ADD COLUMN ncpd_active INTEGER"
@@ -51,7 +61,7 @@ psql -d $DB_NAME -c "UPDATE $SCHEMA.scaffold SET (nsam_tested, nsam_active)  = (
 psql -d $DB_NAME -c "ALTER TABLE $SCHEMA.scaffold ADD COLUMN in_drug BOOLEAN"
 psql -d $DB_NAME -c "UPDATE $SCHEMA.scaffold SET in_drug  = NULL"
 
-#(~5h but ~4h to 50%, since top scafs have more data.)
+
 python src/annotate_db_assaystats.py \
 	--annotate_scaffolds \
 	--assay_id_tag $ASSAY_ID_TAG \
@@ -59,9 +69,8 @@ python src/annotate_db_assaystats.py \
 	--dbname $DB_NAME \
 	--schema $SCHEMA \
 	--activity $SCHEMA \
-	--user $DB_USR \
-	--password $DB_PW \
+	--user $DB_USER \
+	--password $DB_PASSWORD \
 	--v
-
 
 echo "Done annotating scaffolds."

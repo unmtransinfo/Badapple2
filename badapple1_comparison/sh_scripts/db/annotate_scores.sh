@@ -3,18 +3,20 @@
 # Description:
 # Generate scaffold scores + rankings using badapple formula.
 
-DB_NAME="badapple_comparison"
-DB_HOST="localhost"
-SCHEMA="public"
-ASSAY_ID_TAG="aid"
-DB_USR="jack"
-DB_PW="Fletcher12"
+if [ $# -lt 8 ]; then
+	printf "Syntax: %s DB_NAME DB_HOST SCHEMA ASSAY_ID_TAG DB_USER DB_PASSWORD REPO_DIR DATA_DIR\n" $0
+	exit
+fi
 
-# path to directory where all input CSV files stored
-DATA_DIR="/media/jack/big_disk/data/badapple/badapple1_inputs"
+DB_NAME=$1
+DB_HOST=$2
+SCHEMA=$3
+ASSAY_ID_TAG=$4
+DB_USER=$5
+DB_PASSWORD=$6
+REPO_DIR=$7
+DATA_DIR=$8
 
-# path to directory of this repo (Badapple2)
-REPO_DIR="/home/jack/unm_gra/Badapple2"
 # make working dir to call scripts
 cd $REPO_DIR
 
@@ -34,7 +36,7 @@ psql -q --no-align -d $DB_NAME \
 # Step 1) Load metadata.  Postgres 9.4+
 DBCOMMENT='Badapple Db (MLSMR compounds, PubChem HTS assays w/ 20k+ compounds)'
 psql -d $DB_NAME -c "COMMENT ON DATABASE ${DB_NAME} IS '$DBCOMMENT'"
-bash ./badapple1_comparison/sh_scripts/metadata_update.sh $DB_NAME $SCHEMA $ASSAY_ID_FILE "$DBCOMMENT"
+bash badapple1_comparison/sh_scripts/db/metadata_update.sh $DB_NAME $SCHEMA $ASSAY_ID_FILE "$DBCOMMENT"
 
 # Step 2a) Annotate scaffold table with computed scores, add column "pscore".
 psql -d $DB_NAME -c "ALTER TABLE $SCHEMA.scaffold ADD COLUMN IF NOT EXISTS pscore FLOAT NULL"
@@ -42,8 +44,8 @@ python src/annotate_db_scores.py \
 	--host $DB_HOST \
 	--dbname $DB_NAME \
 	--dbschema $SCHEMA \
-	--user $DB_USR \
-	--password $DB_PW \
+	--user $DB_USER \
+	--password $DB_PASSWORD \
 	-vvv
 
 # Step 2b) Annotate scaffold table with score rank, add column "prank".

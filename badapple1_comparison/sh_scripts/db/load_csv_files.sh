@@ -1,33 +1,24 @@
-# author Jack Ringer
-# Date: 7/29/2024
+# Author: Jack Ringer
+# Date: 8/27/2024
 # Description:
-# Load data into badapple-comparison DB
-# Note that this script is similar to load_db.sh but makes some formatting changes to account for the badapple 1 data
-# based on: https://github.com/unmtransinfo/Badapple/blob/ae50bb04a58752933a807170b3d79c8906221500/sh/Go_badapple_DbLoad.sh
+# Load CSV/TSV files into DB.
 
-# run create_db_compare.sh BEFORE running this script
+if [ $# -lt 5 ]; then
+	printf "Syntax: %s DB_NAME DB_HOST SCHEMA REPO_DIR DATA_DIR\n" $0
+	exit
+fi
 
-# tip: run export PGPASSWORD=<your_pw> before running this script to avoid psql prompts for pw
-DB_NAME="badapple_comparison"
-DB_HOST="localhost"
-SCHEMA="public"
-ASSAY_ID_TAG="aid"
+DB_NAME=$1
+DB_HOST=$2
+SCHEMA=$3
+REPO_DIR=$4
+DATA_DIR=$5
+
+
+# NOTE: using temp tables in psql commands to rename/drop columns from input TSVs
 
 # for DB comments
 HIERS_SCRIPT="generate_scaffolds.py"
-
-# path to directory of this repo (Badapple2)
-REPO_DIR="/home/jack/unm_gra/Badapple2"
-# make working dir to call scripts
-cd $REPO_DIR
-
-# path to directory where all input CSV files stored
-DATA_DIR="/media/jack/big_disk/data/badapple/badapple1_inputs"
-
-# NOTE 1: using temp tables in psql commands to rename/drop columns from input TSVs
-# NOTE 2: it is assumed that SMILES for compounds/scaffolds are canonical
-#   (This is true if using output from ${HIERS_SCRIPT})
-
 
 # Step 1) Load scafs with scafids + scaf2scaf relationship
 # expects SCAF_TSV_FILE to have header: scaffold_id smiles  hierarchy   scaf2scaf (TSV-separated)
@@ -45,14 +36,14 @@ CREATE TEMP TABLE temp_scaf (
 INSERT INTO ${SCHEMA}.scaffold (id, scafsmi, scaftree) SELECT scaffold_id, smiles, scaf2scaf FROM temp_scaf;
 DROP TABLE temp_scaf;
 EOF
-psql -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.scaffold IS 'Scaffold definitions from HierS, see ${HIERS_SCRIPT}. Input file is ${SCAF_TSV_PATH}'"
+psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.scaffold IS 'Scaffold definitions from HierS, see ${HIERS_SCRIPT}. Input file is ${SCAF_TSV_PATH}'"
 echo "Loaded scafs table."
 
 
 # Step 2) Load scaf2scaf table, uses "scaftree" column from "scaffold" table
 SCAF2SCAF_SCRIPT="src/sql/fill_scaf2scaf.sql"
 psql -h $DB_HOST -d $DB_NAME -f $SCAF2SCAF_SCRIPT
-psql -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.scaf2scaf IS 'Scaffold parentage from scaftree column in scaffold table, see ${SCAF2SCAF_SCRIPT}.'"
+psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.scaf2scaf IS 'Scaffold parentage from scaftree column in scaffold table, see ${SCAF2SCAF_SCRIPT}.'"
 echo "Loaded scaf2scaf table."
 
 
@@ -72,7 +63,7 @@ CREATE TEMP TABLE temp_scaf2cpd (
 INSERT INTO ${SCHEMA}.scaf2cpd (scafid, cid) SELECT scaffold_id, mol_name FROM temp_scaf2cpd;
 DROP TABLE temp_scaf2cpd;
 EOF
-psql -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.scaf2cpd IS 'From ${SCAF2CPD_TSV_PATH} via ${HIERS_SCRIPT}.'"
+psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.scaf2cpd IS 'From ${SCAF2CPD_TSV_PATH} via ${HIERS_SCRIPT}.'"
 echo "Loaded scaf2cpd table."
 
 
@@ -104,7 +95,7 @@ INSERT INTO ${SCHEMA}.compound (cid, cansmi, isosmi) SELECT CID, SMILES, ISOMERI
 DROP TABLE temp_compound;
 DROP TABLE temp_compound2;
 EOF
-psql -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.compound IS 'From ${CPD_TSV_PATH} via ${HIERS_SCRIPT}, annotate_db_assaystats.py.'"
+psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.compound IS 'From ${CPD_TSV_PATH} via ${HIERS_SCRIPT}, annotate_db_assaystats.py.'"
 echo "Loaded compound table."
 
 
@@ -134,7 +125,7 @@ ON CONFLICT (sid) DO NOTHING;
 -- Drop the staging table
 DROP TABLE temp_sub2cpd;
 EOF
-psql -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.sub2cpd IS 'From ${CID2SID_TSV_PATH}.'"
+psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.sub2cpd IS 'From ${CID2SID_TSV_PATH}.'"
 echo "Loaded sub2cpd table."
 
 
@@ -151,45 +142,5 @@ CREATE TEMP TABLE temp_activity (
 INSERT INTO ${SCHEMA}.activity (aid, sid, outcome) SELECT AID, SID, ACTIVITY_OUTCOME FROM temp_activity;
 DROP TABLE temp_activity;
 EOF
-psql -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.activity IS 'From: ${ASSAYSUB_TSV_PATH} (PubChem-FTP).'"
+psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.activity IS 'From: ${ASSAYSUB_TSV_PATH} (PubChem-FTP).'"
 echo "Loaded activity table."
-
-
-
-# Step 5) RDKit configuration.
-psql -d $DB_NAME -c 'CREATE EXTENSION rdkit'
-
-### Step 5a) compound -> mols.
-### Create mols table for RDKit structural searching.
-psql -d $DB_NAME -f src/sql/create_rdkit_mols_table.sql
-psql -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.mols IS 'Compound structures. For RDKit structural searching.'"
-psql -d $DB_NAME -c "CREATE INDEX molidx ON ${SCHEMA}.mols USING gist(mol)"
-psql -d $DB_NAME -c "UPDATE ${SCHEMA}.compound SET cansmi = mol_to_smiles(mols.mol) FROM ${SCHEMA}.mols WHERE compound.cid = mols.cid"
-echo "Loaded mols table."
-
-
-### Step 5b) Canonicalize scaffold smiles.
-### For database use and efficiency, although the smiles were canonicalized
-### previously during scaffold analysis process.  Must be consistent
-### between query and db.
-
-### Create mols_scaf table for RDKit structural searching.
-psql -d $DB_NAME -f src/sql/create_rdkit_mols_scaf_table.sql
-psql -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.mols_scaf IS 'Scaffold structures. For RDKit structural searching.'"
-psql -d $DB_NAME -c "CREATE INDEX molscafidx ON ${SCHEMA}.mols_scaf USING gist(scafmol)"
-psql -q -d $DB_NAME -c "UPDATE ${SCHEMA}.scaffold SET scafsmi = mol_to_smiles(mols_scaf.scafmol) FROM ${SCHEMA}.mols_scaf WHERE mols_scaf.id = scaffold.id"
-echo "Loaded mols_scaf table."
-
-# Step 6) Index tables.  Greatly improves search performance.
-psql -d $DB_NAME -c "CREATE INDEX scaf_scafid_idx ON ${SCHEMA}.scaffold (id)"
-psql -d $DB_NAME -c "CREATE INDEX scaf_smi_idx on ${SCHEMA}.scaffold (scafsmi)"
-psql -d $DB_NAME -c "CREATE INDEX mols_scaf_scafid_idx ON ${SCHEMA}.mols_scaf (id)"
-psql -d $DB_NAME -c "CREATE INDEX cpd_cid_idx ON ${SCHEMA}.compound (cid)"
-psql -d $DB_NAME -c "CREATE INDEX mols_cid_idx ON ${SCHEMA}.mols (cid)"
-psql -d $DB_NAME -c "CREATE INDEX scaf2cpd_scafid_idx ON ${SCHEMA}.scaf2cpd (scafid)"
-psql -d $DB_NAME -c "CREATE INDEX scaf2cpd_cid_idx ON ${SCHEMA}.scaf2cpd (cid)"
-psql -d $DB_NAME -c "CREATE INDEX sub2cpd_cid_idx ON ${SCHEMA}.sub2cpd (cid)"
-psql -d $DB_NAME -c "CREATE INDEX sub2cpd_sid_idx ON ${SCHEMA}.sub2cpd (sid)"
-psql -d $DB_NAME -c "CREATE INDEX act_sid_idx ON ${SCHEMA}.activity (sid)"
-psql -d $DB_NAME -c "CREATE INDEX act_aid_idx ON ${SCHEMA}.activity (aid)"
-echo "Finished indexing tables."

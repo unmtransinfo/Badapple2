@@ -3,7 +3,6 @@
 # Description:
 # Update metadata table in badapple DB.
 # Based on: https://github.com/unmtransinfo/Badapple/blob/master/sh/Go_badapple_DbMetadata_update.sh
-set -x
 if [ $# -lt 4 ]; then
 	printf "Syntax: %s DB_NAME SCHEMA ASSAY_ID_FILE COMMENT\n" $0
 	exit
