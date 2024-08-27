@@ -34,14 +34,10 @@ Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will 
 1. Install postgresql with the RDKit cartridge (requires sudo):
 `apt install postgresql-14-rdkit`
 2. Run `bash badapple1_comparison/sh_scripts/create_db_compare.sh`
-3. Run `bash badapple1_comparison/sh_scripts/load_db_compare.sh`
-    * (Optional) You can compare the sets of compounds and scaffolds between the original badapple DB and badapple_comparison using `psql -d badapple -f sql/compare_compounds.sql` and `psql -d badapple -f sql/compare_scaffolds.sql`. You can also compare the compound<->scaffold relationships using `psql -d badapple -f sql/compare_compound_scaf_relationships.sql`.
-4. Run `bash badapple1_comparison/sh_scripts/annotate_db.sh`
-    * At the time of writing, this process takes several hours. I will work on making it faster.
-    * (Optional) You can use `psql -d badapple -f sql/compare_compounds_stats.sql` and `psql -d badapple -f sql/compare_scaffold_stats.sql` to compare the two DB annotations.
-    * (Optional) You can run `python src/check_scaf_diffs.py` to check that any differences in scaffold annotations are due only to differences in compound<->scaffold relationships.
-5. Run `bash badapple1_comparison/sh_scripts/in_drug_annotate_db.sh`
-6. Run `bash badapple1_comparison/sh_scripts/score_rank_db.sh`
-
-## TODO:
-* Combine separate shell scripts into `load_db_compare.sh` + use command-line options to clean things up
+3. (Optional) Compare the badapple DB and badapple_comparison DB
+    * You can compare the sets of compounds and scaffolds between the original badapple DB and badapple_comparison using `psql -d badapple -f sql/compare_compounds.sql` and `psql -d badapple -f sql/compare_scaffolds.sql`. You can also compare the compound<->scaffold relationships using `psql -d badapple -f sql/compare_compound_scaf_relationships.sql`.
+    * You can use `psql -d badapple -f sql/compare_compounds_stats.sql` and `psql -d badapple -f sql/compare_scaffold_stats.sql` to compare the two DB activity annotations.
+    * You can run `python src/check_scaf_diffs.py` to check that any differences in scaffold annotations are due only to differences in compound<->scaffold relationships.
+4. (Optional) Drop the activity table to save storage: 
+    
+    `psql -d badapple_comparison -c "DELETE FROM activity"`
