@@ -467,49 +467,42 @@ def parse_arguments():
         "--assay_id_tag", type=str, default="aid", help="assay ID column in the DB."
     )
     parser.add_argument(
-        "-d",
         "--dbname",
         default="badapple2",
         help="Database name (default: %(default)s)",
     )
     parser.add_argument(
-        "-s",
         "--schema",
         default="public",
         help="Database schema (default: %(default)s)",
     )
     parser.add_argument(
-        "-a",
         "--activity",
         default="badapple",
         help="Activity schema (default: %(default)s)",
     )
     parser.add_argument(
-        "-H", "--host", default="localhost", help="Database host (default: %(default)s)"
+        "--host", default="localhost", help="Database host (default: %(default)s)"
     )
     parser.add_argument(
-        "-u",
         "--user",
         default=argparse.SUPPRESS,
         required=True,
         help="Database user",
     )
     parser.add_argument(
-        "-p",
-        "--pw",
+        "--password",
         default=argparse.SUPPRESS,
         required=True,
         help="Database password",
     )
     parser.add_argument(
-        "-n",
         "--nmax",
         type=int,
         default=0,
         help="Maximum number of records to process (default: %(default)s)",
     )
     parser.add_argument(
-        "-x",
         "--nskip",
         type=int,
         default=0,
@@ -523,7 +516,6 @@ def parse_arguments():
         help="Increase verbosity (use -vv for more verbose)",
     )
     parser.add_argument(
-        "-w",
         "--no-write",
         action="store_true",
         help="Disable database writes (updates will be skipped)",
@@ -543,7 +535,7 @@ def main(args):
             dbname=args.dbname,
             host=args.host,
             user=args.user,
-            password=args.pw,
+            password=args.password,
             cursor_factory=psycopg2.extras.DictCursor,
         )
     except Exception as e:

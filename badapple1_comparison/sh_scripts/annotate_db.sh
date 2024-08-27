@@ -24,7 +24,7 @@ python src/annotate_db_assaystats.py \
 	--schema $SCHEMA \
 	--activity $SCHEMA \
 	--user $DB_USR \
-	--pw $DB_PW \
+	--password $DB_PW \
 	--v
 
 echo "Done annotating compounds."
@@ -60,7 +60,7 @@ python src/annotate_db_assaystats.py \
 	--schema $SCHEMA \
 	--activity $SCHEMA \
 	--user $DB_USR \
-	--pw $DB_PW \
+	--password $DB_PW \
 	--v
 
 
