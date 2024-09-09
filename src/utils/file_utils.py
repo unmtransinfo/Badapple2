@@ -21,3 +21,9 @@ def get_csv_writer(file_path: str, delimiter: str):
 def close_file(f):
     if f is not sys.stdout:
         f.close()
+
+
+def read_aid_file(aid_file_path: str) -> list[int]:
+    with open(aid_file_path, "r") as file:
+        aid_list = [int(line.strip()) for line in file if line.strip().isdigit()]
+    return aid_list

@@ -18,7 +18,7 @@ import zipfile
 import pandas as pd
 from tqdm import tqdm
 
-from utils.file_utils import close_file, get_csv_writer
+from utils.file_utils import close_file, get_csv_writer, read_aid_file
 from utils.logging import get_and_set_logger
 
 
@@ -70,12 +70,6 @@ def parse_args(parser: argparse.ArgumentParser):
         default=False,
     )
     return parser.parse_args()
-
-
-def read_aid_file(aid_file_path: str) -> list[int]:
-    with open(aid_file_path, "r") as file:
-        aid_list = [int(line.strip()) for line in file if line.strip().isdigit()]
-    return aid_list
 
 
 def get_zip_filename(
