@@ -5,7 +5,23 @@ The steps outlined in this README provide information on how to generate a compa
 You will need ~3.5 GB of space to store the Badapple1 CSV files used to initialize the DB. Additionally, the badapple_comparison DB will take
 ~12 GB of space, although this is reduced if one drops the "activity" table after constructing the rest of the DB.
 
-## Database (DB) Development Setup
+
+## Database (DB) Easy Setup
+The steps below p
+1. Download [badapple_comparison.pgdump](https://unmtid-dbs.net/download/Badapple2/badapple_comparison.pgdump)
+2. Load DB from dump file: `pg_restore -O -x -v -C -d badapple_comparison badapple_comparison.pgdump` 
+3. Configure user:
+    ```
+    psql -c "CREATE ROLE myname WITH LOGIN PASSWORD 'foobar'"
+    psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO myname"
+    psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO myname"
+    psql -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO myname"
+    ```
+4. (Optional) If you'd like to download the original Badapple DB for running comparisons, follow the steps [here](https://github.com/unmtransinfo/Badapple?tab=readme-ov-file#database-installation)
+
+## DB Advanced Setup (Development/from-scratch)
+**You can skip this section if you setup the DB(s) using the steps from above**
+
 The steps below outline how one can re-create the Badapple1 DB on their own system, using the updated code within this repo (note that the HierS implementation has changed).
 
 Make sure to inspect all bash scripts and **modify variable definitions** (mostly file paths) as needed before running them. When running bash scripts, make sure your conda environment is active (`conda activate badapple2`).
@@ -34,10 +50,11 @@ Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will 
 1. Install postgresql with the RDKit cartridge (requires sudo):
 `apt install postgresql-14-rdkit`
 2. Run `bash badapple1_comparison/sh_scripts/create_and_load_db.sh`
-3. (Optional) Compare the badapple DB and badapple_comparison DB
-    * You can compare the sets of compounds and scaffolds between the original badapple DB and badapple_comparison using `psql -d badapple -f src/sql/compare_compounds.sql` and `psql -d badapple -f src/sql/compare_scaffolds.sql`. You can also compare the compound<->scaffold relationships using `psql -d badapple -f src/sql/compare_compound_scaf_relationships.sql`.
-    * You can use `psql -d badapple -f src/sql/compare_compounds_stats.sql` and `psql -d badapple -f src/sql/compare_scaffold_stats.sql` to compare the two DB activity annotations.
-    * You can run `python src/check_scaf_diffs.py` to check that any differences in scaffold annotations are due only to differences in compound<->scaffold relationships.
-4. (Optional) Drop the activity table to save storage: 
+3. (Optional) Drop the activity table to save storage: 
     
     `psql -d badapple_comparison -c "DELETE FROM activity"`
+
+## (Optional) Compare the badapple DB and badapple_comparison DB
+* You can compare the sets of compounds and scaffolds between the original badapple DB and badapple_comparison using `psql -d badapple -f src/sql/compare_compounds.sql` and `psql -d badapple -f src/sql/compare_scaffolds.sql`. You can also compare the compound<->scaffold relationships using `psql -d badapple -f src/sql/compare_compound_scaf_relationships.sql`.
+* You can use `psql -d badapple -f src/sql/compare_compounds_stats.sql` and `psql -d badapple -f src/sql/compare_scaffold_stats.sql` to compare the two DB activity annotations.
+* You can run `python src/check_scaf_diffs.py` to check that any differences in scaffold annotations are due only to differences in compound<->scaffold relationships.
