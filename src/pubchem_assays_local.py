@@ -18,8 +18,8 @@ import zipfile
 import pandas as pd
 from tqdm import tqdm
 
+from utils.custom_logging import get_and_set_logger
 from utils.file_utils import close_file, get_csv_writer, read_aid_file
-from utils.logging import get_and_set_logger
 
 
 def parse_args(parser: argparse.ArgumentParser):

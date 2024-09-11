@@ -13,7 +13,7 @@ import psycopg2
 import psycopg2.extras
 from psycopg2.extensions import cursor as Psycopg2Cursor
 
-from utils.logging import get_and_set_logger
+from utils.custom_logging import get_and_set_logger
 
 
 def get_medians(cursor: Psycopg2Cursor, schema: str) -> dict[str, int]:

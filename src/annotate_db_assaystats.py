@@ -36,7 +36,7 @@ import time
 import psycopg2
 import psycopg2.extras
 
-from utils.logging import get_and_set_logger
+from utils.custom_logging import get_and_set_logger
 
 
 #############################################################################

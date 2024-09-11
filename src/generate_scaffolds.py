@@ -14,8 +14,8 @@ import argparse
 import scaffoldgraph as sg
 from loguru import logger
 
+from utils.custom_logging import get_and_set_logger
 from utils.file_utils import close_file, get_csv_writer
-from utils.logging import get_and_set_logger
 
 
 class HierSTopLevel(sg.HierS):
