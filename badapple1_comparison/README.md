@@ -7,7 +7,8 @@ You will need ~3.5 GB of space to store the Badapple1 CSV files used to initiali
 
 
 ## Database (DB) Easy Setup
-The steps below p
+The steps below provide info on how to setup the badapple_comparison and original badapple DB. 
+
 1. Download [badapple_comparison.pgdump](https://unmtid-dbs.net/download/Badapple2/badapple_comparison.pgdump)
 2. Load DB from dump file: `pg_restore -O -x -v -C -d badapple_comparison badapple_comparison.pgdump` 
 3. Configure user:
