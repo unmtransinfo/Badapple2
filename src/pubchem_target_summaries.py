@@ -37,7 +37,7 @@ def parse_args(parser: argparse.ArgumentParser):
 def main(args):
     if not (args.out_json_file.endswith(".json")):
         raise ValueError(
-            f"out_json_file have JSON filetype, please check arguments. Given filename was: {args.out_json_file}"
+            f"out_json_file must have JSON filetype, please check arguments. Given filename was: {args.out_json_file}"
         )
     assay_ids = read_aid_file(args.aid_file)
 
