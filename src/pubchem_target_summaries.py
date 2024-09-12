@@ -60,26 +60,22 @@ def is_valid_uniprot_id(uniprot_candidate: str):
 
 
 def extract_uniprot_id(json_data: dict):
-    # search for uniprot id in Protein JSON data from PubChem
-    # the JSON format for these entries is fairly messy...
-    # e.g., see https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/protein/BAA02406/JSON
-    # if a UniProt ID has been mapped to the Protein entry, it will be found under
-    # 'Related Records' -> 'Same-Gene Proteins' -> (addl wrappers)
-    for section in json_data["Record"]["Section"]:
-        if section.get("TOCHeading") == "Related Records":
-            for subsection in section.get("Section", []):
-                if subsection.get("TOCHeading") == "Same-Gene Proteins":
-                    for info in subsection.get("Information", []):
-                        for item in info.get("Value", {}).get("StringWithMarkup", []):
-                            uniprot_candidate = item.get("String")
-                            if is_valid_uniprot_id(uniprot_candidate):
-                                return uniprot_candidate
+    if (
+        "ProteinSummaries" in json_data
+        and "ProteinSummary" in json_data["ProteinSummaries"]
+    ):
+        # summary page will prioritize uniprot id, but if not available will give other id
+        uniprot_candidate = json_data["ProteinSummaries"]["ProteinSummary"][0][
+            "ProteinAccession"
+        ]
+        if is_valid_uniprot_id(uniprot_candidate):
+            return uniprot_candidate
     return None
 
 
 def get_uniprot_id(protein_accession: str) -> str:
     pure_accession = strip_version(protein_accession)
-    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/protein/{pure_accession}/JSON"
+    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/protein/synonym/{pure_accession}/summary/JSON"
     response = requests.get(url)
     if response.status_code == 200:
         data = json.loads(response.text)
@@ -87,6 +83,12 @@ def get_uniprot_id(protein_accession: str) -> str:
         return uniprot_id
     print(f"Failed to retrieve data for protein {protein_accession}")
     return None
+
+
+def has_protein_accession(target_details: dict):
+    return (
+        "mol_id" in target_details and "protein_accession" in target_details["mol_id"]
+    )
 
 
 def main(args):
@@ -103,13 +105,15 @@ def main(args):
         target_info = assay.target
         # default format has target accession under 'mol_id' - fixing this
         if target_info is not None:
-            for target_details in target_info:
+            protein_targets = list(filter(has_protein_accession, target_info))
+            for target_details in protein_targets:
                 protein_accession = target_details["mol_id"]["protein_accession"]
                 target_details["protein_accession"] = protein_accession
                 del target_details["mol_id"]
                 if args.fetch_uniprot_ids:
                     target_details["uniprot_id"] = get_uniprot_id(protein_accession)
-
+            if len(protein_targets) != len(target_info):
+                print(f"Non protein target for AID {aid}")
         aid2target[aid] = target_info
 
     # save output to JSON file
