@@ -1,24 +1,25 @@
 # About
-The steps outlined in this README provide information on how to generate a comparison DB (badapple_comparison) to the Badapple1 DB (badapple) using the updated code. These steps are different because Badapple1 uses compounds from [MLSMR](https://pubchem.ncbi.nlm.nih.gov/source/MLSMR), rather than the set of PubChem compounds found from a given list of AIDs (like Badapple2).
+The steps outlined in this README provide information on how to generate a comparison DB (badapple_comparison) to the Badapple1 DB (badapple) using the updated code. In particular, badapple_comparison differs from badapple in the following ways:
+* badapple_comparison uses HierS scaffold definitions from [ScaffoldGraph](https://github.com/UCLCheminformatics/ScaffoldGraph) rather than the Java-based implementation of HierS from [UNM_BIOCOMP_HSCAF](https://github.com/unmtransinfo/unm_biocomp_hscaf).
+* badapple_comparison uses newer version of PostgreSQL with minor differences in median calculation (using `SELECT PERCENTILE_CONT(0.5)` instead of [create_median_function.sql](https://github.com/unmtransinfo/Badapple/blob/master/sql/create_median_function.sql)).
 
-## Requirements
-You will need ~3.5 GB of space to store the Badapple1 CSV files used to initialize the DB. Additionally, the badapple_comparison DB will take
-~12 GB of space, although this is reduced if one drops the "activity" table after constructing the rest of the DB.
+The steps for generating badapple_comparison are slightly different than badapple2 because badapple and badapple_comparison use compounds from [MLSMR](https://pubchem.ncbi.nlm.nih.gov/source/MLSMR), rather than the set of PubChem compounds found from a given list of AIDs (like badapple2). Thus, the steps below are followed to help provide a more direct comparison between badapple and badapple_comparison (since both DBs will have the exact same set of compounds).
 
 
 ## Database (DB) Easy Setup
 The steps below provide info on how to setup the badapple_comparison and original badapple DB. 
 
-1. Download [badapple_comparison.pgdump](https://unmtid-dbs.net/download/Badapple2/badapple_comparison.pgdump)
-2. Load DB from dump file: `pg_restore -O -x -v -C -d badapple_comparison badapple_comparison.pgdump` 
-3. Configure user:
+1. Setup PostgreSQL on your system: see [here](https://www.postgresql.org/download/)
+2. Download [badapple_comparison.pgdump](https://unmtid-dbs.net/download/Badapple2/badapple_comparison.pgdump)
+3. Load DB from dump file: `pg_restore -O -x -v -C -d badapple_comparison badapple_comparison.pgdump` 
+4. Configure user:
     ```
     psql -c "CREATE ROLE myname WITH LOGIN PASSWORD 'foobar'"
     psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO myname"
     psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO myname"
     psql -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO myname"
     ```
-4. (Optional) If you'd like to download the original Badapple DB for running comparisons, follow the steps [here](https://github.com/unmtransinfo/Badapple?tab=readme-ov-file#database-installation)
+5. (Optional) If you'd like to download the original Badapple DB for running comparisons, follow the steps [here](https://github.com/unmtransinfo/Badapple?tab=readme-ov-file#database-installation)
 
 ## DB Advanced Setup (Development/from-scratch)
 **You can skip this section if you setup the DB(s) using the steps from above**
@@ -26,6 +27,10 @@ The steps below provide info on how to setup the badapple_comparison and origina
 The steps below outline how one can re-create the Badapple1 DB on their own system, using the updated code within this repo (note that the HierS implementation has changed).
 
 Make sure to inspect all bash scripts and **modify variable definitions** (mostly file paths) as needed before running them. When running bash scripts, make sure your conda environment is active (`conda activate badapple2`).
+
+### Requirements
+You will need ~3.5 GB of space to store the Badapple1 CSV files used to initialize the DB. Additionally, the badapple_comparison DB will take
+~12 GB of space, although this is reduced if one drops the "activity" table after constructing the rest of the DB.
 
 ### (1) Preliminary
 First we'll gather the data used for Badapple1.
