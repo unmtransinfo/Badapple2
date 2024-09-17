@@ -64,3 +64,5 @@ Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will 
 * You can compare the sets of compounds and scaffolds between the original badapple DB and badapple_comparison using `psql -d badapple -f src/sql/compare_compounds.sql` and `psql -d badapple -f src/sql/compare_scaffolds.sql`. You can also compare the compound<->scaffold relationships using `psql -d badapple -f src/sql/compare_compound_scaf_relationships.sql`.
 * You can use `psql -d badapple -f src/sql/compare_compounds_stats.sql` and `psql -d badapple -f src/sql/compare_scaffold_stats.sql` to compare the two DB activity annotations.
 * You can run `python src/check_scaf_diffs.py` to check that any differences in scaffold annotations are due only to differences in compound<->scaffold relationships.
+* [assay_comparison.ipynb](src/notebooks/assay_comparison.ipynb) reviews assay statistics between badapple and badapple_comparison
+* [score_comparison.ipynb](src/notebooks/score_comparison.ipynb) reviews the differences in scaffold scores between badapple and badapple_comparison
