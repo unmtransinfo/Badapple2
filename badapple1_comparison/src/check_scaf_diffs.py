@@ -56,7 +56,7 @@ def main(args):
                 scafsmi, compound_diff_df["badapple_scafsmis"]
             )
             comparison_count = count_occurrences(
-                scafsmi, compound_diff_df["badapple_comparison_scafsmis"]
+                scafsmi, compound_diff_df["badapple_classic_scafsmis"]
             )
             if ncpd_total_comparison > ncpd_total_badapple:
                 actual_count = comparison_count - badapple_count

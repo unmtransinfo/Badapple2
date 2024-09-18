@@ -1,17 +1,17 @@
 # About
-The steps outlined in this README provide information on how to generate a comparison DB (badapple_comparison) to the Badapple1 DB (badapple) using the updated code. In particular, badapple_comparison differs from badapple in the following ways:
-* badapple_comparison uses HierS scaffold definitions from [ScaffoldGraph](https://github.com/UCLCheminformatics/ScaffoldGraph) rather than the Java-based implementation of HierS from [UNM_BIOCOMP_HSCAF](https://github.com/unmtransinfo/unm_biocomp_hscaf).
-* badapple_comparison uses newer version of PostgreSQL with minor differences in median calculation (using `SELECT PERCENTILE_CONT(0.5)` instead of [create_median_function.sql](https://github.com/unmtransinfo/Badapple/blob/master/sql/create_median_function.sql)).
+The steps outlined in this README provide information on how to generate a comparison DB (badapple_classic) to the Badapple1 DB (badapple) using the updated code. In particular, badapple_classic differs from badapple in the following ways:
+* badapple_classic uses HierS scaffold definitions from [ScaffoldGraph](https://github.com/UCLCheminformatics/ScaffoldGraph) rather than the Java-based implementation of HierS from [UNM_BIOCOMP_HSCAF](https://github.com/unmtransinfo/unm_biocomp_hscaf).
+* badapple_classic uses newer version of PostgreSQL with minor differences in median calculation (using `SELECT PERCENTILE_CONT(0.5)` instead of [create_median_function.sql](https://github.com/unmtransinfo/Badapple/blob/master/sql/create_median_function.sql)).
 
-The steps for generating badapple_comparison are slightly different than badapple2 because badapple and badapple_comparison use compounds from [MLSMR](https://pubchem.ncbi.nlm.nih.gov/source/MLSMR), rather than the set of PubChem compounds found from a given list of AIDs (like badapple2). Thus, the steps below are followed to help provide a more direct comparison between badapple and badapple_comparison (since both DBs will have the exact same set of compounds).
+The steps for generating badapple_classic are slightly different than badapple2 because badapple and badapple_classic use compounds from [MLSMR](https://pubchem.ncbi.nlm.nih.gov/source/MLSMR), rather than the set of PubChem compounds found from a given list of AIDs (like badapple2). Thus, the steps below are followed to help provide a more direct comparison between badapple and badapple_classic (since both DBs will have the exact same set of compounds).
 
 
 ## Database (DB) Easy Setup
-The steps below provide info on how to setup the badapple_comparison and original badapple DB. 
+The steps below provide info on how to setup the badapple_classic and original badapple DB. 
 
 1. Setup PostgreSQL on your system: see [here](https://www.postgresql.org/download/)
-2. Download [badapple_comparison.pgdump](https://unmtid-dbs.net/download/Badapple2/badapple_comparison.pgdump)
-3. Load DB from dump file: `pg_restore -O -x -v -C -d badapple_comparison badapple_comparison.pgdump` 
+2. Download [badapple_classic.pgdump](https://unmtid-dbs.net/download/Badapple2/badapple_classic.pgdump)
+3. Load DB from dump file: `pg_restore -O -x -v -C -d badapple_classic badapple_classic.pgdump` 
 4. Configure user:
     ```
     psql -c "CREATE ROLE myname WITH LOGIN PASSWORD 'foobar'"
@@ -29,7 +29,7 @@ The steps below outline how one can re-create the Badapple1 DB on their own syst
 Make sure to inspect all bash scripts and **modify variable definitions** (mostly file paths) as needed before running them. When running bash scripts, make sure your conda environment is active (`conda activate badapple2`).
 
 ### Requirements
-You will need ~3.5 GB of space to store the Badapple1 CSV files used to initialize the DB. Additionally, the badapple_comparison DB will take
+You will need ~3.5 GB of space to store the Badapple1 CSV files used to initialize the DB. Additionally, the badapple_classic DB will take
 ~12 GB of space, although this is reduced if one drops the "activity" table after constructing the rest of the DB.
 
 ### (1) Preliminary
@@ -58,11 +58,11 @@ Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will 
 2. Run `bash badapple1_comparison/sh_scripts/create_and_load_db.sh`
 3. (Optional) Drop the activity table to save storage: 
     
-    `psql -d badapple_comparison -c "DELETE FROM activity"`
+    `psql -d badapple_classic -c "DELETE FROM activity"`
 
-## (Optional) Compare the badapple DB and badapple_comparison DB
-* You can compare the sets of compounds and scaffolds between the original badapple DB and badapple_comparison using `psql -d badapple -f src/sql/compare_compounds.sql` and `psql -d badapple -f src/sql/compare_scaffolds.sql`. You can also compare the compound<->scaffold relationships using `psql -d badapple -f src/sql/compare_compound_scaf_relationships.sql`.
+## (Optional) Compare the badapple DB and badapple_classic DB
+* You can compare the sets of compounds and scaffolds between the original badapple DB and badapple_classic using `psql -d badapple -f src/sql/compare_compounds.sql` and `psql -d badapple -f src/sql/compare_scaffolds.sql`. You can also compare the compound<->scaffold relationships using `psql -d badapple -f src/sql/compare_compound_scaf_relationships.sql`.
 * You can use `psql -d badapple -f src/sql/compare_compounds_stats.sql` and `psql -d badapple -f src/sql/compare_scaffold_stats.sql` to compare the two DB activity annotations.
 * You can run `python src/check_scaf_diffs.py` to check that any differences in scaffold annotations are due only to differences in compound<->scaffold relationships.
-* [assay_comparison.ipynb](src/notebooks/assay_comparison.ipynb) reviews assay statistics between badapple and badapple_comparison
-* [score_comparison.ipynb](src/notebooks/score_comparison.ipynb) reviews the differences in scaffold scores between badapple and badapple_comparison
+* [assay_comparison.ipynb](src/notebooks/assay_comparison.ipynb) reviews assay statistics between badapple and badapple_classic
+* [score_comparison.ipynb](src/notebooks/score_comparison.ipynb) reviews the differences in scaffold scores between badapple and badapple_classic

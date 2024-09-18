@@ -1,7 +1,7 @@
 # Author: Jack Ringer
 # Date: 8/15/2024
 # Description:
-# Create labels for 'in_drug' column of badapple_comparison using drugcentral DB.
+# Create labels for 'in_drug' column of badapple_classic using drugcentral DB.
 
 if [ $# -lt 8 ]; then
 	printf "Syntax: %s DB_NAME DB_HOST SCHEMA ASSAY_ID_TAG DB_USER DB_PASSWORD REPO_DIR DATA_DIR\n" $0

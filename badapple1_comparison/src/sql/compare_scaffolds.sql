@@ -3,7 +3,7 @@ Author: Jack Ringer (+copilot)
 Date: 8/15/2024
 Description:  
 Script to compare the sets of scaffolds (based on canonical SMILES)
-between the badapple and badapple_comparison DB. 
+between the badapple and badapple_classic DB. 
 Will output a CSV file with all scafs that are present in one DB but not the other. 
 File will be empty if there are no differences.
 
@@ -28,20 +28,20 @@ CREATE TEMPORARY TABLE comparison_results (
     scafsmi TEXT
 );
 
--- Insert rows that are in badapple but not in badapple_comparison
+-- Insert rows that are in badapple but not in badapple_classic
 INSERT INTO comparison_results (comparison_type, scafsmi)
 SELECT 'Only in badapple', scafsmi
 FROM scaffold
 EXCEPT
 SELECT 'Only in badapple', scafsmi
-FROM dblink('dbname=badapple_comparison', 'SELECT scafsmi FROM scaffold') AS comp(scafsmi TEXT);
+FROM dblink('dbname=badapple_classic', 'SELECT scafsmi FROM scaffold') AS comp(scafsmi TEXT);
 
--- Insert rows that are in badapple_comparison but not in badapple
+-- Insert rows that are in badapple_classic but not in badapple
 INSERT INTO comparison_results (comparison_type, scafsmi)
-SELECT 'Only in badapple_comparison', scafsmi
-FROM dblink('dbname=badapple_comparison', 'SELECT scafsmi FROM scaffold') AS comp(scafsmi TEXT)
+SELECT 'Only in badapple_classic', scafsmi
+FROM dblink('dbname=badapple_classic', 'SELECT scafsmi FROM scaffold') AS comp(scafsmi TEXT)
 EXCEPT
-SELECT 'Only in badapple_comparison', scafsmi
+SELECT 'Only in badapple_classic', scafsmi
 FROM scaffold;
 
 -- Output the results to a file

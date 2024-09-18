@@ -3,7 +3,7 @@ Author: Jack Ringer (+copilot)
 Date: 8/15/2024
 Description:  
 Script to compare stats of shared compound between badapple and 
-badapple_comparison DB. 
+badapple_classic DB. 
 
 Usage: psql -d badapple -f compare_compounds_stats.sql
 
@@ -33,7 +33,7 @@ CREATE TEMPORARY TABLE comparison_results (
     nsam_active_comparison INTEGER
 );
 
--- Insert rows where the specified columns differ between badapple and badapple_comparison
+-- Insert rows where the specified columns differ between badapple and badapple_classic
 INSERT INTO comparison_results (cid, nsub_total_badapple, nsub_total_comparison, nsub_tested_badapple, nsub_tested_comparison, nsub_active_badapple, nsub_active_comparison, nass_tested_badapple, nass_tested_comparison, nass_active_badapple, nass_active_comparison, nsam_tested_badapple, nsam_tested_comparison, nsam_active_badapple, nsam_active_comparison)
 SELECT 
     b.cid,
@@ -47,7 +47,7 @@ SELECT
 FROM 
     compound b
 JOIN 
-    dblink('dbname=badapple_comparison', 'SELECT cid, nsub_total, nsub_tested, nsub_active, nass_tested, nass_active, nsam_tested, nsam_active FROM compound') AS c(cid INTEGER, nsub_total INTEGER, nsub_tested INTEGER, nsub_active INTEGER, nass_tested INTEGER, nass_active INTEGER, nsam_tested INTEGER, nsam_active INTEGER)
+    dblink('dbname=badapple_classic', 'SELECT cid, nsub_total, nsub_tested, nsub_active, nass_tested, nass_active, nsam_tested, nsam_active FROM compound') AS c(cid INTEGER, nsub_total INTEGER, nsub_tested INTEGER, nsub_active INTEGER, nass_tested INTEGER, nass_active INTEGER, nsam_tested INTEGER, nsam_active INTEGER)
 ON 
     b.cid = c.cid
 WHERE 

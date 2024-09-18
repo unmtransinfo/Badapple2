@@ -1,14 +1,14 @@
 # Author: Jack Ringer
 # Date: 7/29/2024
 # Description:
-# Initialize and load data into badapple_comparison DB
+# Initialize and load data into badapple_classic DB
 # Note that this script is similar to load_db.sh but makes some formatting changes to account for the badapple 1 data
 # based on: https://github.com/unmtransinfo/Badapple/blob/ae50bb04a58752933a807170b3d79c8906221500/sh/Go_badapple_DbLoad.sh
 
 # run create_db_compare.sh BEFORE running this script
 
 # tip: run export PGPASSWORD=<your_pw> before running this script to avoid psql prompts for pw
-DB_NAME="badapple_comparison"
+DB_NAME="badapple_classic"
 DB_HOST="localhost"
 SCHEMA="public"
 ASSAY_ID_TAG="aid"
