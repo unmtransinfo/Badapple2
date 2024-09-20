@@ -4,12 +4,16 @@ The steps outlined in this README provide information on how to download/recreat
 badapple_classic differs from badapple in the following ways:
 * badapple_classic uses HierS scaffold definitions from [ScaffoldGraph](https://github.com/UCLCheminformatics/ScaffoldGraph) rather than the Java-based implementation of HierS from [UNM_BIOCOMP_HSCAF](https://github.com/unmtransinfo/unm_biocomp_hscaf).
 * badapple_classic uses a newer version of PostgreSQL with minor differences in median calculation (using `SELECT PERCENTILE_CONT(0.5)` instead of [create_median_function.sql](https://github.com/unmtransinfo/Badapple/blob/master/sql/create_median_function.sql)).
+* badapple_classic generates canonical SMILES using [RDKit](https://www.rdkit.org/), whereas badapple used [openbabel](http://openbabel.org/index.html).
 
 The steps for generating badapple_classic are different than badapple2 because badapple and badapple_classic use identical input files (each containing data with a date cutoff of 2017-08-14):
 * [pc_mlsmr_compounds.smi](https://unmtid-dbs.net/download/Badapple2/badapple_classic_files/pc_mlsmr_compounds.smi) - list of compounds with Isomeric SMILES and PubChem compound IDs (CIDs).
 * [pc_mlsmr_mlp_assaystats_act.csv](https://unmtid-dbs.net/download/Badapple2/badapple_classic_files/pc_mlsmr_mlp_assaystats_act.csv) - assay results by assay ID (AID), substance ID (SID), and activity outcome.
 * [pc_mlsmr_sid2cid.csv](https://unmtid-dbs.net/download/Badapple2/badapple_classic_files/pc_mlsmr_sid2cid.csv) - list of PubChem SIDs mapped to CIDs.
 * [drugcentral.smi](https://unmtid-dbs.net/download/Badapple2/badapple_classic_files/drugcentral.smi) - list of drugs from [DrugCentral](https://drugcentral.org/).
+
+Additionally, one can view the set of PubChem assay IDs used for badapple and badapple_classic from the following file (this file is generated when creating the DB):
+* [badapple_classic_tested.aid](https://unmtid-dbs.net/download/Badapple2/badapple_classic_files/badapple_classic_tested.aid)
 
 ## Database (DB) Easy Setup
 The steps below provide info on how to setup the badapple_classic and original badapple DB. 
@@ -60,6 +64,10 @@ Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will 
     `psql -d badapple_classic -c "DELETE FROM activity"`
 
 ## (Optional) Compare the badapple DB and badapple_classic DB
+**BEFORE** running comparisons, you'll want to canonicalize the badapple scaffold SMILES using RDKit:
+```
+psql -d badapple -c "CREATE EXTENSION IF NOT EXISTS rdkit;UPDATE scaffold SET scafsmi = mol_to_smiles(mols_scaf.scafmol) FROM mols_scaf WHERE mols_scaf.id = scaffold.id;"
+```
 * You can compare the sets of compounds and scaffolds between the original badapple DB and badapple_classic using `psql -d badapple -f src/sql/compare_compounds.sql` and `psql -d badapple -f src/sql/compare_scaffolds.sql`. You can also compare the compound<->scaffold relationships using `psql -d badapple -f src/sql/compare_compound_scaf_relationships.sql`.
 * You can use `psql -d badapple -f src/sql/compare_compounds_stats.sql` and `psql -d badapple -f src/sql/compare_scaffold_stats.sql` to compare the two DB activity annotations.
 * You can run `python src/check_scaf_diffs.py` to check that any differences in scaffold annotations are due only to differences in compound<->scaffold relationships.
