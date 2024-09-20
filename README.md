@@ -16,8 +16,11 @@ Codename:	victoria
 2. Install the Badapple2 environment: `conda env create -f environment.yml`
     * This will create a new conda env with name `badapple2`. If you wish, you can change the first line of [environment.yml](environment.yml) prior to the command above to change the name.
 
-## Database (DB) Development Setup
-**NOTE:** If creating a Badapple1 comparison DB, follow the instructions [here](badapple1_comparison/README.md).
+## badapple_classic
+If you want to use/recreate the classic version of badapple follow the instructions [here](badapple1_comparison/README.md).
+
+## badapple2
+**NOTE: In progress, the steps below are not final or complete**
 
 The steps below outline how one can generate the Badapple2 DB on their own system.
 
@@ -44,7 +47,7 @@ The steps below outline how to mirror PubChem data to your system (much faster/m
     * `o_mol2scaf`: TSV file mapping compound CID to scaffold ID(s)
 
 ### (3) Initializing the DB
-(Step 6 currently out of date, will update after Badapple1 comparison complete)
+(Step 6 currently out of date, will update)
 
 1. Install postgresql with the RDKit cartridge (requires sudo):
 `apt install postgresql-14-rdkit`
