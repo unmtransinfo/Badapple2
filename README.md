@@ -1,23 +1,9 @@
 # Badapple2
 Bioassay data associative promiscuity pattern learning engine V2. 
 
-## System Requirements
-Code is expected to work on Linux systems. Thus far all code has been tested on the following OS:
-```
-Distributor ID:	Linuxmint
-Description:	Linux Mint 21.2
-Release:	21.2
-Codename:	victoria
-```
-
-## Python Setup
-1. Setup conda (see the [Miniconda Site](https://conda.github.io/conda-libmamba-solver/user-guide/) for more info) 
-    * (Optional) I'd recommend using the libmamba solver for faster install times, see [here](https://conda.github.io/conda-libmamba-solver/user-guide/)
-2. Install the Badapple2 environment: `conda env create -f environment.yml`
-    * This will create a new conda env with name `badapple2`. If you wish, you can change the first line of [environment.yml](environment.yml) prior to the command above to change the name.
-
 ## badapple_classic
 If you want to use/recreate the classic version of badapple follow the instructions [here](badapple1_comparison/README.md).
+
 
 ## badapple2
 **NOTE: In progress, the steps below are not final or complete**
@@ -26,12 +12,28 @@ The steps below outline how one can generate the Badapple2 DB on their own syste
 
 Make sure to inspect all bash scripts and **modify variable definitions** (mostly file paths) as needed before running them. When running bash scripts, make sure your conda environment is active (`conda activate badapple2`).
 
-### (1) Preliminary
-Before getting started, make sure you have the following files:
+### (1) Setup
+#### System Requirements
+Code is expected to work on Linux systems. Thus far all code has been tested on the following OS:
+```
+Distributor ID:	Linuxmint
+Description:	Linux Mint 21.2
+Release:	21.2
+Codename:	victoria
+```
+
+#### Python Setup
+1. Setup conda (see the [Miniconda Site](https://conda.github.io/conda-libmamba-solver/user-guide/) for more info) 
+    * (Optional) I'd recommend using the libmamba solver for faster install times, see [here](https://conda.github.io/conda-libmamba-solver/user-guide/)
+2. Install the Badapple2 environment: `conda env create -f environment.yml`
+    * This will create a new conda env with name `badapple2`. If you wish, you can change the first line of [environment.yml](environment.yml) prior to the command above to change the name.
+
+### (2) Preliminary
+Additionally, before getting started, make sure you have the following files:
 
 * AID file: Text file listing all PubChem AIDs to be included in the DB.
 
-### (2) Input Data
+### (3) Input Data
 The steps below outline how to mirror PubChem data to your system (much faster/more reliable than using PUG-REST API) and how to generate the 5 input TSVs we'll use in part (3). I would recommend saving all 5 of these TSVs to the same directory.
 
 1. Run `bash sh_scripts/mirror_pubchem.sh`
@@ -46,7 +48,7 @@ The steps below outline how to mirror PubChem data to your system (much faster/m
     * `o_scaf`: TSV file with all scaffolds and their IDs
     * `o_mol2scaf`: TSV file mapping compound CID to scaffold ID(s)
 
-### (3) Initializing the DB
+### (4) Initializing the DB
 (Step 6 currently out of date, will update)
 
 1. Install postgresql with the RDKit cartridge (requires sudo):
