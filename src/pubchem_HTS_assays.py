@@ -36,6 +36,18 @@ def parse_args(parser: argparse.ArgumentParser):
         help="Compound threshold for considering an assay HTS. Assays with >= n_compound_thresh unique compounds will be considered HTS.",
     )
     parser.add_argument(
+        "--data_source_category",
+        type=str,
+        default="",
+        help="(Optional) Will filter by the provided data source category (e.g. 'NIH Initiatives'). If given, you'll need to provide pubchem_data_sources_file.",
+    )
+    parser.add_argument(
+        "--pubchem_data_sources_file",
+        type=str,
+        default="",
+        help="Path to file downloaded from: https://pubchem.ncbi.nlm.nih.gov/sources/#sort=Last-Updated-Latest-First. Required if using data_source_category.",
+    )
+    parser.add_argument(
         "--log_fname",
         help="File to save logs to. If not given will log to stdout.",
         default=None,
@@ -49,17 +61,36 @@ def main(args):
         raise ValueError(
             f"--bioassays_file should be path to the bioassays.tsv.gz file downloaded from PubChem, given: {args.bioassays_file}"
         )
+    if len(args.data_source_category) > 0 and len(args.pubchem_data_sources_file) < 1:
+        raise ValueError(
+            f"Provided data_source_category but not a path to pubchem_data_sources_file."
+        )
     logger.info(f"Reading bioassays.tsv.gz...")
     bioassays_df = pd.read_csv(args.bioassays_file, compression="gzip", sep="\t")
     # filter out non-HTS assays
+    logger.info(f"Filtering by N_compounds >= {args.n_compound_thresh}")
     bioassays_df = bioassays_df[
         bioassays_df["Number of Tested CIDs"] >= args.n_compound_thresh
     ]
+    logger.info(f"Filtering by Outcome Type == Screening")
+    bioassays_df = bioassays_df[bioassays_df["Outcome Type"] == "Screening"]
+    if len(args.data_source_category) > 0:
+        logger.info(f"Filtering by Data Source Category: {args.data_source_category}")
+        data_sources_df = pd.read_csv(args.pubchem_data_sources_file, sep=",")
+        data_sources_df = data_sources_df.dropna(subset=["Source Category"])
+        # using contains bc often the Source Category contains multiple labels, for example: "Legacy Depositors, NIH Initiatives"
+        data_sources_df = data_sources_df[
+            data_sources_df["Source Category"].str.contains(args.data_source_category)
+        ]
+        bioassays_df = bioassays_df = bioassays_df[
+            bioassays_df["Source Name"].isin(data_sources_df["Source Name"])
+        ]
     # get and save list of HTS AIDs
     hts_aids_list = bioassays_df["AID"].tolist()
     with open(args.aid_out_file, "w") as file:
         for aid in hts_aids_list:
             file.write(f"{aid}\n")
+    logger.info(f"Done! Wrote AID list to: {args.aid_out_file}")
 
 
 if __name__ == "__main__":
