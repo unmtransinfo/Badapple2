@@ -72,8 +72,10 @@ def main(args):
     bioassays_df = bioassays_df[
         bioassays_df["Number of Tested CIDs"] >= args.n_compound_thresh
     ]
-    logger.info(f"Filtering by Outcome Type == Screening")
-    bioassays_df = bioassays_df[bioassays_df["Outcome Type"] == "Screening"]
+    logger.info(f"Filtering by Outcome Type ('Screening', 'Confirmatory', or 'Other')")
+    bioassays_df = bioassays_df[
+        bioassays_df["Outcome Type"].isin(["Screening", "Confirmatory", "Other"])
+    ]  # based on assays from Badapple 1.0 outcome type can include Confirmatory + Other
     if len(args.data_source_category) > 0:
         logger.info(f"Filtering by Data Source Category: {args.data_source_category}")
         data_sources_df = pd.read_csv(args.pubchem_data_sources_file, sep=",")
