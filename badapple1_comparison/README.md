@@ -21,7 +21,10 @@ The steps below provide info on how to setup the badapple_classic DB.
 1. Install postgresql with the RDKit cartridge (requires sudo):
 `apt install postgresql-14-rdkit`
 2. Download [badapple_classic.pgdump](https://unmtid-dbs.net/download/Badapple2/badapple_classic.pgdump).
-3. Load DB from dump file: `pg_restore -O -x -v -C -d badapple_classic badapple_classic.pgdump` 
+3. Load DB from dump file: `pg_restore -O -x -v -C -d badapple_classic badapple_classic.pgdump`
+    * If you get an error like `pg_restore: error: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: FATAL:  role "<user>" does not exist`, try the following steps and then re-run the command:
+    1) `sudo -u postgres createdb badapple_classic`
+    2) `sudo -i -u postgres`
 4. Configure user:
     ```
     psql -c "CREATE ROLE myname WITH LOGIN PASSWORD 'foobar'"
