@@ -27,3 +27,10 @@ def read_aid_file(aid_file_path: str) -> list[int]:
     with open(aid_file_path, "r") as file:
         aid_list = [int(line.strip()) for line in file if line.strip().isdigit()]
     return aid_list
+
+
+def write_aid_file(aid_list: list, aid_file_path: str):
+    aid_list = sorted([int(x) for x in set(aid_list)])
+    with open(aid_file_path, "w") as f:
+        for aid in aid_list:
+            f.write(f"{aid}\n")
