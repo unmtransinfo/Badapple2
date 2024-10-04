@@ -28,6 +28,26 @@ Codename:	victoria
 2. Install the Badapple2 environment: `conda env create -f environment.yml`
     * This will create a new conda env with name `badapple2`. If you wish, you can change the first line of [environment.yml](environment.yml) prior to the command above to change the name.
 
+
+#### PostgreSQL Setup
+The steps below are common to installation of the `badapple`, `badapple_classic`, and `badapple2` databases (DBs).
+
+1. Install PostgreSQL with the RDKit cartridge (requires sudo):
+`sudo apt install postgresql-14-rdkit`
+2. (Option 1) Make your user a superuser prior to DB setup:
+    1) Switch to postgres user: `(base) <username>@<computer>:~$ sudo -i -u postgres`
+    2) Make yourself a superuser: `psql -c "CREATE ROLE <username> WITH SUPERUSER PASSWORD '<password>'"`
+3. (Option 2) If you don't want to make `<username>` a superuser, follow the steps below:
+    1) When running DB setup commands, prepend `sudo -u postgres` to DB setup commands. For example, instead of `createdb <DB_NAME>` use `sudo -u postgres createdb <DB_NAME>`.
+    2) After setting up the DB as `postgres` you can grant permissions to `<username>` to access the DB as `<username>` like so:
+    ```
+    sudo -i -u postgres
+    psql -d <DB_NAME> -c "CREATE ROLE <username> WITH LOGIN PASSWORD '<password>'"
+    psql -d <DB_NAME> -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO <username>"
+    psql -d <DB_NAME> -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO <username>"
+    psql -d <DB_NAME> -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO <username>"
+    ```
+
 ### (2) Preliminary
 Additionally, before getting started, make sure you have the following files:
 

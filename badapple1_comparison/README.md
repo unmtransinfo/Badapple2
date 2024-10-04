@@ -16,21 +16,19 @@ Additionally, one can view the set of PubChem assay IDs used for badapple and ba
 * [badapple_classic_tested.aid](https://unmtid-dbs.net/download/Badapple2/badapple_classic_files/badapple_classic_tested.aid)
 
 ## Database (DB) Easy Setup
-The steps below provide info on how to setup the badapple_classic DB. 
+The steps below provide info on how to set up the badapple_classic DB. 
 
-1. Install postgresql with the RDKit cartridge (requires sudo):
-`apt install postgresql-14-rdkit`
+1. Follow the PostgreSQL setup instructions [here](../README.md#postgresql-setup)
 2. Download [badapple_classic.pgdump](https://unmtid-dbs.net/download/Badapple2/badapple_classic.pgdump).
-3. Load DB from dump file: `pg_restore -O -x -v -C -d badapple_classic badapple_classic.pgdump`
-    * If you get an error like `pg_restore: error: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: FATAL:  role "<user>" does not exist`, try the following steps and then re-run the command:
-    1) `sudo -u postgres createdb badapple_classic`
-    2) `sudo -i -u postgres`
-4. Configure user:
+3. Create the DB: `createdb badapple_classic`
+3. Load DB from dump file: `pg_restore -O -x -v -d badapple_classic badapple_classic.pgdump`
+4. If you followed (Option 2) in the setup, then you can grant permissions for user `<username>` to badapple_classic like so:
     ```
-    psql -c "CREATE ROLE myname WITH LOGIN PASSWORD 'foobar'"
-    psql -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO myname"
-    psql -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO myname"
-    psql -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO myname"
+    sudo -i -u postgres
+    psql -d badapple_classic -c "CREATE ROLE <username> WITH LOGIN PASSWORD '<password>'"
+    psql -d badapple_classic -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO <username>"
+    psql -d badapple_classic -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO <username>"
+    psql -d badapple_classic -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO <username>"
     ```
 
 ## DB Advanced Setup (Development/from-scratch)
