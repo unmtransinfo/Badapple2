@@ -146,20 +146,22 @@ def create_plot(db_connection, logger, plot_fname):
     p = leg.get_window_extent()
 
     # Add annotation
-    annotate_str = "Substances Active (median, 80th percentile) = %d, %d\n" % (
+    annotate_str = "Assays Tested (median) = %d\n" % (params["med_aTested"])
+    annotate_str += "Assays Active (median) = %d\n" % (params["med_aActive"])
+    annotate_str += "Substances Tested (median) = %d\n" % (params["med_sTested"])
+    annotate_str += "Substances Active (median, 80th percentile) = %d, %d\n" % (
         params["med_sActive"],
         p80_sActive,
     )
+    annotate_str += "Samples Tested (median) = %d\n" % (params["med_wTested"])
     annotate_str += "Samples Active (median, 80th percentile) = %d, %d\n" % (
         params["med_wActive"],
         p80_wActive,
     )
-    annotate_str += "Assays Tested (median) = %d\n" % (params["med_aTested"])
-    annotate_str += "Assays Active (median) = %d\n" % (params["med_aActive"])
     plt.annotate(
         annotate_str,
-        xy=(p.p0[0] + 100, p.p1[1] + 60),
-        xytext=(p.p0[0] + 100, p.p1[1] + 60),
+        xy=(p.p0[0] + 100, p.p1[1] + 50),
+        xytext=(p.p0[0] + 100, p.p1[1] + 50),
         ha="left",
         va="center",
         fontsize=10,
