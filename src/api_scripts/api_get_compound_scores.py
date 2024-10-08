@@ -37,6 +37,7 @@ def main(args):
     cpd_df = pd.read_csv(args.input_tsv, sep="\t")
     smiles_list = cpd_df["SMILES"].tolist()
     scaffold_smiles = []
+    scaffold_indrug = []
     scaffold_ids = []
     pscores = []
     for smiles in tqdm(smiles_list, "Processing SMILES..."):
@@ -47,10 +48,12 @@ def main(args):
         data = json.loads(response.text)[0]
         scaffold_info = data["highest_scoring_scaf"]
         scaffold_smiles.append(scaffold_info.get("scafsmi"))
+        scaffold_indrug.append(scaffold_info.get("in_drug"))
         scaffold_ids.append(scaffold_info.get("id"))
         pscores.append(scaffold_info.get("pscore"))
     cpd_df["pscore"] = pscores
     cpd_df["scafsmi"] = scaffold_smiles
+    cpd_df["in_drug"] = scaffold_indrug
     cpd_df["scafid"] = scaffold_ids
     cpd_df.to_csv(args.output_tsv, sep="\t", index=False)
 
