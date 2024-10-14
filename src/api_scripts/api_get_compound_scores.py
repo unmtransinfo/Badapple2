@@ -29,33 +29,73 @@ def parse_args(parser: argparse.ArgumentParser):
         default=argparse.SUPPRESS,
         help="output file, will include all info from input TSV + two new columns: molecule pscore and corresponding scaffold",
     )
+    parser.add_argument(
+        "--include_all_scaffolds",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Report all scaffolds/scores for each input molecule. If False will only report highest-scoring scaffold.",
+    )
     return parser.parse_args()
 
 
 def main(args):
-    API_URL = "http://localhost:8000/api/v1/compound_search/get_high_scores"
-    cpd_df = pd.read_csv(args.input_tsv, sep="\t")
-    smiles_list = cpd_df["SMILES"].tolist()
-    scaffold_smiles = []
-    scaffold_indrug = []
-    scaffold_ids = []
-    pscores = []
-    for smiles in tqdm(smiles_list, "Processing SMILES..."):
-        response = requests.get(
-            API_URL,
-            params={"SMILES": smiles},
+    # TODO: update from localhost to actual website once API deployed
+    if args.include_all_scaffolds:
+        API_URL = (
+            "http://localhost:8000/api/v1/compound_search/get_associated_scaffolds"
         )
-        data = json.loads(response.text)[0]
-        scaffold_info = data["highest_scoring_scaf"]
-        scaffold_smiles.append(scaffold_info.get("scafsmi"))
-        scaffold_indrug.append(scaffold_info.get("in_drug"))
-        scaffold_ids.append(scaffold_info.get("id"))
-        pscores.append(scaffold_info.get("pscore"))
-    cpd_df["pscore"] = pscores
-    cpd_df["scafsmi"] = scaffold_smiles
-    cpd_df["in_drug"] = scaffold_indrug
-    cpd_df["scafid"] = scaffold_ids
-    cpd_df.to_csv(args.output_tsv, sep="\t", index=False)
+    else:
+        API_URL = "http://localhost:8000/api/v1/compound_search/get_high_scores"
+
+    cpd_df = pd.read_csv(args.input_tsv, sep="\t")
+
+    with open(args.output_tsv, "w") as output_file:
+        original_header = cpd_df.columns.tolist()
+        new_columns = ["scafsmi", "in_drug", "id", "pscore"]
+        output_file.write("\t".join(original_header + new_columns) + "\n")
+
+        for _, row in tqdm(
+            cpd_df.iterrows(), desc="Processing rows...", total=cpd_df.shape[0]
+        ):
+            smiles = row["SMILES"]
+            response = requests.get(API_URL, params={"SMILES": smiles})
+            data = json.loads(response.text)
+            if data is None:
+                print(f"Invalid SMILES given: {smiles}, skipping to next row...")
+                continue
+            if args.include_all_scaffolds:
+                data = data[smiles]
+            else:
+                data = [data[0]["highest_scoring_scaf"]]
+
+            original_row = row.tolist()
+            for scaffold_info in data:
+                scaffold_smiles = scaffold_info.get("scafsmi")
+                scaffold_indrug = scaffold_info.get("in_drug")
+                scaffold_id = scaffold_info.get("id")
+                pscore = scaffold_info.get("pscore")
+
+                output_file.write(
+                    "\t".join(
+                        map(
+                            str,
+                            original_row
+                            + [scaffold_smiles, scaffold_indrug, scaffold_id, pscore],
+                        )
+                    )
+                    + "\n"
+                )
+            if len(data) == 0:
+                # include row w/ none
+                output_file.write(
+                    "\t".join(
+                        map(
+                            str,
+                            original_row + [None, None, None, None],
+                        )
+                    )
+                    + "\n"
+                )
 
 
 if __name__ == "__main__":
