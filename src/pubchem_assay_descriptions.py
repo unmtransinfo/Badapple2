@@ -15,15 +15,24 @@ from tqdm import tqdm
 from utils.file_utils import read_aid_file
 
 
-def get_assay_description(aid: int) -> str:
+def get_assay_data(aid: int) -> dict:
     url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/assay/aid/{aid}/description/JSON"
     response = requests.get(url)
     if response.status_code == 200:
         data = json.loads(response.text)
-        description_list = data["PC_AssayContainer"][0]["assay"]["descr"]["description"]
-        return "\n".join(description_list)  # create single description string
+        return data
     print(f"Failed to retrieve data for AID {aid}")
     return ""
+
+
+def get_assay_description(data: dict) -> str:
+    description_list = data["PC_AssayContainer"][0]["assay"]["descr"]["description"]
+    return "\n".join(description_list)
+
+
+def get_assay_protocol(data: dict) -> str:
+    protocol_list = data["PC_AssayContainer"][0]["assay"]["descr"]["protocol"]
+    return "\n".join(protocol_list)
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -53,7 +62,10 @@ def main(args):
     # get description for each assay
     descriptions = {}
     for aid in tqdm(assay_ids, desc="Processing list of assay ids..."):
-        descriptions[aid] = get_assay_description(aid)
+        data = get_assay_data(aid)
+        descriptions[aid] = {}
+        descriptions[aid]["Description"] = get_assay_description(data)
+        descriptions[aid]["Protocol"] = get_assay_protocol(data)
 
     # save output to JSON file
     out_dir = os.path.dirname(args.out_json_file)
