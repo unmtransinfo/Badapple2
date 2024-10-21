@@ -1,0 +1,70 @@
+# docker file to setup badapple_classic DB
+# build image with:
+# docker build -f Dockerfile_BA_classic -t badapple_classic_db:1.0 --progress plain .
+# then run the image in a container with:
+# docker run -d --name badapple_classic_db_container -p 5442:5442 badapple_classic_db:1.0
+
+FROM ubuntu:22.04
+WORKDIR /home/app
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update
+RUN echo "---Done installing Ubuntu."
+
+
+WORKDIR /home/app
+
+# Install necessary packages
+RUN apt-get update && apt-get install -y \
+    postgresql-14-rdkit \
+    wget \
+	tzdata \
+	apt-utils \
+	sudo \
+    && rm -rf /var/lib/apt/lists/*
+RUN echo "---Done installing packages"
+
+
+# set timezone
+ENV TZ=America/Denver
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ >/etc/timezone
+
+
+# Copy configuration files and set appropriate permissions
+COPY config/postgresql/pg_hba.conf /etc/postgresql/14/main/
+RUN chmod 640 /etc/postgresql/14/main/pg_hba.conf 
+RUN chown postgres /etc/postgresql/14/main/pg_hba.conf 
+COPY config/postgresql/postgresql.conf /etc/postgresql/14/main/
+RUN chmod 644 /etc/postgresql/14/main/postgresql.conf
+RUN chown postgres /etc/postgresql/14/main/postgresql.conf
+RUN echo "---Copied over PostgreSQL config files"
+
+# download pgdump file
+RUN wget -O /tmp/badapple_classic.pgdump https://unmtid-dbs.net/download/Badapple2/badapple_classic.pgdump
+RUN echo "---Downloaded pgdump file"
+
+
+# initialize DB
+USER postgres
+RUN pg_config
+ENV DB_NAME=badapple_classic
+ENV DB_USER=robin
+ENV DB_PASSWORD=katchow
+# set port to 5442 in case DB already installed on system
+ENV DB_PORT=5442
+RUN /etc/init.d/postgresql start && \
+	psql -p ${DB_PORT} -c "CREATE ROLE ${DB_USER} WITH LOGIN PASSWORD '${DB_PASSWORD}'" && \
+	createdb -p ${DB_PORT} -O postgres ${DB_NAME} && \
+	psql -p ${DB_PORT} -d ${DB_NAME} -c "CREATE EXTENSION rdkit" && \
+	pg_restore -p ${DB_PORT} -O -x -v -d ${DB_NAME} /tmp/badapple_classic.pgdump && \
+	psql -p ${DB_PORT} -d ${DB_NAME} -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${DB_USER}" && \
+	psql -p ${DB_PORT} -d ${DB_NAME} -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO ${DB_USER}" && \
+	psql -p ${DB_PORT} -d ${DB_NAME} -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO ${DB_USER}" && \
+	psql -p ${DB_PORT} -l
+USER root
+RUN service postgresql stop
+RUN echo "---Done instantiating and loading db."
+
+# cleanup pgdump file
+RUN rm /tmp/badapple_classic.pgdump
+
+CMD ["sudo", "-u", "postgres", "/usr/lib/postgresql/14/bin/postgres", "-D", "/var/lib/postgresql/14/main", "-c", "config_file=/etc/postgresql/14/main/postgresql.conf"]
