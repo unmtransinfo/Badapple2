@@ -16,10 +16,10 @@ RUN date
 
 
 # Copy configuration files and set appropriate permissions
-COPY ../config/postgresql/pg_hba.conf /etc/postgresql/14/main/
+COPY config/postgresql/pg_hba.conf /etc/postgresql/14/main/
 RUN chmod 640 /etc/postgresql/14/main/pg_hba.conf 
 RUN chown postgres /etc/postgresql/14/main/pg_hba.conf 
-COPY ../config/postgresql/postgresql.conf /etc/postgresql/14/main/
+COPY config/postgresql/postgresql.conf /etc/postgresql/14/main/
 RUN chmod 644 /etc/postgresql/14/main/postgresql.conf
 RUN chown postgres /etc/postgresql/14/main/postgresql.conf
 RUN echo "---Copied over PostgreSQL config files"
