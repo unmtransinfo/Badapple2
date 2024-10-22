@@ -2,7 +2,7 @@
 # build image with:
 # docker build -f Dockerfile_BA_classic -t badapple_classic_db:1.0 --progress plain .
 # then run the image in a container with:
-# docker run -d --name badapple_classic_db_container -p 5442:5442 badapple_classic_db:1.0
+# docker run -d --name badapple_classic_db_container -p 5443:5443 badapple_classic_db:1.0
 
 FROM ubuntu:22.04
 WORKDIR /home/app
