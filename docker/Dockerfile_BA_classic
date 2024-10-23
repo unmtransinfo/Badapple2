@@ -1,8 +1,4 @@
 # docker file to setup badapple_classic DB
-# build image with:
-# docker build -f Dockerfile_BA_classic -t badapple_classic_db:1.0 --progress plain .
-# then run the image in a container with:
-# docker run -d --name badapple_classic_db_container -p 5443:5443 badapple_classic_db:1.0
 
 FROM ubuntu:22.04
 WORKDIR /home/app
@@ -51,6 +47,14 @@ COPY config/postgresql/postgresql.conf /etc/postgresql/14/main/
 RUN chmod 644 /etc/postgresql/14/main/postgresql.conf
 RUN chown postgres /etc/postgresql/14/main/postgresql.conf
 RUN echo "---Copied over PostgreSQL config files"
+
+
+# update config file to use appropriate port
+COPY update_postgres_conf.sh /docker-entrypoint-initdb.d/update_postgres_conf.sh
+RUN chmod +x /docker-entrypoint-initdb.d/update_postgres_conf.sh
+RUN /docker-entrypoint-initdb.d/update_postgres_conf.sh
+RUN echo "---Updated postgresql.conf to use correct port"
+
 
 # download pgdump file
 RUN wget -O /tmp/badapple_classic.pgdump https://unmtid-dbs.net/download/Badapple2/badapple_classic.pgdump
