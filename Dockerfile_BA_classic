@@ -1,12 +1,24 @@
 # docker file to setup badapple_classic DB
-# build image with:
-# docker build -f Dockerfile_BA_classic -t badapple_classic_db:1.0 --progress plain .
-# then run the image in a container with:
-# docker run -d --name badapple_classic_db_container -p 5443:5443 badapple_classic_db:1.0
+# have to keep docker file in main dir (instead of under docker/) because
+# docker-compose does not support subdirs when reading from git repositories
 
 FROM ubuntu:22.04
 WORKDIR /home/app
 ENV DEBIAN_FRONTEND noninteractive
+
+# Define required build-time arguments
+ARG DB_PORT
+ARG DB_NAME
+ARG DB_USER
+ARG DB_PASSWORD
+ARG TZ
+ENV DB_PORT=${DB_PORT}
+ENV DB_NAME=${DB_NAME}
+ENV DB_USER=${DB_USER}
+ENV DB_PASSWORD=${DB_PASSWORD}
+ENV TZ=${TZ}
+
+
 RUN apt-get update
 RUN echo "---Done installing Ubuntu."
 
@@ -25,18 +37,25 @@ RUN echo "---Done installing packages"
 
 
 # set timezone
-ENV TZ=America/Denver
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ >/etc/timezone
 
 
 # Copy configuration files and set appropriate permissions
-COPY config/postgresql/pg_hba.conf /etc/postgresql/14/main/
+COPY docker/config/postgresql/pg_hba.conf /etc/postgresql/14/main/
 RUN chmod 640 /etc/postgresql/14/main/pg_hba.conf 
 RUN chown postgres /etc/postgresql/14/main/pg_hba.conf 
-COPY config/postgresql/postgresql.conf /etc/postgresql/14/main/
+COPY docker/config/postgresql/postgresql.conf /etc/postgresql/14/main/
 RUN chmod 644 /etc/postgresql/14/main/postgresql.conf
 RUN chown postgres /etc/postgresql/14/main/postgresql.conf
 RUN echo "---Copied over PostgreSQL config files"
+
+
+# update config file to use appropriate port
+COPY docker/update_postgres_conf.sh /docker-entrypoint-initdb.d/update_postgres_conf.sh
+RUN chmod +x /docker-entrypoint-initdb.d/update_postgres_conf.sh
+RUN /docker-entrypoint-initdb.d/update_postgres_conf.sh
+RUN echo "---Updated postgresql.conf to use correct port"
+
 
 # download pgdump file
 RUN wget -O /tmp/badapple_classic.pgdump https://unmtid-dbs.net/download/Badapple2/badapple_classic.pgdump
@@ -46,11 +65,6 @@ RUN echo "---Downloaded pgdump file"
 # initialize DB
 USER postgres
 RUN pg_config
-ENV DB_NAME=badapple_classic
-ENV DB_USER=robin
-ENV DB_PASSWORD=katchow
-# set port to 5443 in case DB already installed on system
-ENV DB_PORT=5443
 RUN /etc/init.d/postgresql start && \
 	psql -p ${DB_PORT} -c "CREATE ROLE ${DB_USER} WITH LOGIN PASSWORD '${DB_PASSWORD}'" && \
 	createdb -p ${DB_PORT} -O postgres ${DB_NAME} && \

@@ -1,0 +1,32 @@
+# docker compose file for badapple_classic
+services:
+  classic_db:
+    build:
+      context: .
+      dockerfile: Dockerfile_BA_classic
+      args:
+        - DB_PORT=${DB_PORT}
+        - DB_NAME=${DB_NAME}
+        - DB_USER=${DB_USER}
+        - DB_PASSWORD=${DB_PASSWORD}
+        - TZ=${TZ}
+    env_file:
+      - ./docker/.env_BA_classic
+    ports:
+      - "${DB_PORT}:${DB_PORT}"
+    environment:
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - TZ=${TZ}
+    volumes:
+      - postgres_data_BA_classic:/var/lib/postgresql/data
+    networks:
+      - BA_classic
+
+volumes:
+  postgres_data_BA_classic:
+
+networks:
+  BA_classic:
