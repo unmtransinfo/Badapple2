@@ -20,4 +20,4 @@ psql -d badapple_classic -p 5443 -U robin -h localhost
 
 ## Notes:
 * Depending on your version of docker, you may need to use `docker compose` instead of `docker-compose`
-* Although generally it is best practice to use docker secrets for DB_PASSWORD, since these databases have intentionally been made publicly available is it unnecessary in this case. The password is really just a config detail rather than security measure here.
+* Although generally it is best practice to use docker secrets for DB_PASSWORD, since these databases have intentionally been made completely public it is unnecessary in this case. The password is really just a config detail rather than security measure here.
