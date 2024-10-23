@@ -1,4 +1,6 @@
 # docker file to setup badapple_classic DB
+# have to keep docker file in main dir (instead of under docker/) because
+# docker-compose does not support subdirs when reading from git repositories
 
 FROM ubuntu:22.04
 WORKDIR /home/app
@@ -39,17 +41,17 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ >/etc/timezone
 
 
 # Copy configuration files and set appropriate permissions
-COPY config/postgresql/pg_hba.conf /etc/postgresql/14/main/
+COPY docker/config/postgresql/pg_hba.conf /etc/postgresql/14/main/
 RUN chmod 640 /etc/postgresql/14/main/pg_hba.conf 
 RUN chown postgres /etc/postgresql/14/main/pg_hba.conf 
-COPY config/postgresql/postgresql.conf /etc/postgresql/14/main/
+COPY docker/config/postgresql/postgresql.conf /etc/postgresql/14/main/
 RUN chmod 644 /etc/postgresql/14/main/postgresql.conf
 RUN chown postgres /etc/postgresql/14/main/postgresql.conf
 RUN echo "---Copied over PostgreSQL config files"
 
 
 # update config file to use appropriate port
-COPY update_postgres_conf.sh /docker-entrypoint-initdb.d/update_postgres_conf.sh
+COPY docker/update_postgres_conf.sh /docker-entrypoint-initdb.d/update_postgres_conf.sh
 RUN chmod +x /docker-entrypoint-initdb.d/update_postgres_conf.sh
 RUN /docker-entrypoint-initdb.d/update_postgres_conf.sh
 RUN echo "---Updated postgresql.conf to use correct port"

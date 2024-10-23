@@ -1,3 +1,4 @@
+# docker compose file for badapple_classic
 services:
   classic_db:
     build:
@@ -10,7 +11,7 @@ services:
         - DB_PASSWORD=${DB_PASSWORD}
         - TZ=${TZ}
     env_file:
-      - .env_BA_classic
+      - ./docker/.env_BA_classic
     ports:
       - "${DB_PORT}:${DB_PORT}"
     environment:
