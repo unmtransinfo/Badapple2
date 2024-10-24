@@ -18,6 +18,17 @@ Additionally, one can view the set of PubChem assay IDs used for badapple and ba
 ## Database (DB) Easy Setup
 The steps below provide info on how to set up the badapple_classic DB. 
 
+
+### Option 1: Docker
+Use this option to install a Docker image with the DB.
+
+
+See the docker README file [here](../docker/README.md#badapple_classic)
+
+
+### Option 2: PostgreSQL
+Use this option to install the DB directly on your system using PostgreSQL.
+
 1. Follow the PostgreSQL setup instructions [here](../README.md#postgresql-setup)
 2. Download [badapple_classic.pgdump](https://unmtid-dbs.net/download/Badapple2/badapple_classic.pgdump).
 3. Create the DB: `createdb badapple_classic`
