@@ -13,12 +13,45 @@ import argparse
 
 import scaffoldgraph as sg
 from loguru import logger
+from rdkit import Chem
+from scaffoldgraph.core.fragment import (
+    get_annotated_murcko_scaffold,
+    get_murcko_scaffold,
+)
+from scaffoldgraph.core.scaffold import Scaffold
+from scaffoldgraph.io import *
 
 from utils.custom_logging import get_and_set_logger
 from utils.file_utils import close_file, get_csv_writer
 
 
-class HierSTopLevel(sg.HierS):
+def kekule_canon_smiles(mol: Chem.Mol):
+    try:
+        kekule_smiles = Chem.MolToSmiles(mol, canonical=True, kekuleSmiles=True)
+        return kekule_smiles
+    except:
+        # this is an extreme edge case, but certain SMILES output by ScaffoldGraph do not play nice with other functions in RDKit
+        # (e.g., Chem.MolFromSmiles)
+        # only example seen so far: [c-]1cccc1.c1cc(N2CCCC2)[c-]2[cH-][cH-][cH-][c-]2n1
+        # (this was from CID 16717706)
+        original_smiles = Chem.MolToSmiles(mol)
+        return original_smiles
+
+
+class CustomHierS(sg.HierS):
+    """
+    This is a slightly modified version of the original HierS algorithm from ScaffoldGraph. it uses the following changes:
+    1) Includes molecules with no top-level scaffold in the graph.
+    2) Uses Kekule SMILES from RDKit as a canonical identifier
+    3) Catch SMILES considered invalid by generic RDKit function (extreme edge case)
+    4) Tracks problematic scaffolds for analysis
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Track scaffolds that couldn't be Kekulized
+        self.non_kekule_scaffolds = set()
+
     def _process_no_top_level(self, molecule):
         """Private: Process molecules with no top-level scaffold.
         Modified from original code so that molecules with no top-level
@@ -35,6 +68,63 @@ class HierSTopLevel(sg.HierS):
             molecule,
         )
         return None
+
+    def _initialize_scaffold(self, molecule, init_args):
+        """Initialize the top-level scaffold for a molecule.
+        Modified from the original code to Kekulize the scaffold.
+
+        Initialization generates a murcko scaffold, performs
+        any preprocessing required and then adds the scaffold
+        node to the graph connecting it to its child molecule.
+        This process can be customised in subclasses to modify
+        how a scaffold is initialized.
+
+        Parameters
+        ----------
+        molecule : rdkit.Chem.rdchem.Mol
+            A molecule from whicg to initialize a scaffold.
+        init_args : dict
+            A dictionary containing arguments for scaffold
+            initialization and preprocessing.
+
+        Returns
+        -------
+        scaffold : Scaffold
+            A Scaffold object containing the initialized
+            scaffold to be processed further (hierarchy
+            generation).
+
+        """
+        scaffold_rdmol = get_murcko_scaffold(molecule)
+        if scaffold_rdmol.GetNumAtoms() <= 0:
+            return self._process_no_top_level(molecule)
+        scaffold_rdmol = self._preprocess_scaffold(scaffold_rdmol, init_args)
+        scaffold = Scaffold(scaffold_rdmol)
+
+        # track un-kekulizable scaffolds
+        try:
+            test_kekule = Chem.MolToSmiles(
+                scaffold_rdmol, canonical=True, kekuleSmiles=True
+            )
+        except:
+            original_smiles = Chem.MolToSmiles(scaffold_rdmol)
+            logger.info(
+                f"Unable to generate Kekule SMILES for scaffold: {original_smiles}"
+            )
+            self.non_kekule_scaffolds.add(original_smiles)
+
+        scaffold.hash_func = kekule_canon_smiles
+        annotation = None
+        if init_args.get("annotate") is True:
+            annotation = get_annotated_murcko_scaffold(molecule, scaffold_rdmol, False)
+        self.add_scaffold_node(scaffold)
+        self.add_molecule_node(molecule)
+        self.add_molecule_edge(molecule, scaffold, annotation=annotation)
+        return scaffold
+
+    def get_non_kekule_scaffolds(self):
+        """Return the set of scaffolds that couldn't be Kekulized."""
+        return self.non_kekule_scaffolds
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -131,7 +221,7 @@ def _get_sub_scaffolds(scaffold_graph, scaf_id: int, scaf_smile: str, scaf_smile
 
 
 def write_outs(
-    scaffold_graph,
+    scaffold_graph: CustomHierS,
     o_mol: str,
     o_scaf: str,
     o_mol2scaf: str,
@@ -147,6 +237,8 @@ def write_outs(
     mol2scaf_writer.writerow(["mol_id", "mol_name", "scaffold_id"])
     seen_scafs = {}
     seen_invalid_scafs = {}
+    # scaffolds that could not be kekulized considered invalid (extreme edge case)
+    non_kekule_scafsmis = scaffold_graph.get_non_kekule_scaffolds()
     N = scaffold_graph.num_scaffold_nodes
     # for the "id" just use indexing
     scaf_smile_to_id = dict(
@@ -163,7 +255,11 @@ def write_outs(
         for scaf_node in mol_scaffolds:
             scaf_smile = scaf_node[0]
             scaf_id = scaf_smile_to_id[scaf_smile]
-            if scaf_id in seen_invalid_scafs or not (is_valid_scaf(scaf_smile)):
+            if (
+                scaf_id in seen_invalid_scafs
+                or not (is_valid_scaf(scaf_smile))
+                or (scaf_smile in non_kekule_scafsmis)
+            ):
                 seen_invalid_scafs[scaf_id] = True
             else:
                 mol2scaf_writer.writerow([mol_id, mol_name, scaf_id])
@@ -182,7 +278,7 @@ def write_outs(
 
 
 def main(args):
-    network = HierSTopLevel.from_smiles_file(
+    network = CustomHierS.from_smiles_file(
         file_name=args.i,
         header=args.iheader,
         delimiter=args.idelim,
