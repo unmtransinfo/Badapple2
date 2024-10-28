@@ -233,7 +233,7 @@ def write_outs(
     mol2scaf_writer, f_mol2scaf = get_csv_writer(o_mol2scaf, odelimeter)
     # mol_name is from name of mol in input file (e.g., "CID")
     mol_writer.writerow(["mol_id", "smiles", "mol_name"])
-    scaf_writer.writerow(["scaffold_id", "smiles", "hierarchy", "scaf2scaf"])
+    scaf_writer.writerow(["scaffold_id", "kekule_smiles", "hierarchy", "scaf2scaf"])
     mol2scaf_writer.writerow(["mol_id", "mol_name", "scaffold_id"])
     seen_scafs = {}
     seen_invalid_scafs = {}
