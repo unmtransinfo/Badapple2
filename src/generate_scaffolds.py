@@ -28,6 +28,23 @@ from utils.file_utils import close_file, get_csv_writer
 def kekule_canon_smiles(mol: Chem.Mol):
     try:
         kekule_smiles = Chem.MolToSmiles(mol, canonical=True, kekuleSmiles=True)
+        # converting again... why:
+        # there is some information loss (undefined stereochemistry) when converting to SMILES
+        # by converting twice, we ensure consistency with the PostgreSQL DB and RDKit
+        # example of what happens without converting twice:
+        # >>> scaf1 = Chem.MolFromSmiles("C(=NC1=C(N2CCCCC2)C=CC=C1)C1=CNN=C1")
+        # >>> scaf2 = Chem.MolFromSmiles("C(=NC1=CC=CC=C1N1CCCCC1)C1=CNN=C1")
+        # >>> Chem.MolToInchi(scaf1) == Chem.MolToInchi(scaf2)
+        # [15:23:11] WARNING: Omitted undefined stereo
+        # [15:23:11] WARNING: Omitted undefined stereo
+        # True
+        # >>> Chem.MolToSmiles(scaf1,kekuleSmiles=True) == Chem.MolToSmiles(scaf2,kekuleSmiles=True)
+        # True
+        # basically in ScaffoldGraph scaf1 and scaf2 were considered to be different and output different kekuleSmiles,
+        # even though when we reconstruct the scaffolds with these SMILES they are the same
+        kekule_smiles = Chem.MolToSmiles(
+            Chem.MolFromSmiles(kekule_smiles), canonical=True, kekuleSmiles=True
+        )
         return kekule_smiles
     except:
         # this is an extreme edge case, but certain SMILES output by ScaffoldGraph do not play nice with other functions in RDKit
@@ -125,6 +142,20 @@ class CustomHierS(sg.HierS):
     def get_non_kekule_scaffolds(self):
         """Return the set of scaffolds that couldn't be Kekulized."""
         return self.non_kekule_scaffolds
+
+    def _hierarchy_constructor(self, child):
+        parents = (p for p in self.fragmenter.fragment(child) if p)
+        # CHANGE: using kekule_canon_smiles as hash_func instead of canonical SMILES
+        # for sub-scaffolds
+        for parent in parents:
+            parent.hash_func = kekule_canon_smiles
+            if parent in self.nodes:
+                self.add_scaffold_edge(parent, child)
+            else:
+                self.add_scaffold_node(parent)
+                self.add_scaffold_edge(parent, child)
+                if parent.ring_systems.count > 1:
+                    self._hierarchy_constructor(parent)
 
 
 def parse_args(parser: argparse.ArgumentParser):
