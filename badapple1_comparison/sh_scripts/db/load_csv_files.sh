@@ -21,19 +21,20 @@ DATA_DIR=$5
 HIERS_SCRIPT="generate_scaffolds.py"
 
 # Step 1) Load scafs with scafids + scaf2scaf relationship
-# expects SCAF_TSV_FILE to have header: scaffold_id smiles  hierarchy   scaf2scaf (TSV-separated)
+# expects SCAF_TSV_FILE to have header: scaffold_id	canon_smiles	kekule_smiles	hierarchy	scaf2scaf (TSV-separated)
 # (output from ${HIERS_SCRIPT})
 SCAF_TSV_FILE="scafs.tsv"
 SCAF_TSV_PATH="$DATA_DIR/$SCAF_TSV_FILE"
 psql -h $DB_HOST -d $DB_NAME <<EOF
 CREATE TEMP TABLE temp_scaf (
     scaffold_id INTEGER PRIMARY KEY,
-    smiles VARCHAR(512) NOT NULL,
+    canon_smiles VARCHAR(512) NOT NULL UNIQUE,
+    kekule_smiles VARCHAR(512) NOT NULL UNIQUE,
     hierarchy INTEGER,
     scaf2scaf VARCHAR(2048)
 );
-\COPY temp_scaf (scaffold_id, smiles, hierarchy, scaf2scaf) FROM '$SCAF_TSV_PATH' WITH (FORMAT CSV, DELIMITER E'\t', HEADER true);
-INSERT INTO ${SCHEMA}.scaffold (id, scafsmi, scaftree) SELECT scaffold_id, smiles, scaf2scaf FROM temp_scaf;
+\COPY temp_scaf (scaffold_id, canon_smiles, kekule_smiles, hierarchy, scaf2scaf) FROM '$SCAF_TSV_PATH' WITH (FORMAT CSV, DELIMITER E'\t', HEADER true);
+INSERT INTO ${SCHEMA}.scaffold (id, scafsmi, kekule_scafsmi, scaftree) SELECT scaffold_id, canon_smiles, kekule_smiles, scaf2scaf FROM temp_scaf;
 DROP TABLE temp_scaf;
 EOF
 psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.scaffold IS 'Scaffold definitions from HierS, see ${HIERS_SCRIPT}. Input file is ${SCAF_TSV_PATH}'"

@@ -22,7 +22,8 @@ psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON DATABASE ${DB_NAME} IS '$COMMENT'"
 psql -h $DB_HOST -d $DB_NAME <<EOF
 CREATE TABLE IF NOT EXISTS $SCHEMA.scaffold (
 	id INTEGER PRIMARY KEY,
-	scafsmi VARCHAR(512) NOT NULL,
+	scafsmi VARCHAR(512) NOT NULL UNIQUE,
+	kekule_scafsmi VARCHAR(512) NOT NULL UNIQUE,
 	scaftree VARCHAR(2048),
 	ncpd_total INTEGER,
 	ncpd_tested INTEGER,
