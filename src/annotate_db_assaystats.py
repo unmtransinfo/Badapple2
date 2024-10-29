@@ -103,7 +103,7 @@ def AnnotateCompounds(
                 f"n_cpd: {n_cpd_total} ; elapsed time: {time.time() - t0} ({100.0 * n_cpd_total / cpd_rowcount:.1f}% done)",
             )
         row = cur.fetchone()
-        if n_cpd_total >= n_max:
+        if n_max > 0 and n_cpd_total >= n_max:
             break
     cur.close()
     db.close()
@@ -114,8 +114,18 @@ def AnnotateCompounds(
 def AnnotateCompound(
     cid, db, dbschema, dbschema_activity, assay_id_tag, assay_ids, no_write
 ):
-    """Annotate compound with assay statistics."""
+    """Annotate compound with assay statistics.
 
+    For this compound, loop over substances. For each substance, loop over assay outcomes.
+    Generate assay statistics. Update compound row.
+        sTotal  - substances containing scaffold
+        sTested - tested substances containing scaffold
+        sActive - active substances containing scaffold
+        aTested - assays involving substances containing scaffold
+        aActive - assays involving active substances containing scaffold
+        wTested - samples (wells) involving substances containing scaffold
+        wActive - active samples (wells) involving substances containing scaffold
+    """
     # Fetch all relevant data in one query
     sql = f"""
     SELECT s.sid, a.{assay_id_tag}, a.outcome
@@ -128,40 +138,75 @@ def AnnotateCompound(
     cur.execute(sql, (cid,))
 
     substances = {}
-    assays = set()
+    assays = {}  # Using dict instead of set to match original behavior
+    sTotal = 0
+    sTested = 0
+    sActive = 0
+    wTested = 0
+    wActive = 0
 
+    # Group results by substance
+    current_sid = None
     for sid, aid, outcome in cur.fetchall():
-        if sid not in substances:
-            substances[sid] = {"tested": False, "active": False, "assays": set()}
+        # Count new substance
+        if sid != current_sid:
+            sTotal += 1
+            current_sid = sid
+            substances[sid] = {"tested": False, "active": False, "results": []}
 
-        if aid is not None:
+        # Skip if no assay data
+        if aid is None:
+            continue
+
+        # Mark substance as tested
+        if not substances[sid]["tested"]:
             substances[sid]["tested"] = True
-            if not assay_ids or aid in assay_ids:
-                substances[sid]["assays"].add((aid, outcome))
-                if outcome in (2, 5):  # active or probe
-                    substances[sid]["active"] = True
-                    assays.add(aid)
+            sTested += 1
+
+        # Skip if assay not in custom selection
+        if assay_ids and aid not in assay_ids:
+            continue
+
+        # Count this well/sample
+        wTested += 1
+        substances[sid]["results"].append((aid, outcome))
+
+        if outcome in (2, 5):  # active or probe
+            wActive += 1
+            if not substances[sid]["active"]:
+                substances[sid]["active"] = True
+                sActive += 1
+            # Track active assay
+            if aid in assays:
+                assays[aid] = True
+            else:
+                assays[aid] = True
+        elif outcome in (1, 3):  # tested inactive
+            # Track tested but inactive assay
+            if aid not in assays:
+                assays[aid] = False
 
     cur.close()
 
-    # Calculate statistics
-    sTotal = len(substances)
-    sTested = sum(1 for s in substances.values() if s["tested"])
-    sActive = sum(1 for s in substances.values() if s["active"])
-    aTested = len({aid for s in substances.values() for aid, _ in s["assays"]})
-    aActive = len(assays)
-    wTested = sum(len(s["assays"]) for s in substances.values())
-    wActive = sum(
-        sum(1 for _, outcome in s["assays"] if outcome in (2, 5))
-        for s in substances.values()
-    )
+    # Calculate assay statistics
+    aTested = len(assays)
+    aActive = sum(1 for active in assays.values() if active)
 
     # Update compound row
+    ok_write = False
+    n_err = 0
+
     if not no_write:
         sql = f"""
         UPDATE {dbschema}.compound
-        SET nsub_total = %s, nsub_tested = %s, nsub_active = %s,
-            nass_tested = %s, nass_active = %s, nsam_tested = %s, nsam_active = %s
+        SET 
+            nsub_total = %s,
+            nsub_tested = %s,
+            nsub_active = %s,
+            nass_tested = %s,
+            nass_active = %s,
+            nsam_tested = %s,
+            nsam_active = %s
         WHERE cid = %s
         """
         try:
@@ -174,11 +219,7 @@ def AnnotateCompound(
             ok_write = True
         except Exception as e:
             logger.error(e)
-            ok_write = False
             n_err = 1
-    else:
-        ok_write = False
-        n_err = 0
 
     logger.debug(
         f"CID={cid}, sTotal={sTotal}, sTested={sTested}, sActive={sActive}, "
@@ -264,7 +305,7 @@ def AnnotateScaffolds(
                 )
             )
         row = cur.fetchone()
-        if n_scaf_total >= n_max:
+        if n_max > 0 and n_scaf_total >= n_max:
             break
     cur.close()
     db.close()
@@ -313,7 +354,7 @@ def AnnotateScaffold(
     # Fetch all relevant data in one query
     sql = f"""
     SELECT c.cid, c.nsub_total, c.nsub_tested, c.nsub_active, c.nass_tested, c.nass_active, c.nsam_tested, c.nsam_active,
-           s.sid, a.{assay_id_tag}, a.outcome
+           s2c.sid, a.{assay_id_tag}, a.outcome
     FROM {dbschema}.compound c
     JOIN {dbschema}.scaf2cpd sc ON sc.cid = c.cid
     JOIN {dbschema}.sub2cpd s2c ON s2c.cid = c.cid
@@ -326,6 +367,7 @@ def AnnotateScaffold(
 
     assays = set()
     compound_data = {}
+    nres_total = 0  # Count total results processed
 
     for row in cur.fetchall():
         (
@@ -344,64 +386,62 @@ def AnnotateScaffold(
 
         if cid not in compound_data:
             compound_data[cid] = {
-                "nsub_total": nsub_total,
-                "nsub_tested": nsub_tested,
-                "nsub_active": nsub_active,
-                "nass_tested": nass_tested,
-                "nass_active": nass_active,
-                "nsam_tested": nsam_tested,
-                "nsam_active": nsam_active,
+                "nsub_total": nsub_total or 0,
+                "nsub_tested": nsub_tested or 0,
+                "nsub_active": nsub_active or 0,
+                "nass_tested": nass_tested or 0,
+                "nass_active": nass_active or 0,
+                "nsam_tested": nsam_tested or 0,
+                "nsam_active": nsam_active or 0,
                 "assays": set(),
+                "is_tested": False,
+                "is_active": False,
             }
 
         if aid is not None and (not assay_ids or aid in assay_ids):
+            nres_total += 1
             compound_data[cid]["assays"].add((aid, outcome))
             if outcome in (2, 5):  # active or probe
                 assays.add(aid)
+                compound_data[cid]["is_active"] = True
+            if outcome in (
+                1,
+                2,
+                3,
+                5,
+            ):  # tested (inactive, active, inconclusive, probe)
+                compound_data[cid]["is_tested"] = True
 
     # Process the collected data
     cTotal = len(compound_data)
-    cTested = sum(1 for data in compound_data.values() if data["nass_tested"] > 0)
-    cActive = sum(1 for data in compound_data.values() if data["nass_active"] > 0)
-    sTotal = sum(data["nsub_total"] or 0 for data in compound_data.values())
-    sTested = sum(data["nsub_tested"] or 0 for data in compound_data.values())
-    sActive = sum(data["nsub_active"] or 0 for data in compound_data.values())
-    wTested = sum(data["nsam_tested"] or 0 for data in compound_data.values())
-    wActive = sum(data["nsam_active"] or 0 for data in compound_data.values())
+    cTested = sum(1 for data in compound_data.values() if data["is_tested"])
+    cActive = sum(1 for data in compound_data.values() if data["is_active"])
+    sTotal = sum(data["nsub_total"] for data in compound_data.values())
+    sTested = sum(data["nsub_tested"] for data in compound_data.values())
+    sActive = sum(data["nsub_active"] for data in compound_data.values())
+    wTested = sum(data["nsam_tested"] for data in compound_data.values())
+    wActive = sum(data["nsam_active"] for data in compound_data.values())
     aTested = len({aid for data in compound_data.values() for aid, _ in data["assays"]})
     aActive = len(assays)
 
     # update scaffold row ...
-    sql = """
-    UPDATE
-        {DBSCHEMA}.scaffold
+    sql = f"""
+    UPDATE {dbschema}.scaffold
     SET
-        ncpd_total = {NCPD_TOTAL},
-        ncpd_tested = {NCPD_TESTED},
-        ncpd_active = {NCPD_ACTIVE},
-        nsub_total = {NSUB_TOTAL},
-        nsub_tested = {NSUB_TESTED},
-        nsub_active = {NSUB_ACTIVE},
-        nass_tested = {NASS_TESTED},
-        nass_active = {NASS_ACTIVE},
-        nsam_tested = {NSAM_TESTED},
-        nsam_active = {NSAM_ACTIVE}
+        ncpd_total = {cTotal},
+        ncpd_tested = {cTested},
+        ncpd_active = {cActive},
+        nsub_total = {sTotal},
+        nsub_tested = {sTested},
+        nsub_active = {sActive},
+        nass_tested = {aTested},
+        nass_active = {aActive},
+        nsam_tested = {wTested},
+        nsam_active = {wActive}
     WHERE
-        id={SCAFID}
-    """.format(
-        DBSCHEMA=dbschema,
-        SCAFID=scaf_id,
-        NCPD_TOTAL=cTotal,
-        NCPD_TESTED=cTested,
-        NCPD_ACTIVE=cActive,
-        NSUB_TOTAL=sTotal,
-        NSUB_TESTED=sTested,
-        NSUB_ACTIVE=sActive,
-        NASS_TESTED=aTested,
-        NASS_ACTIVE=aActive,
-        NSAM_TESTED=wTested,
-        NSAM_ACTIVE=wActive,
-    )
+        id = {scaf_id}
+    """
+
     if not no_write:
         try:
             cur1 = db.cursor()
@@ -412,21 +452,7 @@ def AnnotateScaffold(
         except Exception as e:
             logger.error(e)
             n_err += 1
-    logger.debug(
-        "SCAFID={},cTotal={},cTested={},cActive={},sTotal={},sTested={},sActive={},aTested={},aActive={},wTested={},wActive={}".format(
-            scaf_id,
-            cTotal,
-            cTested,
-            cActive,
-            sTotal,
-            sTested,
-            sActive,
-            aTested,
-            aActive,
-            wTested,
-            wActive,
-        )
-    )
+
     return (
         nres_total,
         cTotal,
@@ -500,7 +526,7 @@ def parse_arguments():
         "--nmax",
         type=int,
         default=0,
-        help="Maximum number of records to process (default: %(default)s)",
+        help="Maximum number of records to process, if <=0 will process entire DB (default: %(default)s)",
     )
     parser.add_argument(
         "--nskip",
