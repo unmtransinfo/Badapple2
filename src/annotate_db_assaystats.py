@@ -322,130 +322,162 @@ def AnnotateScaffold(
     assay_ids,
     no_write,
 ):
-    """For this scaffold, loop over compounds.  For each compound, loop over assay outcomes.
-    Generate assay statistics.  Update scaffold row.
-        cTotal  - compounds containing scaffold
-        cTested - tested compounds containing scaffold
-        cActive - active compounds containing scaffold
-        sTotal  - substances containing scaffold
-        sTested - tested substances containing scaffold
-        sActive - active substances containing scaffold
-        aTested - assays involving compounds containing scaffold
-        aActive - assays involving active compounds containing scaffold
-        wTested - samples (wells) involving compounds containing scaffold
-        wActive - active samples (wells) involving compounds containing scaffold
+    """Annotate scaffold with assay statistics using aggregated SQL queries.
 
-    NOTE: This function presumes that the compound annotations have already been completed.
+    Parameters:
+    scaf_id (int): The ID of the scaffold to annotate
+    db (cursor): Database connection
+    dbschema (str): Name of the main database schema
+    dbschema_activity (str): Name of the activity database schema
+    assay_id_tag (str): The column name for the assay ID
+    assay_ids (set or None): Optional set of assay IDs to filter on
+    no_write (bool): If True, don't update the database
+
+    Returns:
+    Tuple[int, int, int, int, int, int, int, int, int, int, int, bool, int]:
+        nres_total, cTotal, cTested, cActive, sTotal, sTested, sActive,
+        aTested, aActive, wTested, wActive, ok_write, n_err
     """
-    cTotal = 0  # total compounds, this scaffold
-    cTested = 0  # compounds tested, this scaffold
-    cActive = 0  # compounds active, this scaffold
-    sTotal = 0  # total substances, this scaffold
-    sTested = 0  # substances tested, this scaffold
-    sActive = 0  # substances active, this scaffold
-    aTested = 0  # assays tested, this scaffold
-    aActive = 0  # assays active, this scaffold
-    wTested = 0  # wells (samples) tested, this scaffold
-    wActive = 0  # wells (samples) active, this scaffold
-    nres_total = 0  # total results (outcomes) processed, this scaffold
-    ok_write = False  # flag true if write row update ok
     n_err = 0
+    ok_write = False
 
-    # Fetch all relevant data in one query
+    # Prepare the assay IDs filter if provided
+    assay_filter = ""
+    if assay_ids:
+        assay_ids_str = ",".join(map(str, assay_ids))
+        assay_filter = f"AND a.{assay_id_tag} IN ({assay_ids_str})"
+
+    # SQL query to aggregate counts
     sql = f"""
-    SELECT c.cid, c.nsub_total, c.nsub_tested, c.nsub_active, c.nass_tested, c.nass_active, c.nsam_tested, c.nsam_active,
-           s2c.sid, a.{assay_id_tag}, a.outcome
-    FROM {dbschema}.compound c
-    JOIN {dbschema}.scaf2cpd sc ON sc.cid = c.cid
-    JOIN {dbschema}.sub2cpd s2c ON s2c.cid = c.cid
-    LEFT JOIN {dbschema_activity}.activity a ON a.sid = s2c.sid
-    WHERE sc.scafid = %s
+    WITH compound_data AS (
+        SELECT
+            c.cid,
+            c.nsub_total,
+            c.nsub_tested,
+            c.nsub_active,
+            c.nass_tested,
+            c.nass_active,
+            c.nsam_tested,
+            c.nsam_active
+        FROM {dbschema}.compound c
+        JOIN {dbschema}.scaf2cpd sc ON sc.cid = c.cid
+        WHERE sc.scafid = %s
+    ),
+    activity_data AS (
+        SELECT
+            c.cid,
+            a.{assay_id_tag} AS aid,
+            a.outcome
+        FROM compound_data c
+        JOIN {dbschema}.sub2cpd s2c ON s2c.cid = c.cid
+        LEFT JOIN {dbschema_activity}.activity a ON a.sid = s2c.sid
+        WHERE a.{assay_id_tag} IS NOT NULL {assay_filter}
+    ),
+    counts AS (
+        SELECT
+            COUNT(DISTINCT c.cid) AS cTotal,
+            SUM(c.nsub_total) AS sTotal,
+            SUM(c.nsub_tested) AS sTested,
+            SUM(c.nsub_active) AS sActive,
+            SUM(c.nsam_tested) AS wTested,
+            SUM(c.nsam_active) AS wActive
+        FROM compound_data c
+    ),
+    tested_compounds AS (
+        SELECT DISTINCT cid
+        FROM activity_data
+        WHERE outcome IN (1, 2, 3, 5)
+    ),
+    active_compounds AS (
+        SELECT DISTINCT cid
+        FROM activity_data
+        WHERE outcome IN (2, 5)
+    ),
+    tested_assays AS (
+        SELECT DISTINCT aid
+        FROM activity_data
+        WHERE outcome IN (1, 2, 3, 5)
+    ),
+    active_assays AS (
+        SELECT DISTINCT aid
+        FROM activity_data
+        WHERE outcome IN (2, 5)
+    ),
+    total_results AS (
+        SELECT COUNT(*) AS nres_total
+        FROM activity_data
+    )
+    SELECT
+        counts.cTotal,
+        counts.sTotal,
+        counts.sTested,
+        counts.sActive,
+        counts.wTested,
+        counts.wActive,
+        (SELECT COUNT(*) FROM tested_compounds) AS cTested,
+        (SELECT COUNT(*) FROM active_compounds) AS cActive,
+        (SELECT COUNT(*) FROM tested_assays) AS aTested,
+        (SELECT COUNT(*) FROM active_assays) AS aActive,
+        total_results.nres_total
+    FROM counts, total_results
     """
 
     cur = db.cursor()
     cur.execute(sql, (scaf_id,))
+    result = cur.fetchone()
+    cur.close()
 
-    assays = set()
-    compound_data = {}
-    nres_total = 0  # Count total results processed
+    (
+        cTotal,
+        sTotal,
+        sTested,
+        sActive,
+        wTested,
+        wActive,
+        cTested,
+        cActive,
+        aTested,
+        aActive,
+        nres_total,
+    ) = result
 
-    for row in cur.fetchall():
-        (
-            cid,
-            nsub_total,
-            nsub_tested,
-            nsub_active,
-            nass_tested,
-            nass_active,
-            nsam_tested,
-            nsam_active,
-            sid,
-            aid,
-            outcome,
-        ) = row
-
-        if cid not in compound_data:
-            compound_data[cid] = {
-                "nsub_total": nsub_total or 0,
-                "nsub_tested": nsub_tested or 0,
-                "nsub_active": nsub_active or 0,
-                "nass_tested": nass_tested or 0,
-                "nass_active": nass_active or 0,
-                "nsam_tested": nsam_tested or 0,
-                "nsam_active": nsam_active or 0,
-                "assays": set(),
-                "is_tested": False,
-                "is_active": False,
-            }
-
-        if aid is not None and (not assay_ids or aid in assay_ids):
-            nres_total += 1
-            compound_data[cid]["assays"].add((aid, outcome))
-            if outcome in (2, 5):  # active or probe
-                assays.add(aid)
-                compound_data[cid]["is_active"] = True
-            if outcome in (
-                1,
-                2,
-                3,
-                5,
-            ):  # tested (inactive, active, inconclusive, probe)
-                compound_data[cid]["is_tested"] = True
-
-    # Process the collected data
-    cTotal = len(compound_data)
-    cTested = sum(1 for data in compound_data.values() if data["is_tested"])
-    cActive = sum(1 for data in compound_data.values() if data["is_active"])
-    sTotal = sum(data["nsub_total"] for data in compound_data.values())
-    sTested = sum(data["nsub_tested"] for data in compound_data.values())
-    sActive = sum(data["nsub_active"] for data in compound_data.values())
-    wTested = sum(data["nsam_tested"] for data in compound_data.values())
-    wActive = sum(data["nsam_active"] for data in compound_data.values())
-    aTested = len({aid for data in compound_data.values() for aid, _ in data["assays"]})
-    aActive = len(assays)
-
-    # update scaffold row ...
-    sql = f"""
+    # Update scaffold row
+    update_sql = f"""
     UPDATE {dbschema}.scaffold
     SET
-        ncpd_total = {cTotal},
-        ncpd_tested = {cTested},
-        ncpd_active = {cActive},
-        nsub_total = {sTotal},
-        nsub_tested = {sTested},
-        nsub_active = {sActive},
-        nass_tested = {aTested},
-        nass_active = {aActive},
-        nsam_tested = {wTested},
-        nsam_active = {wActive}
+        ncpd_total = %s,
+        ncpd_tested = %s,
+        ncpd_active = %s,
+        nsub_total = %s,
+        nsub_tested = %s,
+        nsub_active = %s,
+        nass_tested = %s,
+        nass_active = %s,
+        nsam_tested = %s,
+        nsam_active = %s
     WHERE
-        id = {scaf_id}
+        id = %s
     """
 
     if not no_write:
         try:
             cur1 = db.cursor()
-            cur1.execute(sql)
+            cur1.execute(
+                update_sql,
+                (
+                    cTotal or 0,
+                    cTested or 0,
+                    cActive or 0,
+                    sTotal or 0,
+                    sTested or 0,
+                    sActive or 0,
+                    aTested or 0,
+                    aActive or 0,
+                    wTested or 0,
+                    wActive or 0,
+                    scaf_id,
+                ),
+            )
             db.commit()
             cur1.close()
             ok_write = True
@@ -454,17 +486,17 @@ def AnnotateScaffold(
             n_err += 1
 
     return (
-        nres_total,
-        cTotal,
-        cTested,
-        cActive,
-        sTotal,
-        sTested,
-        sActive,
-        aTested,
-        aActive,
-        wTested,
-        wActive,
+        nres_total or 0,
+        cTotal or 0,
+        cTested or 0,
+        cActive or 0,
+        sTotal or 0,
+        sTested or 0,
+        sActive or 0,
+        aTested or 0,
+        aActive or 0,
+        wTested or 0,
+        wActive or 0,
         ok_write,
         n_err,
     )
