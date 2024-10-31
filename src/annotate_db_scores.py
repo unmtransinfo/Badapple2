@@ -59,7 +59,7 @@ def compute_score(
         * 100.0
         * 1000.0
     )
-    pScore = round(pScore, 2)  # rounds to two decimal places
+    pScore = round(pScore, 0)  # round to whole number, matches badapple
     return pScore
 
 

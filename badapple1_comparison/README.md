@@ -69,10 +69,8 @@ Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will 
 * `o_mol2scaf`: TSV file mapping compound CID to scaffold ID(s)
 
 ### (4) Initializing the DB
-1. Install postgresql with the RDKit cartridge (requires sudo):
-`apt install postgresql-14-rdkit`
-2. Run `bash badapple1_comparison/sh_scripts/create_and_load_db.sh`
-3. (Optional) Drop the activity table to save storage: 
+1. Run `bash badapple1_comparison/sh_scripts/create_and_load_db.sh`
+2. (Optional) Drop the activity table to save storage: 
     
     `psql -d badapple_classic -c "DELETE FROM activity"`
 
