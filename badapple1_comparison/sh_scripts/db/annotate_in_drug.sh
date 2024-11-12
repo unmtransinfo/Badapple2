@@ -32,10 +32,9 @@ O_SCAF="${PREFIX}_scaf.tsv"
 NMOL=`cat $IFILE |wc -l`
 echo "NMOL($IFILE) = $NMOL"
 
-# don't provide name_column as it isn't unique
-python src/generate_scaffolds.py --log_fname $LOG_FILE --idelim ' ' \
+python src/generate_scaffolds.py --log_fname $LOG_FILE --idelim ',' \
     --i $IFILE --max_rings 5 --o_mol $O_MOL --o_scaf $O_SCAF \
-    --o_mol2scaf $O_MOL2SCAF --smiles_column 0 --name_column 0
+    --o_mol2scaf $O_MOL2SCAF --smiles_column 0 --name_column 1
 
 echo "Done generating scaffolds from ${IFILE}"
 

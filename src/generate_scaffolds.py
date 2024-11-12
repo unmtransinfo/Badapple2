@@ -89,7 +89,7 @@ def parse_args(parser: argparse.ArgumentParser):
         "--name_column",
         type=int,
         default=1,
-        help="(integer) column where molecule names are located (for input SMI file)",
+        help="(integer) column where molecule names are located (for input SMI file). Names should be unique!",
     )
     parser.add_argument(
         "--log_fname",
@@ -221,6 +221,10 @@ def write_outs(
 
 
 def main(args):
+    if args.smiles_column == args.name_column:
+        raise ValueError(
+            "Given smiles_column and name_column cannot be the same. This is because using SMILES as the name can cause issues when input molecules are self-scaffolds and/or scaffolds of another input molecule."
+        )
     args_dict = vars(args)
     logger.info(f"Running generate_scaffolds.py with the following args: {args_dict}")
     network = CustomHierS.from_smiles_file(
