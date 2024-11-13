@@ -1,10 +1,11 @@
 # About
 The steps outlined in this README provide information on how to download/recreate the classic version of Badapple (badapple_classic) using the updated code. There are also steps for comparing badapple_classic to the [original Badapple DB](https://github.com/unmtransinfo/Badapple/) (badapple). 
 
-badapple_classic differs from badapple in the following ways:
+badapple_classic differs from badapple in the following ways (note that not all of these are necessarily functional changes):
 * badapple_classic uses HierS scaffold definitions from [ScaffoldGraph](https://github.com/UCLCheminformatics/ScaffoldGraph) rather than the Java-based implementation of HierS from [UNM_BIOCOMP_HSCAF](https://github.com/unmtransinfo/unm_biocomp_hscaf).
-* badapple_classic uses a newer version of PostgreSQL with minor differences in median calculation (using `SELECT PERCENTILE_CONT(0.5)` instead of [create_median_function.sql](https://github.com/unmtransinfo/Badapple/blob/master/sql/create_median_function.sql)).
 * badapple_classic generates canonical SMILES using [RDKit](https://www.rdkit.org/), whereas badapple used [openbabel](http://openbabel.org/index.html).
+* badapple_classic counts ring systems using [RingSystemFinder](https://github.com/PatWalters/useful_rdkit_utils/blob/master/useful_rdkit_utils/ring_systems.py#L17) (RDKit-based) whereas badapple used [RawRingsystemCount](https://github.com/unmtransinfo/unm_biocomp_hscaf/blob/befd175da409b27374d005f6431a2df94e361d02/unm_biocomp_hscaf/src/main/java/edu/unm/health/biocomp/hscaf/hier_scaffolds_utils.java#L161) (Chemaxon-based).
+* badapple_classic uses a newer version of PostgreSQL with minor differences in median calculation (using `SELECT PERCENTILE_CONT(0.5)` instead of [create_median_function.sql](https://github.com/unmtransinfo/Badapple/blob/master/sql/create_median_function.sql)). 
 
 The steps for generating badapple_classic are different than badapple2 because badapple and badapple_classic use identical input files (each containing data with a date cutoff of 2017-08-14):
 * [pc_mlsmr_compounds.smi](https://unmtid-dbs.net/download/Badapple2/badapple_classic_files/pc_mlsmr_compounds.smi) - list of compounds with Isomeric SMILES and PubChem compound IDs (CIDs).

@@ -1,6 +1,6 @@
 inp="/media/jack/big_disk/data/badapple/badapple1_inputs/pc_mlsmr_compounds.smi"
 out_dir="/media/jack/big_disk/data/badapple/badapple1_inputs" # same as DATA_DIR
-max_rings=30
+max_rings=5
 o_scaf="$out_dir/scafs.tsv"
 o_mol="$out_dir/cpds.tsv"
 o_mol2scaf="$out_dir/scaf2cpd.tsv"
