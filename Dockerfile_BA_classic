@@ -72,7 +72,7 @@ RUN /etc/init.d/postgresql start && \
 	psql -p ${DB_PORT} -c "CREATE ROLE ${DB_USER} WITH LOGIN PASSWORD '${DB_PASSWORD}'" && \
 	createdb -p ${DB_PORT} -O postgres ${DB_NAME} && \
 	psql -p ${DB_PORT} -d ${DB_NAME} -c "CREATE EXTENSION rdkit" && \
-	pg_restore --clean -p ${DB_PORT} -O -x -v -d ${DB_NAME} /tmp/badapple_classic.pgdump && \
+	pg_restore -p ${DB_PORT} -O -x -v -d ${DB_NAME} /tmp/badapple_classic.pgdump && \
 	psql -p ${DB_PORT} -d ${DB_NAME} -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${DB_USER}" && \
 	psql -p ${DB_PORT} -d ${DB_NAME} -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO ${DB_USER}" && \
 	psql -p ${DB_PORT} -d ${DB_NAME} -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO ${DB_USER}" && \
