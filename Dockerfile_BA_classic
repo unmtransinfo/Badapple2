@@ -58,7 +58,7 @@ RUN echo "---Updated postgresql.conf to use correct port"
 
 
 # download pgdump file
-RUN wget -O --no-cache /tmp/badapple_classic.pgdump https://unmtid-dbs.net/download/Badapple2/badapple_classic.pgdump
+RUN wget --no-cache -O /tmp/badapple_classic.pgdump https://unmtid-dbs.net/download/Badapple2/badapple_classic.pgdump
 RUN echo "pgdump file stat:"
 RUN stat /tmp/badapple_classic.pgdump
 RUN echo "---Downloaded pgdump file"
