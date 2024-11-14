@@ -7,6 +7,7 @@ Helper utils to convert annotations and target JSON files to TSV for easier read
 
 import argparse
 import json
+from typing import Tuple
 
 import pandas as pd
 
@@ -79,6 +80,20 @@ def unpack_annotations_json_to_tsv(json_path: str, tsv_path: str):
     df.to_csv(tsv_path, sep="\t", index=False)
 
 
+def _get_target_type_and_id(item: dict) -> Tuple[str, str]:
+    if "protein_accession" in item:
+        return "Protein", item["protein_accession"]
+    elif "mol_id" in item:
+        id_info = item["mol_id"]
+        if "nucleotide_accession" in id_info:
+            return "Nucleotide", id_info["nucleotide_accession"]
+        elif "gene_id" in id_info:
+            return "Gene", id_info["gene_id"]
+        elif "other" in id_info and id_info["other"].startswith("Pathway"):
+            return "Pathway", id_info["other"]
+    raise ValueError(f"Unrecognized target type in item: {item}")
+
+
 def unpack_target_json_to_tsv(json_path: str, tsv_path: str):
     # Read JSON file
     with open(json_path, "r") as file:
@@ -97,13 +112,20 @@ def unpack_target_json_to_tsv(json_path: str, tsv_path: str):
             organism_taxname = (
                 item.get("organism", {}).get("org", {}).get("taxname", "")
             )
-            is_protein = "protein_accession" in item
-            protein_accession = item.get("protein_accession", "") if is_protein else ""
+            target_type, pubchem_id = _get_target_type_and_id(item)
+            is_protein = target_type == "Protein"
             uniprot_id = item.get("uniprot_id", "") if is_protein else ""
 
             # Append row to list
             rows.append(
-                [aid, name, organism_taxname, is_protein, protein_accession, uniprot_id]
+                [
+                    aid,
+                    name,
+                    organism_taxname,
+                    target_type,
+                    pubchem_id,
+                    uniprot_id,
+                ]
             )
 
     # Create DataFrame
@@ -112,10 +134,10 @@ def unpack_target_json_to_tsv(json_path: str, tsv_path: str):
         columns=[
             "AID",
             "Name",
-            "Organism TaxName",
-            "isProtein",
-            "Protein Accession",
-            "UniProt ID",
+            "OrganismTaxName",
+            "TargetType",
+            "PubChemID",
+            "UniProtID",
         ],
     )
 
