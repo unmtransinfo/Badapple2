@@ -89,7 +89,7 @@ def unpack_target_json_to_tsv(json_path: str, tsv_path: str):
 
     # Iterate through JSON data
     for aid, items in data.items():
-        if items is None:
+        if items is None or len(items) == 0:
             rows.append([aid, None, None, None, None, None])  # no target
             continue
         for item in items:
