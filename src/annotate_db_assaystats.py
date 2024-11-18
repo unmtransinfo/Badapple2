@@ -321,6 +321,7 @@ def AnnotateScaffold(
     assay_id_tag,
     assay_ids,
     no_write,
+    write_scaf2activeaid: bool = False,
 ):
     """Annotate scaffold with assay statistics using aggregated SQL queries.
 
@@ -418,13 +419,21 @@ def AnnotateScaffold(
         (SELECT COUNT(*) FROM active_compounds) AS cActive,
         (SELECT COUNT(*) FROM tested_assays) AS aTested,
         (SELECT COUNT(*) FROM active_assays) AS aActive,
-        total_results.nres_total
+        total_results.nres_total,
+        (SELECT * FROM active_assays) AS activeAssayIDs,
     FROM counts, total_results
     """
 
     cur = db.cursor()
     cur.execute(sql, (scaf_id,))
     result = cur.fetchone()
+    if write_scaf2activeaid:
+        insert_query = """
+        INSERT INTO scaf2activeaid (scafid, aid)
+        SELECT ?, aid
+        FROM active_assays
+        """
+        cur.execute(insert_query, (scaf_id,))
     cur.close()
 
     (
@@ -439,6 +448,7 @@ def AnnotateScaffold(
         aTested,
         aActive,
         nres_total,
+        activeAssayIDs,
     ) = result
 
     # Update scaffold row
@@ -481,6 +491,18 @@ def AnnotateScaffold(
             db.commit()
             cur1.close()
             ok_write = True
+        except Exception as e:
+            logger.error(e)
+            n_err += 1
+
+    if ok_write and write_scaf2activeaid:
+        try:
+            cur1 = db.cursor()
+            insert_query = "INSERT INTO scaf2activeaid (scafid, aid) VALUES (?, ?)"
+            data = [(scaf_id, aid) for aid in activeAssayIDs]
+            cur1.executemany(insert_query, data)
+            db.commit()
+            cur1.close()
         except Exception as e:
             logger.error(e)
             n_err += 1
