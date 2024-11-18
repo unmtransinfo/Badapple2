@@ -239,6 +239,7 @@ def AnnotateScaffolds(
     no_write,
     n_max=0,
     n_skip=0,
+    write_scaf2activeaid=False,
 ):
     """Loop over scaffolds.  For each scaffold call AnnotateScaffold().
     NOTE: This function presumes that the compound annotations have already been accomplished
@@ -289,6 +290,7 @@ def AnnotateScaffolds(
             assay_id_tag,
             assay_ids,
             no_write,
+            write_scaf2activeaid,
         )
         n_cpd_total += cTotal
         n_sub_total += sTotal
@@ -333,6 +335,7 @@ def AnnotateScaffold(
     assay_id_tag (str): The column name for the assay ID
     assay_ids (set or None): Optional set of assay IDs to filter on
     no_write (bool): If True, don't update the database
+    write_scaf2activeaid (bool): If True and not(no_write), write updates to the scaf2activeaid table
 
     Returns:
     Tuple[int, int, int, int, int, int, int, int, int, int, int, bool, int]:
@@ -427,13 +430,6 @@ def AnnotateScaffold(
     cur = db.cursor()
     cur.execute(sql, (scaf_id,))
     result = cur.fetchone()
-    if write_scaf2activeaid:
-        insert_query = """
-        INSERT INTO scaf2activeaid (scafid, aid)
-        SELECT ?, aid
-        FROM active_assays
-        """
-        cur.execute(insert_query, (scaf_id,))
     cur.close()
 
     (
@@ -601,6 +597,11 @@ def parse_arguments():
         help="Disable database writes (updates will be skipped)",
     )
     parser.add_argument(
+        "--write_scafid2activeaid",
+        action="store_true",
+        help="Write to the scaf2activeaid table (Badapple2+ versions of DB)",
+    )
+    parser.add_argument(
         "--log_fname",
         help="File to save logs to. If not given will log to stdout.",
         default=None,
@@ -655,6 +656,7 @@ def main(args):
                 args.no_write,
                 args.nmax,
                 args.nskip,
+                args.write_scafid2activeaid,
             )
         )
 
