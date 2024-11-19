@@ -6,7 +6,15 @@ File-related utilities shared between multiple scripts.
 """
 
 import csv
+import json
 import sys
+
+
+def load_json_file(json_file: str):
+    data = {}
+    with open(json_file, "r") as f:
+        data = json.load(f)
+    return data
 
 
 def get_csv_writer(file_path: str, delimiter: str):
