@@ -71,7 +71,7 @@ UNIPROT_REGEX = r"[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]
 
 
 def is_valid_uniprot_id(uniprot_candidate: str):
-    # see https://www.uniprot.org/help/accession_number
+    # see https://www.uniprot.org/help/accession_numbers
     return re.match(UNIPROT_REGEX, uniprot_candidate)
 
 
@@ -137,6 +137,7 @@ def get_target_summary(target_info: dict):
     target_type, target_id = get_target_type_and_id(target_info)
     summary["TargetType"] = target_type
     summary["PubChemID"] = target_id
+    filled_summary = False
 
     # if target type is gene or protein can use PubChem API to fill in name + taxonomy info
     # otherwise have to rely on what's present in target_info
@@ -154,9 +155,10 @@ def get_target_summary(target_info: dict):
             summary["Name"] = data_summary["Name"]
             summary["Taxonomy"] = data_summary["Taxonomy"]
             summary["TaxonomyID"] = data_summary["TaxonomyID"]
+            filled_summary = True
         else:
             print(f"Failed to fetch summary for gene/protein: {target_id}")
-    else:
+    if not (filled_summary):
         # use information present in existing dict to try and fill in information
         fill_summary(summary, target_info)
     return summary
