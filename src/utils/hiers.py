@@ -67,6 +67,7 @@ class CustomHierS(sg.HierS):
     This is a slightly modified version of the original HierS algorithm from ScaffoldGraph. it uses the following changes:
     1) Includes molecules with no top-level scaffold in the graph.
     2) Supports multiple identifier types, rather than only canonical aromatic SMILES
+    3) Counts number of ring systems rather than number of rings when determining filter
     """
 
     def __init__(self, *args, logger=None, identifier_type="canon_smiles", **kwargs):
