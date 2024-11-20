@@ -13,7 +13,7 @@ from typing import Tuple
 import pandas as pd
 from tqdm import tqdm
 
-from utils.target_utils import strip_version
+from utils.target_utils import TargetType, strip_version
 
 
 def are_duplicates(row1, row2) -> bool:
@@ -21,9 +21,9 @@ def are_duplicates(row1, row2) -> bool:
     type_1, type_2 = row1["TargetType"], row2["TargetType"]
     if pd.isna(type_1) or pd.isna(type_2) or type_1 != type_2:
         return False
-    elif type_1 in ["Protein", "Gene", "Nucleotide", "Pathway"]:
+    elif type_1 in TargetType:
         ncbi_1, ncbi_2 = row1["NCBI_ID"], row2["NCBI_ID"]
-        if type_1 == "Protein":
+        if type_1 == TargetType.PROTEIN.value:
             uni_1, uni_2 = row1["UniProtID"], row2["UniProtID"]
             if not (pd.isna(uni_1) or pd.isna(uni_2)) and uni_1 == uni_2:
                 return True

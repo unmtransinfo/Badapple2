@@ -19,6 +19,8 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 
+from utils.target_utils import TargetType
+
 
 def fetch_target_summary(target_row: dict):
     # if target type is gene or protein can use PubChem API to fill in name + taxonomy info
@@ -26,9 +28,9 @@ def fetch_target_summary(target_row: dict):
     url = None
     target_id = target_row["NCBI_ID"]
     target_type = target_row["TargetType"]
-    if target_type not in ["Protein", "Gene"]:
+    if target_type not in [TargetType.PROTEIN.value, TargetType.GENE.value]:
         return None
-    elif target_type == "Protein":
+    elif target_type == TargetType.PROTEIN.value:
         if not (pd.isna(target_row["UniProtID"])):
             # prefer UniProtID over NCBI_ID
             target_id = target_row["UniProtID"]

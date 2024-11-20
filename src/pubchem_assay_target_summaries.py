@@ -17,7 +17,7 @@ import requests
 from tqdm import tqdm
 
 from utils.file_utils import read_aid_file
-from utils.target_utils import is_valid_uniprot_id, strip_version
+from utils.target_utils import TargetType, is_valid_uniprot_id, strip_version
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -46,13 +46,13 @@ def get_target_type_and_id(item: dict) -> Tuple[str, str]:
     if "mol_id" in item:
         id_info = item["mol_id"]
         if "protein_accession" in id_info:
-            return "Protein", id_info["protein_accession"]
+            return TargetType.PROTEIN.value, id_info["protein_accession"]
         if "nucleotide_accession" in id_info:
-            return "Nucleotide", id_info["nucleotide_accession"]
+            return TargetType.NUCLEOTIDE.value, id_info["nucleotide_accession"]
         elif "gene_id" in id_info:
-            return "Gene", id_info["gene_id"]
+            return TargetType.GENE.value, id_info["gene_id"]
         elif "other" in id_info and id_info["other"].startswith("Pathway"):
-            return "Pathway", id_info["other"]
+            return TargetType.PATHWAY.value, id_info["other"]
         raise ValueError(f"Unrecognized target type in item: {item}")
     return None, None
 
@@ -123,12 +123,6 @@ def get_target_summary(target_info: dict):
     return summary
 
 
-def has_protein_accession(target_details: dict):
-    return (
-        "mol_id" in target_details and "protein_accession" in target_details["mol_id"]
-    )
-
-
 def main(args):
     if not (args.out_json_file.endswith(".json")):
         raise ValueError(
@@ -145,7 +139,10 @@ def main(args):
         if target_infos is not None:
             for target_info in target_infos:
                 target_summary = get_target_summary(target_info)
-                if target_summary["TargetType"] == "Protein" and args.fetch_uniprot_ids:
+                if (
+                    target_summary["TargetType"] == TargetType.PROTEIN.value
+                    and args.fetch_uniprot_ids
+                ):
                     target_summary["UniProtID"] = get_uniprot_id(
                         target_summary["NCBI_ID"]
                     )

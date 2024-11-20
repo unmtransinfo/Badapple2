@@ -12,6 +12,8 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 
+from utils.target_utils import TargetType
+
 
 def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
@@ -64,7 +66,7 @@ def main(args):
     families = []
     data_sources = []
     for _, row in tqdm(df.iterrows(), "Getting protein families", total=len(df)):
-        if row["TargetType"] == "Protein" and pd.notna(row["UniProtID"]):
+        if row["TargetType"] == TargetType.PROTEIN.value and pd.notna(row["UniProtID"]):
             family, data_source = get_protein_family(row["UniProtID"])
             families.append(family)
             data_sources.append(data_source)
