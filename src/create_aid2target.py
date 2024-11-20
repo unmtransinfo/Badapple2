@@ -2,8 +2,8 @@
 @author Jack Ringer
 Date: 11/15/2024
 Description:
-Script which generates the TSVs used to populate the "target" and "aid2target"
-tables in the badapple2 DB. Uses output of gather_protein_families.py
+Script which generates the TSVs used to populate the "aid2target". Will also generate a targets table without duplicates.
+table in the badapple2 DB. Uses output of json_to_tsv.py
 Will assign target_id to each unique target in input (requires combining duplicates). 
 """
 
@@ -14,6 +14,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from utils.custom_logging import get_and_set_logger
+from utils.target_utils import strip_version
 
 
 def are_duplicates(row1, row2) -> bool:
@@ -22,28 +23,16 @@ def are_duplicates(row1, row2) -> bool:
     if pd.isna(type_1) or pd.isna(type_2) or type_1 != type_2:
         return False
     elif type_1 in ["Protein", "Gene", "Nucleotide", "Pathway"]:
-        pid_1, pid_2 = row1["NCBI_ID"], row2["NCBI_ID"]
-        assert not (pd.isna(pid_1)), f"NaN NCBI_ID in row: {row1}"
-        assert not (pd.isna(pid_2)), f"NaN NCBI_ID in row: {row2}"
+        ncbi_1 = strip_version(row1["NCBI_ID"])
+        ncbi_2 = strip_version(row2["NCBI_ID"])
+        assert not (pd.isna(ncbi_1)), f"NaN NCBI_ID in row: {row1}"
+        assert not (pd.isna(ncbi_2)), f"NaN NCBI_ID in row: {row2}"
         if type_1 == "Protein":
             uni_1, uni_2 = row1["UniProtID"], row2["UniProtID"]
-            if pd.isna(uni_1) and pd.isna(uni_2):
-                return pid_1 == pid_2
-            elif (pid_1 == pid_2) and (uni_1 == uni_2):
+            if not (pd.isna(uni_1) or pd.isna(uni_2)) and uni_1 == uni_2:
                 return True
-            elif (pid_1 == uni_2) or (uni_1 == pid_2):
-                # NCBI_ID can be UniProtID
-                return True
-            elif (pid_1 != pid_2) and (uni_1 != uni_2):
-                return False
-            # generally the NCBI_ID can be different even though UniProtID is same for these reasons:
-            # 1) The two proteins are isoforms
-            # 2) The two proteins come from different databases/versions
-            # being conservative and considering both cases above to be unique targets (row!=row2)...
-            logger.info(
-                f"Unusual pattern, falling back on NCBI_ID comparison alone for the following two rows: \n{row1}\n{row2}"
-            )
-        return pid_1 == pid_2
+            # fall back on NCBI_ID comparison if either uniprot id null
+        return ncbi_1 == ncbi_2
     raise ValueError(f"Unrecognized target type in row: {row1}")
 
 
@@ -101,12 +90,12 @@ def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--inp_tsv",
         type=str,
-        help="Path to input targets TSV file (output of gather_protein_families.py).",
+        help="Path to input targets TSV file (output of json_to_tsv.py).",
     )
     parser.add_argument(
-        "--target_out_path",
+        "--unique_target_path",
         type=str,
-        help="Path to output TSV file for target table",
+        help="Path to output TSV file for targets TSV without duplicates",
     )
     parser.add_argument(
         "--aid2target_out_path",
