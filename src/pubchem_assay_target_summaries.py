@@ -114,35 +114,12 @@ def fill_summary(summary: dict, target_info: dict):
 
 
 def get_target_summary(target_info: dict):
-    url = None
     summary = {}
     target_type, target_id = get_target_type_and_id(target_info)
     summary["TargetType"] = target_type
     summary["NCBI_ID"] = target_id
-    filled_summary = False
-
-    # if target type is gene or protein can use PubChem API to fill in name + taxonomy info
-    # otherwise have to rely on what's present in target_info
-    if target_type == "Protein":
-        pure_accession = strip_version(target_id)
-        url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/protein/accession/{pure_accession}/summary/JSON"
-    elif target_type == "Gene":
-        url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/gene/geneid/{target_id}/summary/JSON"
-    if url is not None:
-        # use PubChemAPI to get information (more consistent than raw data from assays)
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = json.loads(response.text)
-            data_summary = data[f"{target_type}Summaries"][f"{target_type}Summary"][0]
-            summary["Name"] = data_summary["Name"]
-            summary["Taxonomy"] = data_summary["Taxonomy"]
-            summary["TaxonomyID"] = data_summary["TaxonomyID"]
-            filled_summary = True
-        else:
-            print(f"Failed to fetch summary for gene/protein: {target_id}")
-    if not (filled_summary):
-        # use information present in existing dict to try and fill in information
-        fill_summary(summary, target_info)
+    # use information present in existing dict to try and fill in information
+    fill_summary(summary, target_info)
     return summary
 
 

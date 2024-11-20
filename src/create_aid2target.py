@@ -13,7 +13,6 @@ from typing import Tuple
 import pandas as pd
 from tqdm import tqdm
 
-from utils.custom_logging import get_and_set_logger
 from utils.target_utils import strip_version
 
 
@@ -23,10 +22,7 @@ def are_duplicates(row1, row2) -> bool:
     if pd.isna(type_1) or pd.isna(type_2) or type_1 != type_2:
         return False
     elif type_1 in ["Protein", "Gene", "Nucleotide", "Pathway"]:
-        ncbi_1 = strip_version(row1["NCBI_ID"])
-        ncbi_2 = strip_version(row2["NCBI_ID"])
-        assert not (pd.isna(ncbi_1)), f"NaN NCBI_ID in row: {row1}"
-        assert not (pd.isna(ncbi_2)), f"NaN NCBI_ID in row: {row2}"
+        ncbi_1, ncbi_2 = row1["NCBI_ID"], row2["NCBI_ID"]
         if type_1 == "Protein":
             uni_1, uni_2 = row1["UniProtID"], row2["UniProtID"]
             if not (pd.isna(uni_1) or pd.isna(uni_2)) and uni_1 == uni_2:
@@ -50,20 +46,6 @@ def get_target_tables(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
             if j not in indices_to_drop and are_duplicates(df.iloc[i], df.iloc[j]):
                 indices_to_drop.add(j)
                 dropped_to_first[j] = i
-                # by default use first row - will try to fill in other info if possible
-                if pd.isna(df.at[i, "Name"]) and not (pd.isna(df.at[j, "Name"])):
-                    df.at[i, "Name"] = df.at[j, "Name"]
-                    logger.info(
-                        f"Set 'Name' from row 1 to 'Name' from row 2 for the following two rows:\n{df.iloc[i]}\n{df.iloc[j]}"
-                    )
-                if pd.isna(df.at[i, "Taxonomy"]) and not (
-                    pd.isna(df.at[j, "Taxonomy"])
-                ):
-                    df.at[i, "Taxonomy"] = df.at[j, "Taxonomy"]
-                    df.at[i, "TaxonomyID"] = df.at[j, "TaxonomyID"]
-                    logger.info(
-                        f"Set 'Taxonomy' from row 1 to the 'Taxonomy' from row 2 for the following two rows:\n{df.iloc[i]}\n{df.iloc[j]}"
-                    )
 
     target_df = df.drop(index=indices_to_drop)
     target_df.drop("AID", axis=1, inplace=True)
@@ -93,7 +75,7 @@ def parse_args(parser: argparse.ArgumentParser):
         help="Path to input targets TSV file (output of json_to_tsv.py).",
     )
     parser.add_argument(
-        "--unique_target_path",
+        "--unique_target_out_path",
         type=str,
         help="Path to output TSV file for targets TSV without duplicates",
     )
@@ -101,11 +83,6 @@ def parse_args(parser: argparse.ArgumentParser):
         "--aid2target_out_path",
         type=str,
         help="Path to output TSV file for aid2target table",
-    )
-    parser.add_argument(
-        "--log_fname",
-        help="File to save logs to. If not given will log to stdout.",
-        default=None,
     )
     args = parser.parse_args()
     return args
@@ -117,8 +94,12 @@ def main(args):
         subset=["NCBI_ID"], inplace=True
     )  # if NCBI_ID is NaN then target was not specified
     input_df.reset_index(inplace=True, drop=True)
-    target_df, aid2target_df = get_target_tables(input_df)
-    target_df.to_csv(args.target_out_path, sep="\t", index=False)
+    # remove versioning information, not useful for our case
+    input_df["NCBI_ID"] = input_df["NCBI_ID"].apply(strip_version)
+
+    # merge duplicates and get aid2target table
+    unique_target_df, aid2target_df = get_target_tables(input_df)
+    unique_target_df.to_csv(args.unique_target_out_path, sep="\t", index=False)
     aid2target_df.to_csv(args.aid2target_out_path, sep="\t", index=False)
 
 
@@ -127,5 +108,4 @@ if __name__ == "__main__":
         description="Combine duplicate target entries from input TSV into single row, output result to TSV file."
     )
     args = parse_args(parser)
-    logger = get_and_set_logger(args.log_fname)
     main(args)
