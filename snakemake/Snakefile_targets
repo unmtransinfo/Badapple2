@@ -1,0 +1,38 @@
+"""
+@author Jack Ringer
+Date: 11/20/2024
+Description:
+Rule definitions for Snakemake workflow to create "aid2target" and
+"target" table.
+See: https://snakemake.readthedocs.io/en/stable/ for more info on Snakemake
+"""
+
+import os
+import yaml
+configfile: "config.yaml"
+
+
+for key in config.keys():
+    if key.startswith("ASSAY"):
+        config[key] = os.path.join(config["ASSAY_DATA_DIR"], config[key])
+
+
+rule all:
+    input:
+        config["ASSAY_TARGET_SUMMARIES_JSON"]
+
+
+rule pubchem_assay_target_summaries:
+    input:
+        aid_file=config["ASSAY_ID_FILE"]
+    output:
+        out_json_file=config["ASSAY_TARGET_SUMMARIES_JSON"]
+    log:
+        "logs/pubchem_assay_target_summaries/all.log"
+    benchmark:
+        "benchmark/pubchem_assay_target_summaries/all.tsv"
+    shell:
+        "python3 ../src/pubchem_assay_target_summaries.py "
+        "--aid_file {input.aid_file} "
+        "--out_json_file {output.out_json_file} "
+        "--fetch_uniprot_ids"
