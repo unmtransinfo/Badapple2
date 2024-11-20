@@ -255,7 +255,9 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Scaffolds compare", epilog="")
+    parser = argparse.ArgumentParser(
+        description="Generate scaffolds using the HierS algorithm", epilog=""
+    )
     args = parse_args(parser)
     logger = get_and_set_logger(args.log_fname)
     main(args)
