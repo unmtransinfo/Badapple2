@@ -109,7 +109,7 @@ def unpack_target_json_to_tsv(json_path: str, tsv_path: str):
         for item in items:
             name = item["Name"]
             target_type = item["TargetType"]
-            pubchem_id = item["PubChemID"]
+            pubchem_id = item["NCBI_ID"]
             organism_taxonomy = item["Taxonomy"]
             taxonomy_id = item["TaxonomyID"]
             if "(" not in organism_taxonomy:
@@ -142,7 +142,7 @@ def unpack_target_json_to_tsv(json_path: str, tsv_path: str):
             "Taxonomy",
             "TaxonomyID",
             "TargetType",
-            "PubChemID",
+            "NCBI_ID",
             "UniProtID",
         ],
     )

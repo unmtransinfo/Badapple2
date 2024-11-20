@@ -136,7 +136,7 @@ def get_target_summary(target_info: dict):
     summary = {}
     target_type, target_id = get_target_type_and_id(target_info)
     summary["TargetType"] = target_type
-    summary["PubChemID"] = target_id
+    summary["NCBI_ID"] = target_id
     filled_summary = False
 
     # if target type is gene or protein can use PubChem API to fill in name + taxonomy info
@@ -188,7 +188,7 @@ def main(args):
                 target_summary = get_target_summary(target_info)
                 if target_summary["TargetType"] == "Protein" and args.fetch_uniprot_ids:
                     target_summary["UniProtID"] = get_uniprot_id(
-                        target_summary["PubChemID"]
+                        target_summary["NCBI_ID"]
                     )
                 target_summaries.append(target_summary)
         aid2target[aid] = target_summaries

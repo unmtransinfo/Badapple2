@@ -22,9 +22,9 @@ def are_duplicates(row1, row2) -> bool:
     if pd.isna(type_1) or pd.isna(type_2) or type_1 != type_2:
         return False
     elif type_1 in ["Protein", "Gene", "Nucleotide", "Pathway"]:
-        pid_1, pid_2 = row1["PubChemID"], row2["PubChemID"]
-        assert not (pd.isna(pid_1)), f"NaN PubChemID in row: {row1}"
-        assert not (pd.isna(pid_2)), f"NaN PubChemID in row: {row2}"
+        pid_1, pid_2 = row1["NCBI_ID"], row2["NCBI_ID"]
+        assert not (pd.isna(pid_1)), f"NaN NCBI_ID in row: {row1}"
+        assert not (pd.isna(pid_2)), f"NaN NCBI_ID in row: {row2}"
         if type_1 == "Protein":
             uni_1, uni_2 = row1["UniProtID"], row2["UniProtID"]
             if pd.isna(uni_1) and pd.isna(uni_2):
@@ -32,16 +32,16 @@ def are_duplicates(row1, row2) -> bool:
             elif (pid_1 == pid_2) and (uni_1 == uni_2):
                 return True
             elif (pid_1 == uni_2) or (uni_1 == pid_2):
-                # PubChemID can be UniProtID
+                # NCBI_ID can be UniProtID
                 return True
             elif (pid_1 != pid_2) and (uni_1 != uni_2):
                 return False
-            # generally the PubChemID can be different even though UniProtID is same for these reasons:
+            # generally the NCBI_ID can be different even though UniProtID is same for these reasons:
             # 1) The two proteins are isoforms
             # 2) The two proteins come from different databases/versions
             # being conservative and considering both cases above to be unique targets (row!=row2)...
             logger.info(
-                f"Unusual pattern, falling back on PubChemID comparison alone for the following two rows: \n{row1}\n{row2}"
+                f"Unusual pattern, falling back on NCBI_ID comparison alone for the following two rows: \n{row1}\n{row2}"
             )
         return pid_1 == pid_2
     raise ValueError(f"Unrecognized target type in row: {row1}")
@@ -67,12 +67,13 @@ def get_target_tables(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
                     logger.info(
                         f"Set 'Name' from row 1 to 'Name' from row 2 for the following two rows:\n{df.iloc[i]}\n{df.iloc[j]}"
                     )
-                if pd.isna(df.at[i, "OrganismTaxName"]) and not (
-                    pd.isna(df.at[j, "OrganismTaxName"])
+                if pd.isna(df.at[i, "Taxonomy"]) and not (
+                    pd.isna(df.at[j, "Taxonomy"])
                 ):
-                    df.at[i, "OrganismTaxName"] = df.at[j, "OrganismTaxName"]
+                    df.at[i, "Taxonomy"] = df.at[j, "Taxonomy"]
+                    df.at[i, "TaxonomyID"] = df.at[j, "TaxonomyID"]
                     logger.info(
-                        f"Set 'OrganismTaxName' from row 1 to the 'OrganismTaxName' from row 2 for the following two rows:\n{df.iloc[i]}\n{df.iloc[j]}"
+                        f"Set 'Taxonomy' from row 1 to the 'Taxonomy' from row 2 for the following two rows:\n{df.iloc[i]}\n{df.iloc[j]}"
                     )
 
     target_df = df.drop(index=indices_to_drop)
@@ -80,7 +81,7 @@ def get_target_tables(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     target_df["TargetID"] = list(range(1, len(target_df) + 1))
 
     # now that duplicates combined can assign id map between AID and targets
-    # TargetID is unique to badapple2 DB (can't use PubChemID because depositor info is inconsistent, e.g. some use UniProtID others use NIH accession etc)
+    # TargetID is unique to badapple2 DB (can't use NCBI_ID because depositor info is inconsistent, e.g. some use UniProtID others use NIH accession etc)
     aid2target = []
     for i in tqdm(range(len(df)), "Creating aid2target table"):
         aid = df.at[i, "AID"]
@@ -124,8 +125,8 @@ def parse_args(parser: argparse.ArgumentParser):
 def main(args):
     input_df = pd.read_csv(args.inp_tsv, sep="\t")
     input_df.dropna(
-        subset=["PubChemID"], inplace=True
-    )  # if PubChemID is NaN then target was not specified
+        subset=["NCBI_ID"], inplace=True
+    )  # if NCBI_ID is NaN then target was not specified
     input_df.reset_index(inplace=True, drop=True)
     target_df, aid2target_df = get_target_tables(input_df)
     target_df.to_csv(args.target_out_path, sep="\t", index=False)
