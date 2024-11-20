@@ -6,9 +6,17 @@ File with various utilities related to processing drug targets (proteins, genes,
 """
 
 import re
+from enum import Enum
 
 # see https://www.uniprot.org/help/accession_numbers
 UNIPROT_REGEX = r"[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}"
+
+
+class TargetType(Enum):
+    PROTEIN = "Protein"
+    GENE = "Gene"
+    NUCLEOTIDE = "Nucleotide"
+    PATHWAY = "Pathway"
 
 
 def strip_version(protein_accession: str):
