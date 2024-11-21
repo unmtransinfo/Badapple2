@@ -31,7 +31,7 @@ AID2DESCRIPTORS_TSV: "aid2descriptors.tsv"
 ### ACTIVITY DATA (processed activity info from assay data)
 ACTIVITY_TSV: "activity.tsv"
 SUB2CPD_TSV: "sid2cid.tsv" # maps substance id (sid)<->compound id (cid)
-BIOACTIVITY_COMPOUND_SET: "cpds_set.tsv" # set of compounds from the assays
+BIOACTIVITY_COMPOUND_SET_TSV: "cpds_set.tsv" # set of compounds from the assays
 
 
 ### SCAFFOLD DATA (scaffold-compound relationships for PubChem)

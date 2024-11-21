@@ -27,29 +27,14 @@ def update_config_paths(config: dict):
     )
     config["MIRROR_PUBCHEM_DONE_FILE"] = "logs/mirror_pubchem_records/job_done.txt"
 
-    # for misc assay data
-    for key in list(config.keys()):
-        if key.startswith("ASSAY") and key != "ASSAY_DATA_DIR":
-            config[key + "_PATH"] = os.path.join(config["ASSAY_DATA_DIR"], config[key])
-
     # for assay bioactivity data
     config["PUBCHEM_ASSAY_RECORDS_DIR"] = os.path.join(
         config["LOCAL_PUBCHEM_DIRECTORY"], "Bioassay", "CSV", "Data"
     )
-    config["ACTIVITY_TSV_PATH"] = os.path.join(
-        config["BASE_DATA_DIR"], config["ACTIVITY_TSV"]
-    )
-    config["SUB2CPD_TSV_PATH"] = os.path.join(
-        config["BASE_DATA_DIR"], config["SUB2CPD_TSV"]
-    )
-    config["BIOACTIVITY_COMPOUND_SET_PATH"] = os.path.join(
-        config["BASE_DATA_DIR"], config["BIOACTIVITY_COMPOUND_SET"]
-    )
 
-    # for targets
-    config["AID2TARGET_TSV_PATH"] = os.path.join(
-        config["BASE_DATA_DIR"], config["AID2TARGET_TSV"]
-    )
-    config["TARGET_TSV_PATH"] = os.path.join(
-        config["BASE_DATA_DIR"], config["TARGET_TSV"]
-    )
+    # save misc assay data to assay dir, db tables to base dir
+    for key in list(config.keys()):
+        if key.startswith("ASSAY") and key != "ASSAY_DATA_DIR":
+            config[key + "_PATH"] = os.path.join(config["ASSAY_DATA_DIR"], config[key])
+        elif key.endswith("TSV"):
+            config[key + "_PATH"] = os.path.join(config["BASE_DATA_DIR"], config[key])

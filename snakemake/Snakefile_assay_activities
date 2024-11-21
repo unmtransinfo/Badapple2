@@ -15,7 +15,7 @@ update_config_paths(config)
 rule all:
     input:
         o_assaystats=config["ACTIVITY_TSV_PATH"],
-        o_compound=config["BIOACTIVITY_COMPOUND_SET_PATH"],
+        o_compound=config["BIOACTIVITY_COMPOUND_SET_TSV_PATH"],
         o_sid2cid=config["SUB2CPD_TSV_PATH"]
 
 
@@ -26,7 +26,7 @@ rule get_pubchem_assay_activities:
         aid_file=config["ASSAY_ID_FILE_PATH"]
     output:
         o_assaystats=config["ACTIVITY_TSV_PATH"],
-        o_compound=config["BIOACTIVITY_COMPOUND_SET_PATH"],
+        o_compound=config["BIOACTIVITY_COMPOUND_SET_TSV_PATH"],
         o_sid2cid=config["SUB2CPD_TSV_PATH"]
     log:
         "logs/get_pubchem_assay_activities/all.log"
