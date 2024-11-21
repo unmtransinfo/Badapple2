@@ -1,0 +1,51 @@
+"""
+@author Jack Ringer
+Date: 11/21/2024
+Description:
+Snakefile defining how to generate the "activity" and "sub2cpd" tables
+for the Badapple2 DB.
+"""
+import os
+import yaml
+configfile: "config.yaml"
+
+ASSAY_ID_FILE_PATH = os.path.join(config["ASSAY_DATA_DIR"], config["ASSAY_ID_FILE"])
+ACTIVITY_TSV_PATH = os.path.join(config["BASE_DATA_DIR"], config["ACTIVITY_TSV"])
+SUB2CPD_TSV_PATH = os.path.join(config["BASE_DATA_DIR"], config["SUB2CPD_TSV"])
+BIOACTIVITY_COMPOUND_SET_PATH = os.path.join(config["BASE_DATA_DIR"], config["BIOACTIVITY_COMPOUND_SET"])
+PUBCHEM_ASSAY_RECORDS_DIR = os.path.join(config["LOCAL_PUBCHEM_DIRECTORY"], "Bioassay", "CSV", "Data")
+
+
+rule all:
+    input:
+        o_assaystats=ACTIVITY_TSV_PATH,
+        o_compound=BIOACTIVITY_COMPOUND_SET_PATH,
+        o_sid2cid=SUB2CPD_TSV_PATH
+
+
+# get bioassay data + sets of pubchem compounds/substances
+rule get_pubchem_assay_activities:
+    input:
+        assay_records_dir=directory(PUBCHEM_ASSAY_RECORDS_DIR),
+        aid_file=ASSAY_ID_FILE_PATH
+    output:
+        o_assaystats=ACTIVITY_TSV_PATH,
+        o_compound=BIOACTIVITY_COMPOUND_SET_PATH,
+        o_sid2cid=SUB2CPD_TSV_PATH
+    params:
+        pubchem_ftp_dir=config["REMOTE_FTP_DIRECTORY"]
+    log:
+        "logs/get_pubchem_assay_activities/all.log"
+    benchmark:
+        "benchmark/get_pubchem_assay_activities/all.tsv"
+    shell:
+        "python3 ../src/pubchem_assay_activities.py "
+        "--aid_file {input.aid_file} "
+        "--assay_zip_dir {input.assay_records_dir} "
+        "--o_assaystats {output.o_assaystats} "
+        "--o_sid2cid {output.o_sid2cid} "
+        "--o_compound {output.o_compound} "
+        "--log_fname {log} "
+        "> {log} 2>&1"
+    
+

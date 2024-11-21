@@ -1,6 +1,6 @@
 # configuration file with file path definitions
 
-# base directory where all table TSVs stored
+# base directory where all tables (for DB) are stored in TSV format
 BASE_DATA_DIR: "/media/jack/big_disk/data/badapple/badapple2"
 
 
@@ -26,3 +26,22 @@ TARGET_TSV: "target.tsv"
 ASSAY_ANNOTATIONS_JSON: "assay_annotations_hts_20000.json"
 ASSAY_DESCRIPTIONS_JSON: "assay_descriptions_hts_20000.json"
 AID2DESCRIPTORS_TSV: "aid2descriptors.tsv"
+
+
+### ACTIVITY DATA (processed activity info from assay data)
+ACTIVITY_TSV: "activity.tsv"
+SUB2CPD_TSV: "sid2cid.tsv" # maps substance id (sid)<->compound id (cid)
+BIOACTIVITY_COMPOUND_SET: "cpds_set.tsv" # set of compounds from the assays
+
+
+### SCAFFOLD DATA (scaffold-compound relationships for PubChem)
+COMPOUND_TSV: "cpds.tsv" # compounds from bioassay data
+SCAFFOLD_TSV: "scafs.tsv" # scaffolds ""
+SCAF2CPD_TSV: "scaf2cpd.tsv"
+
+
+### DRUG DATA
+DRUG_CENTRAL_FILE: "/media/jack/big_disk/data/badapple/badapple2/drugcentral/structures.smiles.tsv"
+DRUG_TSV: "drug.tsv"
+DRUG_SCAFFOLD_TSV: "drug_scafs.tsv"
+DRUG_SCAF2CPD_TSV: "drug_scaf2cpd.tsv"
