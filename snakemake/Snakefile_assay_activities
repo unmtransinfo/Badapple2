@@ -6,7 +6,6 @@ Snakefile defining how to generate the "activity" and "sub2cpd" tables
 for the Badapple2 DB.
 """
 import os
-import yaml
 from utils.utils import update_config_paths
 configfile: "config.yaml"
 update_config_paths(config)

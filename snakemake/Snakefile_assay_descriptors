@@ -8,7 +8,6 @@ This table combines both assay annotations from BARD as well as assay
 description and protocol text from PubChem.
 """
 import os
-import yaml
 from utils.utils import update_config_paths
 configfile: "config.yaml"
 update_config_paths(config)

@@ -6,7 +6,6 @@ Snakefile defining how to get list of assays (AssayIDs) for Badapple2.
 See: https://snakemake.readthedocs.io/en/stable/ for more info on Snakemake
 """
 import os
-import yaml
 from utils.utils import update_config_paths
 configfile: "config.yaml"
 update_config_paths(config)
