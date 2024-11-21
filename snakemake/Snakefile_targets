@@ -65,9 +65,9 @@ rule create_aid2target_table:
         unique_target_tsv_file=config["ASSAY_TARGET_UNIQUE_TSV"],
         aid2target_file=AID2TARGET_PATH
     log:
-        "logs/target_json_to_tsv/all.log"
+        "logs/create_aid2target_table/all.log"
     benchmark:
-        "benchmark/target_json_to_tsvs/all.tsv"
+        "benchmark/create_aid2target_table/all.tsv"
     shell:
         "python3 ../src/create_aid2target.py "
         "--inp_tsv {input.tsv_file} "
@@ -110,9 +110,9 @@ rule create_target_table:
     output:
         target_tsv_file=TARGET_PATH
     log:
-        "logs/get_protein_families/all.log"
+        "logs/create_target_table/all.log"
     benchmark:
-        "benchmark/get_protein_families/all.tsv"
+        "benchmark/create_target_table/all.tsv"
     shell:
         "python3 ../src/create_target.py "
         "--inp_tsv {input.tsv_file} "
