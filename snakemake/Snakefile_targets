@@ -12,14 +12,20 @@ import yaml
 configfile: "config.yaml"
 
 
+# setup paths for files
+AID2TARGET_PATH = os.path.join(config["BASE_DATA_DIR"], config["AID2TARGET_TSV"])
+TARGET_PATH = os.path.join(config["BASE_DATA_DIR"], config["TARGET_TSV"])
+
 for key in config.keys():
     if key.startswith("ASSAY"):
         config[key] = os.path.join(config["ASSAY_DATA_DIR"], config[key])
 
 
+# rule definitions
 rule all:
     input:
-        config["ASSAY_TARGET_SUMMARIES_JSON"]
+        aid2target_table=AID2TARGET_PATH,
+        target_table=TARGET_PATH
 
 
 rule pubchem_assay_target_summaries:
@@ -35,4 +41,79 @@ rule pubchem_assay_target_summaries:
         "python3 ../src/pubchem_assay_target_summaries.py "
         "--aid_file {input.aid_file} "
         "--out_json_file {output.out_json_file} "
-        "--fetch_uniprot_ids"
+        "--fetch_uniprot_ids > {log} 2>&1"
+
+
+rule target_json_to_tsv:
+    input:
+        json_file=config["ASSAY_TARGET_SUMMARIES_JSON"]
+    output:
+        tsv_file=config["ASSAY_TARGET_SUMMARIES_TSV"]
+    log:
+        "logs/target_json_to_tsv/all.log"
+    benchmark:
+        "benchmark/target_json_to_tsv/all.tsv"
+    shell:
+        "python3 ../src/utils/json_to_tsv.py "
+        "{input.json_file} {output.tsv_file} targets > {log} 2>&1"
+
+
+rule create_aid2target_table:
+    input:
+        tsv_file=config["ASSAY_TARGET_SUMMARIES_TSV"]
+    output:
+        unique_target_tsv_file=config["ASSAY_TARGET_UNIQUE_TSV"],
+        aid2target_file=AID2TARGET_PATH
+    log:
+        "logs/target_json_to_tsv/all.log"
+    benchmark:
+        "benchmark/target_json_to_tsvs/all.tsv"
+    shell:
+        "python3 ../src/create_aid2target.py "
+        "--inp_tsv {input.tsv_file} "
+        "--unique_target_out_path {output.unique_target_tsv_file} "
+        "--aid2target_out_path {output.aid2target_file} > {log} 2>&1"
+
+
+rule get_consistent_target_summaries:
+    input:
+        tsv_file=config["ASSAY_TARGET_UNIQUE_TSV"]
+    output:
+        consistent_tsv_file=config["ASSAY_TARGET_CONSISTENT_TSV"]
+    log:
+        "logs/get_consistent_target_summaries/all.log"
+    benchmark:
+        "benchmark/get_consistent_target_summaries/all.tsv"
+    shell:
+        "python3 ../src/get_consistent_target_summaries.py "
+        "--input_tsv {input.tsv_file} "
+        "--out_tsv {output.consistent_tsv_file} > {log} 2>&1"
+
+
+rule get_protein_families:
+    input:
+        tsv_file=config["ASSAY_TARGET_CONSISTENT_TSV"]
+    output:
+        family_tsv_file=config["ASSAY_TARGET_FAMILY_TSV"]
+    log:
+        "logs/get_protein_families/all.log"
+    benchmark:
+        "benchmark/get_protein_families/all.tsv"
+    shell:
+        "python3 ../src/get_protein_families.py "
+        "{input.tsv_file} {output.family_tsv_file} > {log} 2>&1"
+
+
+rule create_target_table:
+    input:
+        tsv_file=config["ASSAY_TARGET_FAMILY_TSV"]
+    output:
+        target_tsv_file=TARGET_PATH
+    log:
+        "logs/get_protein_families/all.log"
+    benchmark:
+        "benchmark/get_protein_families/all.tsv"
+    shell:
+        "python3 ../src/create_target.py "
+        "--inp_tsv {input.tsv_file} "
+        "--out_tsv {output.target_tsv_file} > {log} 2>&1"
