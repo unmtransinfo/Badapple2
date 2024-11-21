@@ -1,0 +1,85 @@
+"""
+@author Jack Ringer
+Date: 11/21/2024
+Description:
+Main Snakefile for creating the Badapple2 DB. Will generate all necessary
+input files (if the don't already exist), initialize the DB, and fill it
+with data.
+
+Note: If running from start->finish this workflow can take several hours!
+"""
+from utils.utils import update_config_paths
+configfile: "config.yaml"
+update_config_paths(config)
+
+# 1) initialize DB
+INITIALIZE_DB_JOB_FILE="logs/initialize_db/job_done.txt"
+rule initialize_db:
+    output:
+        INITIALIZE_DB_JOB_FILE
+    params:
+        db_name="badapple2",
+        db_host="localhost",
+        schema="public",
+        comment="Badapple2 DB (dev version, PubChem-based)"
+    log:
+        "logs/initialize_db/all.log"
+    benchmark:
+        "benchmark/initialize_db/all.tsv"
+    shell:
+        "bash ../sh_scripts/db/create_db.sh "
+        "{params.db_name} {params.db_host} {params.schema} '{params.comment}' "
+        "> {log} 2>&1"
+
+
+# 2) load in PubChem TSV files (compounds, scaffolds, activity data)
+LOAD_PUBCHEM_DATA_JOB_FILE = "logs/initialize_db/job_done.txt"
+rule load_pubchem_data:
+    input:
+        INITIALIZE_DB_JOB_FILE
+    output:
+        LOAD_PUBCHEM_DATA_JOB_FILE
+    params:
+        db_name="badapple2",
+        db_host="localhost",
+        schema="public",
+        scaf_tsv_path=config["SCAFFOLD_TSV_PATH"],
+        scaf2cpd_tsv_path=config["SCAF2CPD_TSV_PATH"],
+        bioactivity_cpd_set_tsv_path=config["BIOACTIVITY_COMPOUND_SET_TSV_PATH"],
+        cpd_tsv_path=config["COMPOUND_TSV_PATH"],
+        cid2sid_tsv_path=config["SUB2CPD_TSV_PATH"],
+        activity_tsv_path=config["ACTIVITY_TSV_PATH"]
+    log:
+        "logs/initialize_db/all.log"
+    benchmark:
+        "benchmark/initialize_db/all.tsv"
+    shell:
+        "bash ../sh_scripts/db/load_pubchem_tsvs.sh "
+        "{params.db_name} {params.db_host} {params.schema} "
+        "{params.scaf_tsv_path} "
+        "{params.scaf2cpd_tsv_path} "
+        "{params.bioactivity_cpd_set_tsv_path} "
+        "{params.cpd_tsv_path} "
+        "{params.cid2sid_tsv_path} "
+        "{params.activity_tsv_path} "
+        "> {log} 2>&1"
+
+# TODO:
+# include other Snakefiles as modules +...
+"""
+# 3) create mol tables for structural searching
+bash badapple1_comparison/sh_scripts/db/create_mol_tables.sh $DB_NAME $DB_HOST $SCHEMA $REPO_DIR
+
+# 4) index tables for better performance
+bash badapple1_comparison/sh_scripts/db/index_tables.sh $DB_NAME $DB_HOST $SCHEMA
+
+# 5) annotate compound and scaffold table with activity stats
+bash badapple1_comparison/sh_scripts/db/annotate_assaystats.sh $DB_NAME $DB_HOST $SCHEMA $ASSAY_ID_TAG $DB_USER $DB_PASSWORD $REPO_DIR
+
+# 6) annotate 'in_drug'
+bash badapple1_comparison/sh_scripts/db/annotate_in_drug.sh $DB_NAME $DB_HOST $SCHEMA $ASSAY_ID_TAG $DB_USER $DB_PASSWORD $REPO_DIR $DATA_DIR
+
+# 7) annotate scaffold scores+ranking
+bash badapple1_comparison/sh_scripts/db/annotate_scores.sh $DB_NAME $DB_HOST $SCHEMA $ASSAY_ID_TAG $DB_USER $DB_PASSWORD $REPO_DIR $DATA_DIR
+"""
+# ...+ load in target tables and other new data
