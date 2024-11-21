@@ -7,33 +7,27 @@ for the Badapple2 DB.
 """
 import os
 import yaml
+from utils.utils import update_config_paths
 configfile: "config.yaml"
-
-ASSAY_ID_FILE_PATH = os.path.join(config["ASSAY_DATA_DIR"], config["ASSAY_ID_FILE"])
-ACTIVITY_TSV_PATH = os.path.join(config["BASE_DATA_DIR"], config["ACTIVITY_TSV"])
-SUB2CPD_TSV_PATH = os.path.join(config["BASE_DATA_DIR"], config["SUB2CPD_TSV"])
-BIOACTIVITY_COMPOUND_SET_PATH = os.path.join(config["BASE_DATA_DIR"], config["BIOACTIVITY_COMPOUND_SET"])
-PUBCHEM_ASSAY_RECORDS_DIR = os.path.join(config["LOCAL_PUBCHEM_DIRECTORY"], "Bioassay", "CSV", "Data")
+update_config_paths(config)
 
 
 rule all:
     input:
-        o_assaystats=ACTIVITY_TSV_PATH,
-        o_compound=BIOACTIVITY_COMPOUND_SET_PATH,
-        o_sid2cid=SUB2CPD_TSV_PATH
+        o_assaystats=config["ACTIVITY_TSV_PATH"],
+        o_compound=config["BIOACTIVITY_COMPOUND_SET_PATH"],
+        o_sid2cid=config["SUB2CPD_TSV_PATH"]
 
 
 # get bioassay data + sets of pubchem compounds/substances
 rule get_pubchem_assay_activities:
     input:
-        assay_records_dir=directory(PUBCHEM_ASSAY_RECORDS_DIR),
-        aid_file=ASSAY_ID_FILE_PATH
+        assay_records_dir=directory(config["PUBCHEM_ASSAY_RECORDS_DIR"]),
+        aid_file=config["ASSAY_ID_FILE_PATH"]
     output:
-        o_assaystats=ACTIVITY_TSV_PATH,
-        o_compound=BIOACTIVITY_COMPOUND_SET_PATH,
-        o_sid2cid=SUB2CPD_TSV_PATH
-    params:
-        pubchem_ftp_dir=config["REMOTE_FTP_DIRECTORY"]
+        o_assaystats=config["ACTIVITY_TSV_PATH"],
+        o_compound=config["BIOACTIVITY_COMPOUND_SET_PATH"],
+        o_sid2cid=config["SUB2CPD_TSV_PATH"]
     log:
         "logs/get_pubchem_assay_activities/all.log"
     benchmark:

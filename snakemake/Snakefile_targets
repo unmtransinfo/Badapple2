@@ -6,33 +6,25 @@ Rule definitions for Snakemake workflow to create "aid2target" and
 "target" table.
 See: https://snakemake.readthedocs.io/en/stable/ for more info on Snakemake
 """
-
 import os
 import yaml
+from utils.utils import update_config_paths
 configfile: "config.yaml"
-
-
-# setup paths for files
-AID2TARGET_PATH = os.path.join(config["BASE_DATA_DIR"], config["AID2TARGET_TSV"])
-TARGET_PATH = os.path.join(config["BASE_DATA_DIR"], config["TARGET_TSV"])
-
-for key in config.keys():
-    if key.startswith("ASSAY"):
-        config[key] = os.path.join(config["ASSAY_DATA_DIR"], config[key])
+update_config_paths(config)
 
 
 # rule definitions
 rule all:
     input:
-        aid2target_table=AID2TARGET_PATH,
-        target_table=TARGET_PATH
+        aid2target_table=config["AID2TARGET_TSV_PATH"],
+        target_table=config["TARGET_TSV_PATH"]
 
 
 rule pubchem_assay_target_summaries:
     input:
-        aid_file=config["ASSAY_ID_FILE"]
+        aid_file=config["ASSAY_ID_FILE_PATH"]
     output:
-        out_json_file=config["ASSAY_TARGET_SUMMARIES_JSON"]
+        out_json_file=config["ASSAY_TARGET_SUMMARIES_JSON_PATH"]
     log:
         "logs/pubchem_assay_target_summaries/all.log"
     benchmark:
@@ -46,9 +38,9 @@ rule pubchem_assay_target_summaries:
 
 rule target_json_to_tsv:
     input:
-        json_file=config["ASSAY_TARGET_SUMMARIES_JSON"]
+        json_file=config["ASSAY_TARGET_SUMMARIES_JSON_PATH"]
     output:
-        tsv_file=config["ASSAY_TARGET_SUMMARIES_TSV"]
+        tsv_file=config["ASSAY_TARGET_SUMMARIES_TSV_PATH"]
     log:
         "logs/target_json_to_tsv/all.log"
     benchmark:
@@ -60,10 +52,10 @@ rule target_json_to_tsv:
 
 rule create_aid2target_table:
     input:
-        tsv_file=config["ASSAY_TARGET_SUMMARIES_TSV"]
+        tsv_file=config["ASSAY_TARGET_SUMMARIES_TSV_PATH"]
     output:
-        unique_target_tsv_file=config["ASSAY_TARGET_UNIQUE_TSV"],
-        aid2target_file=AID2TARGET_PATH
+        unique_target_tsv_file=config["ASSAY_TARGET_UNIQUE_TSV_PATH"],
+        aid2target_file=config["AID2TARGET_TSV_PATH"]
     log:
         "logs/create_aid2target_table/all.log"
     benchmark:
@@ -77,9 +69,9 @@ rule create_aid2target_table:
 
 rule get_consistent_target_summaries:
     input:
-        tsv_file=config["ASSAY_TARGET_UNIQUE_TSV"]
+        tsv_file=config["ASSAY_TARGET_UNIQUE_TSV_PATH"]
     output:
-        consistent_tsv_file=config["ASSAY_TARGET_CONSISTENT_TSV"]
+        consistent_tsv_file=config["ASSAY_TARGET_CONSISTENT_TSV_PATH"]
     log:
         "logs/get_consistent_target_summaries/all.log"
     benchmark:
@@ -92,9 +84,9 @@ rule get_consistent_target_summaries:
 
 rule get_protein_families:
     input:
-        tsv_file=config["ASSAY_TARGET_CONSISTENT_TSV"]
+        tsv_file=config["ASSAY_TARGET_CONSISTENT_TSV_PATH"]
     output:
-        family_tsv_file=config["ASSAY_TARGET_FAMILY_TSV"]
+        family_tsv_file=config["ASSAY_TARGET_FAMILY_TSV_PATH"]
     log:
         "logs/get_protein_families/all.log"
     benchmark:
@@ -106,9 +98,9 @@ rule get_protein_families:
 
 rule create_target_table:
     input:
-        tsv_file=config["ASSAY_TARGET_FAMILY_TSV"]
+        tsv_file=config["ASSAY_TARGET_FAMILY_TSV_PATH"]
     output:
-        target_tsv_file=TARGET_PATH
+        target_tsv_file=config["TARGET_TSV_PATH"]
     log:
         "logs/create_target_table/all.log"
     benchmark:

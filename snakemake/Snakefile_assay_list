@@ -7,24 +7,21 @@ See: https://snakemake.readthedocs.io/en/stable/ for more info on Snakemake
 """
 import os
 import yaml
+from utils.utils import update_config_paths
 configfile: "config.yaml"
-
-
-ASSAY_ID_FILE_PATH = os.path.join(config["ASSAY_DATA_DIR"], config["ASSAY_ID_FILE"])
-BIOASSAY_FILE = os.path.join(config["LOCAL_PUBCHEM_DIRECTORY"], "Bioassay", "Extras", "bioassays.tsv.gz")
-MIRROR_PUBCHEM_DONE_FILE = "logs/mirror_pubchem_records/job_done.txt"
+update_config_paths(config)
 
 
 rule all:
     input:
-        ASSAY_ID_FILE_PATH
+        config["ASSAY_ID_FILE_PATH"]
 
 
 rule mirror_pubchem_records:
     output:
         workdir=directory(config["LOCAL_PUBCHEM_DIRECTORY"]),
-        bioassay_file=BIOASSAY_FILE,
-        job_done=touch(MIRROR_PUBCHEM_DONE_FILE)
+        bioassay_file=config["BIOASSAY_FILE"],
+        job_done=touch(config["MIRROR_PUBCHEM_DONE_FILE"])
     params:
         pubchem_ftp_dir=config["REMOTE_FTP_DIRECTORY"]
     log:
@@ -38,11 +35,11 @@ rule mirror_pubchem_records:
 
 rule get_pubchem_hts_assays:
     input:
-        mirror_done=MIRROR_PUBCHEM_DONE_FILE,
-        bioassay_file=BIOASSAY_FILE,
+        mirror_done=config["MIRROR_PUBCHEM_DONE_FILE"],
+        bioassay_file=config["BIOASSAY_FILE"],
         pubchem_data_sources_csv=config["PUBCHEM_DATASOURCES_CSV"]
     output:
-        aid_out_file=ASSAY_ID_FILE_PATH
+        aid_out_file=config["ASSAY_ID_FILE_PATH"]
     params:
         n_compound_thresh=20000,
         data_source_category="NIH Initiatives"
