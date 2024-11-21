@@ -1,0 +1,66 @@
+"""
+@author Jack Ringer
+Date: 11/21/2024
+Description:
+Snakefile defining how to create the "aid2descriptors" table in the 
+Badapple2 DB.
+This table combines both assay annotations from BARD as well as assay
+description and protocol text from PubChem.
+"""
+import os
+import yaml
+from utils.utils import update_config_paths
+configfile: "config.yaml"
+update_config_paths(config)
+
+
+rule all:
+    input:
+        config["AID2DESCRIPTORS_TSV_PATH"]
+
+
+rule get_assay_annotations:
+    input:
+        aid_file=config["ASSAY_ID_FILE_PATH"]
+    output:
+        out_json_file=config["ASSAY_ANNOTATIONS_JSON_PATH"]
+    log:
+        "logs/get_assay_annotations/all.log"
+    benchmark:
+        "benchmark/get_assay_annotations/all.tsv"
+    shell:
+        "python3 ../src/pubchem_assay_annotations.py "
+        "--aid_file {input.aid_file} "
+        "--out_json_file {output.out_json_file} > {log} 2>&1"
+
+
+rule get_assay_descriptions:
+    input:
+        aid_file=config["ASSAY_ID_FILE_PATH"]
+    output:
+        out_json_file=config["ASSAY_DESCRIPTIONS_JSON_PATH"]
+    log:
+        "logs/get_assay_descriptions/all.log"
+    benchmark:
+        "benchmark/get_assay_descriptions/all.tsv"
+    shell:
+        "python3 ../src/pubchem_assay_descriptions.py "
+        "--aid_file {input.aid_file} "
+        "--out_json_file {output.out_json_file} > {log} 2>&1"
+
+
+rule create_aid2descriptors:
+    input:
+        annotations_json_file=config["ASSAY_ANNOTATIONS_JSON_PATH"],
+        descriptions_json_file=config["ASSAY_DESCRIPTIONS_JSON_PATH"]
+    output:
+        aid2descriptors_file=config["AID2DESCRIPTORS_TSV_PATH"]
+    log:
+        "logs/create_aid2descriptors/all.log"
+    benchmark:
+        "benchmark/create_aid2descriptors/all.tsv"
+    shell:
+        "python3 ../src/create_aid2descriptors.py "
+        "--annotations_json_file {input.annotations_json_file} "
+        "--descriptions_json_file {input.descriptions_json_file} "
+        "--tsv_out_path {output.aid2descriptors_file} > {log} 2>&1"
