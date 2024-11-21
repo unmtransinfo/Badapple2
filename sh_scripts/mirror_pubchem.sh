@@ -1,7 +1,13 @@
 # based on: https://depth-first.com/articles/2010/02/08/big-data-in-chemistry-mirroring-pubchem-the-easy-way/
 
-workdir="/media/jack/big_disk/data/pubchem"
-ftp_directory="ftp.ncbi.nlm.nih.gov/pubchem/"
+if [ $# -lt 4 ]; then
+	printf "Syntax: %s WORK_DIR FTP_DIR\n" $0
+	exit
+fi
+
+
+WORK_DIR=$1
+FTP_DIR=$2
 
 # Function to sync files from FTP to local directory
 sync_files() {
@@ -17,19 +23,19 @@ sync_files() {
 }
 
 # Change to the working directory
-cd "$workdir" || exit
+cd "$WORK_DIR" || exit
 
 # Create necessary directories
-mkdir -p "$ftp_directory"
+mkdir -p "$FTP_DIR"
 mkdir -p Bioassay/CSV/Data/
 mkdir -p Bioassay/Extras/
 
 # Mount the FTP directory using curlftpfs
-curlftpfs "$ftp_directory" "$ftp_directory" || { echo "Failed to mount FTP"; exit 1; }
+curlftpfs "$FTP_DIR" "$FTP_DIR" || { echo "Failed to mount FTP"; exit 1; }
 
 # Sync files
-sync_files "$ftp_directory" "Bioassay/CSV/Data/"
-sync_files "$ftp_directory" "Bioassay/Extras/"
+sync_files "$FTP_DIR" "Bioassay/CSV/Data/"
+sync_files "$FTP_DIR" "Bioassay/Extras/"
 
 # Unmount the FTP directory
-fusermount -u $ftp_directory
+fusermount -u $FTP_DIR
