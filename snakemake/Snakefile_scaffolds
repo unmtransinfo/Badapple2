@@ -1,0 +1,77 @@
+"""
+@author Jack Ringer
+Date: 11/21/2024
+Description:
+Snakemake rule definitions for deriving scaffolds
+from both PubChem bioassay compounds as well as compounds from DrugCentral.
+Will create the TSV files used to create the following tables:
+"compound", "scaf2cpd", "scaffold", "drug", "scaf2drug"
+"""
+import os
+from utils.utils import update_config_paths
+configfile: "config.yaml"
+update_config_paths(config)
+
+
+rule all:
+    input:
+        compound_tsv=config["COMPOUND_TSV_PATH"],
+        scaffold_tsv=config["SCAFFOLD_TSV_PATH"],
+        scaf2cpd_tsv=config["SCAF2CPD_TSV_PATH"],
+        drug_tsv=config["DRUG_TSV_PATH"],
+        drug_scaffolds=config["DRUG_SCAFFOLD_TSV_PATH"],
+        scaf2drug_tsv=config["DRUG_SCAF2CPD_TSV_PATH"]
+
+
+rule get_pubchem_compound_scaffolds:
+    input:
+        input_compounds_tsv=config["BIOACTIVITY_COMPOUND_SET_TSV_PATH"]
+    output:
+        compound_tsv=config["COMPOUND_TSV_PATH"],
+        scaffold_tsv=config["SCAFFOLD_TSV_PATH"],
+        scaf2cpd_tsv=config["SCAF2CPD_TSV_PATH"],
+    params:
+        max_rings=5,
+        name_column=0,
+        smiles_column=1,
+    log:
+        "logs/get_pubchem_compound_scaffolds/all.log"
+    benchmark:
+        "benchmark/get_pubchem_compound_scaffolds/all.tsv"
+    shell:
+        "python3 ../src/generate_scaffolds.py "
+        "--i {input.input_compounds_tsv} "
+        "--o_mol {output.compound_tsv} "
+        "--o_scaf {output.scaffold_tsv} "
+        "--o_mol2scaf {output.scaf2cpd_tsv} "
+        "--max_rings {params.max_rings} "
+        "--name_column {params.name_column}"
+        "--smiles_column {params.smiles_column} "
+        "--log_fname {log} > {log} 2>&1"
+
+
+rule get_drugcentral_compound_scaffolds:
+    input:
+        input_compounds_tsv=config["DRUG_CENTRAL_FILE"]
+    output:
+        compound_tsv=config["DRUG_TSV_PATH"],
+        scaffold_tsv=config["DRUG_SCAFFOLD_TSV_PATH"],
+        scaf2cpd_tsv=config["DRUG_SCAF2CPD_TSV_PATH"],
+    params:
+        max_rings=5,
+        name_column=4,
+        smiles_column=0,
+    log:
+        "logs/get_drugcentral_compound_scaffolds/all.log"
+    benchmark:
+        "benchmark/get_drugcentral_compound_scaffolds/all.tsv"
+    shell:
+        "python3 ../src/generate_scaffolds.py "
+        "--i {input.input_compounds_tsv} "
+        "--o_mol {output.compound_tsv} "
+        "--o_scaf {output.scaffold_tsv} "
+        "--o_mol2scaf {output.scaf2cpd_tsv} "
+        "--max_rings {params.max_rings} "
+        "--name_column {params.name_column}"
+        "--smiles_column {params.smiles_column} "
+        "--log_fname {log} > {log} 2>&1"
