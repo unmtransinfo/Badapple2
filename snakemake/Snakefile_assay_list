@@ -1,2 +1,60 @@
-# 1) mirror pubchem
-# 2) get AID list
+"""
+@author Jack Ringer
+Date: 11/21/2024
+Description:
+Snakefile defining how to get list of assays (AssayIDs) for Badapple2.
+See: https://snakemake.readthedocs.io/en/stable/ for more info on Snakemake
+"""
+import os
+import yaml
+configfile: "config.yaml"
+
+
+ASSAY_ID_FILE_PATH = os.path.join(config["ASSAY_DATA_DIR"], config["ASSAY_ID_FILE"])
+BIOASSAY_FILE = os.path.join(config["LOCAL_PUBCHEM_DIRECTORY"], "Bioassay", "Extras", "bioassays.tsv.gz")
+MIRROR_PUBCHEM_DONE_FILE = "logs/mirror_pubchem_records/job_done.txt"
+
+
+rule all:
+    input:
+        ASSAY_ID_FILE_PATH
+
+
+rule mirror_pubchem_records:
+    output:
+        workdir=directory(config["LOCAL_PUBCHEM_DIRECTORY"]),
+        bioassay_file=BIOASSAY_FILE,
+        job_done=touch(MIRROR_PUBCHEM_DONE_FILE)
+    params:
+        pubchem_ftp_dir=config["REMOTE_FTP_DIRECTORY"]
+    log:
+        "logs/mirror_pubchem_records/all.log"
+    benchmark:
+        "benchmark/mirror_pubchem_records/all.tsv"
+    shell:
+        "bash ../sh_scripts/mirror_pubchem.sh "
+        "{output.workdir} {params.pubchem_ftp_dir} > {log} 2>&1"
+
+
+rule get_pubchem_hts_assays:
+    input:
+        mirror_done=MIRROR_PUBCHEM_DONE_FILE,
+        bioassay_file=BIOASSAY_FILE,
+        pubchem_data_sources_csv=config["PUBCHEM_DATASOURCES_CSV"]
+    output:
+        aid_out_file=ASSAY_ID_FILE_PATH
+    params:
+        n_compound_thresh=20000,
+        data_source_category="NIH Initiatives"
+    log:
+        "logs/get_pubchem_hts_assays/all.log"
+    benchmark:
+        "benchmark/get_pubchem_hts_assays/all.tsv"
+    shell:
+        "python3 ../src/pubchem_HTS_assays.py "
+        "--bioassays_file {input.bioassay_file} "
+        "--aid_out_file {output.aid_out_file} "
+        "--n_compound_thresh {params.n_compound_thresh} "
+        "--data_source_category '{params.data_source_category}' "
+        "--pubchem_data_sources_file {input.pubchem_data_sources_csv} "
+        "--log_fname {log} > {log} 2>&1"

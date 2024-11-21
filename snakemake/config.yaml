@@ -2,9 +2,17 @@
 
 # base directory where all table TSVs stored
 BASE_DATA_DIR: "/media/jack/big_disk/data/badapple/badapple2"
-# assay data (assay list + additional info from assays)
+
+
+### ASSAY DATA (assay list + additional info from assays)
 ASSAY_DATA_DIR: "/media/jack/big_disk/data/badapple/badapple2/assays/"
 ASSAY_ID_FILE: "assay_set.aid"
+
+# where to store pubchem files/assay list
+REMOTE_FTP_DIRECTORY: "ftp.ncbi.nlm.nih.gov/pubchem/"
+LOCAL_PUBCHEM_DIRECTORY: "/media/jack/big_disk/data/pubchem"
+PUBCHEM_DATASOURCES_CSV: "/media/jack/big_disk/data/badapple/badapple2/assays/PubChemDataSources_all.csv" # from: https://pubchem.ncbi.nlm.nih.gov/sources/
+ 
 # assay target data
 ASSAY_TARGET_SUMMARIES_JSON: "aid2target_hts_20000.json"
 ASSAY_TARGET_SUMMARIES_TSV: "aid2target_hts_20000.tsv"
@@ -13,6 +21,7 @@ ASSAY_TARGET_UNIQUE_TSV: "unique_target.tsv"
 ASSAY_TARGET_CONSISTENT_TSV: "unique_target_consistent.tsv"
 ASSAY_TARGET_FAMILY_TSV: "unique_target_consistent_fam.tsv"
 TARGET_TSV: "target.tsv"
+
 # assay description/annotation data
 ASSAY_ANNOTATIONS_JSON: "assay_annotations_hts_20000.json"
 ASSAY_DESCRIPTIONS_JSON: "assay_descriptions_hts_20000.json"
