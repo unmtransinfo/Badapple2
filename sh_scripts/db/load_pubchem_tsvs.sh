@@ -6,8 +6,8 @@
 # perhaps could be combined into a single script, but since each of these
 # files are likely only ever going to be run once is it really worth it?
 
-if [ $# -lt 9 ]; then
-	printf "Syntax: %s DB_NAME DB_HOST SCHEMA SCAF_TSV_PATH SCAF2CPD_TSV_PATH BIOACTIVITY_CPD_SET_TSV_PATH CPD_TSV_PATH CID2SID_TSV_PATH ACTIVITY_TSV_PATH\n" $0
+if [ $# -lt 12 ]; then
+	printf "Syntax: %s DB_NAME DB_HOST SCHEMA SCAF_TSV_PATH SCAF2CPD_TSV_PATH BIOACTIVITY_CPD_SET_TSV_PATH CPD_TSV_PATH CID2SID_TSV_PATH ACTIVITY_TSV_PATH AID2DESCRIPTORS_TSV_PATH TARGET_TSV_PATH AID2TARGET_TSV_PATH\n" $0
 	exit
 fi
 
@@ -20,6 +20,9 @@ BIOACTIVITY_CPD_SET_TSV_PATH=$6 # from pubchem_assay_target_summaries.py
 CPD_TSV_PATH=$7 # from generate_scaffolds.py
 CID2SID_TSV_PATH=$8
 ACTIVITY_TSV_PATH=$9
+AID2DESCRIPTORS_TSV_PATH=${10}
+TARGET_TSV_PATH=${11}
+AID2TARGET_TSV_PATH=${12}
 
 # NOTE: using temp tables in psql commands to rename/drop columns from input TSVs
 
@@ -139,3 +142,55 @@ DROP TABLE temp_activity;
 EOF
 psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.activity IS 'From: ${ACTIVITY_TSV_PATH} (PubChem-FTP).'"
 echo "Loaded activity table."
+
+
+# Step 5) Load assay descriptors file
+psql -h $DB_HOST -d $DB_NAME <<EOF
+CREATE TEMP TABLE temp_aid2desc (
+    aid INTEGER PRIMARY KEY,
+	description TEXT NOT NULL,
+	protocol TEXT NOT NULL,
+	assay_format VARCHAR(128),
+	assay_type VARCHAR(128),
+	detection_method VARCHAR(128)
+);
+\COPY temp_aid2desc (aid, description, protocol, assay_format, assay_type, detection_method) FROM '$AID2DESCRIPTORS_TSV_PATH' WITH (FORMAT CSV, DELIMITER E'\t', HEADER true);
+INSERT INTO ${SCHEMA}.aid2descriptors (aid, description, protocol, assay_format, assay_type, detection_method) SELECT aid, description, protocol, assay_format, assay_type, detection_method FROM temp_aid2desc;
+DROP TABLE temp_aid2desc;
+EOF
+psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.aid2descriptors IS 'From: ${AID2DESCRIPTORS_TSV_PATH} (PubChem).'"
+echo "Loaded aid2descriptors table."
+
+
+# Step 6) Load target table
+psql -h $DB_HOST -d $DB_NAME <<EOF
+CREATE TEMP TABLE temp_target (
+	target_id INTEGER PRIMARY KEY,
+	type VARCHAR(64) NOT NULL,
+	external_id VARCHAR(64) NOT NULL,
+	external_id_type VARCHAR(64) NOT NULL,
+	name VARCHAR(256),
+	taxonomy VARCHAR(128),
+	taxonomy_id INTEGER,
+	protein_family VARCHAR(64)
+	);
+\COPY temp_target (target_id, type, external_id, external_id_type, name, taxonomy, taxonomy_id, protein_family) FROM '$TARGET_TSV_PATH' WITH (FORMAT CSV, DELIMITER E'\t', HEADER true);
+INSERT INTO ${SCHEMA}.target (target_id, type, external_id, external_id_type, name, taxonomy, taxonomy_id, protein_family) SELECT target_id, type, external_id, external_id_type, name, taxonomy, taxonomy_id, protein_family FROM temp_target;
+DROP TABLE temp_target;
+EOF
+psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.target IS 'From: ${TARGET_TSV_PATH} (PubChem).'"
+echo "Loaded target table."
+
+
+# Step 7) Load aid2target table
+psql -h $DB_HOST -d $DB_NAME <<EOF
+CREATE TEMP TABLE temp_aid2target (
+	aid INTEGER NOT NULL,
+    target_id INTEGER NOT NULL
+	);
+\COPY temp_aid2target (aid, target_id) FROM '$AID2TARGET_TSV_PATH' WITH (FORMAT CSV, DELIMITER E'\t', HEADER true);
+INSERT INTO ${SCHEMA}.aid2target (aid, target_id) SELECT aid, target_id FROM temp_aid2target;
+DROP TABLE temp_aid2target;
+EOF
+psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.target IS 'From: ${AID2TARGET_TSV_PATH} (PubChem).'"
+echo "Loaded aid2target table."
