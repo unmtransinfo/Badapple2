@@ -57,7 +57,7 @@ CREATE TABLE $SCHEMA.compound (
 	nass_active INTEGER,
 	nsam_tested INTEGER,
 	nsam_active INTEGER
-	) ;
+	);
 CREATE TABLE $SCHEMA.sub2cpd (
 	sid INTEGER PRIMARY KEY,
 	cid INTEGER NOT NULL
@@ -97,7 +97,7 @@ CREATE TABLE $SCHEMA.aid2target (
 CREATE TABLE $SCHEMA.drug (
 	drug_id INTEGER PRIMARY KEY,
 	cansmi VARCHAR(2048) NOT NULL,
-	inn VARCHAR(128) NOT NULL, 
+	inn VARCHAR(128) NOT NULL
 	);
 CREATE TABLE $SCHEMA.scaf2activeaid (
 	scafid INTEGER NOT NULL,
@@ -105,7 +105,7 @@ CREATE TABLE $SCHEMA.scaf2activeaid (
 	);
 CREATE TABLE $SCHEMA.scaf2drug (
 	scafid INTEGER NOT NULL,
-	drug_id INTEGER NOT NULL,
+	drug_id INTEGER NOT NULL
 	);
 CREATE TABLE $SCHEMA.target (
 	target_id INTEGER PRIMARY KEY,

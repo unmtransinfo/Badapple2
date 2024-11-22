@@ -22,7 +22,7 @@ CREATE TEMP TABLE temp_drug (
     temp_id INTEGER,
 	cansmi VARCHAR(2048),
     drug_id INTEGER NOT NULL,
-	inn VARCHAR(128), 
+	inn VARCHAR(128) 
 );
 CREATE TEMP TABLE temp_drug2 (
     SMILES VARCHAR(2048),
