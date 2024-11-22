@@ -5,8 +5,8 @@
 # This script is simpler than the from "badapple_classic" because
 # we now have the "scaf2drug" table
 
-if [ $# -lt 8 ]; then
-	printf "Syntax: %s DB_NAME DB_HOST SCHEMA ASSAY_ID_TAG DB_USER DB_PASSWORD REPO_DIR DATA_DIR\n" $0
+if [ $# -lt 3 ]; then
+	printf "Syntax: %s DB_NAME DB_HOST SCHEMA\n" $0
 	exit
 fi
 
