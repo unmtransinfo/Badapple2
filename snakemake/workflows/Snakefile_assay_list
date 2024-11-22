@@ -5,24 +5,16 @@ Description:
 Snakefile defining how to get list of assays (AssayIDs) for Badapple2.
 See: https://snakemake.readthedocs.io/en/stable/ for more info on Snakemake
 """
-import os
-from utils.utils import update_config_paths
-configfile: "config.yaml"
-update_config_paths(config)
-
-
-rule all:
-    input:
-        config["ASSAY_ID_FILE_PATH"]
 
 
 rule mirror_pubchem_records:
     output:
-        workdir=directory(config["LOCAL_PUBCHEM_DIRECTORY"]),
+        workdir=config["LOCAL_PUBCHEM_DIR"],
         bioassay_file=config["BIOASSAY_FILE"],
-        job_done=touch(config["MIRROR_PUBCHEM_DONE_FILE"])
+        job_done=touch(config["MIRROR_PUBCHEM_DONE_FILE"]),
+        assay_records_dir=config["PUBCHEM_ASSAY_RECORDS_DIR"]
     params:
-        pubchem_ftp_dir=config["REMOTE_FTP_DIRECTORY"]
+        pubchem_ftp_dir=config["REMOTE_FTP_DIR"]
     log:
         "logs/mirror_pubchem_records/all.log"
     benchmark:
@@ -36,7 +28,7 @@ rule get_pubchem_hts_assays:
     input:
         mirror_done=config["MIRROR_PUBCHEM_DONE_FILE"],
         bioassay_file=config["BIOASSAY_FILE"],
-        pubchem_data_sources_csv=config["PUBCHEM_DATASOURCES_CSV"]
+        pubchem_data_sources_csv=config["PUBCHEM_DATASOURCES_CSV_PATH"]
     output:
         aid_out_file=config["ASSAY_ID_FILE_PATH"]
     params:

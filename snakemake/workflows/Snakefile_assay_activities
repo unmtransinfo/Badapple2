@@ -5,17 +5,6 @@ Description:
 Snakefile defining how to generate the "activity" and "sub2cpd" tables
 for the Badapple2 DB.
 """
-import os
-from utils.utils import update_config_paths
-configfile: "config.yaml"
-update_config_paths(config)
-
-
-rule all:
-    input:
-        o_assaystats=config["ACTIVITY_TSV_PATH"],
-        o_compound=config["BIOACTIVITY_COMPOUND_SET_TSV_PATH"],
-        o_sid2cid=config["SUB2CPD_TSV_PATH"]
 
 
 # get bioassay data + sets of pubchem compounds/substances
