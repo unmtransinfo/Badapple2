@@ -53,3 +53,9 @@ PUBCHEM_DATASOURCES_CSV: "PubChemDataSources_all.csv"
 PUBCHEM_DATASOURCES_CSV_URL: "https://pubchem.ncbi.nlm.nih.gov/rest/pug/sourcetable/all/CSV/?response_type=save&response_basename=PubChemDataSources_all"
 DRUG_CENTRAL_TSV_URL: "https://unmtid-dbs.net/download/DrugCentral/2021_09_01/structures.smiles.tsv"
 REMOTE_FTP_DIR: "ftp.ncbi.nlm.nih.gov/pubchem/"
+
+
+### DB PARAMS
+DB_NAME: "badapple2"
+DB_SCHEMA: "public"
+DB_HOST: "localhost"
