@@ -8,11 +8,12 @@ with data.
 
 Note: If running from start->finish this workflow can take several hours!
 """
+import os
 from utils.utils import update_config_paths
-configfile: "config.yaml"
-update_config_paths(config)
 from snakemake.utils import min_version
 min_version("6.0")
+configfile: "config.yaml"
+update_config_paths(config)
 include: "workflows/Snakefile_download_files"
 include: "workflows/Snakefile_assay_list"
 include: "workflows/Snakefile_assay_activities"
@@ -20,25 +21,27 @@ include: "workflows/Snakefile_assay_descriptors"
 include: "workflows/Snakefile_scaffolds"
 include: "workflows/Snakefile_targets"
 
+# for running some scripts in src/sql need path to the code repo
+REPO_DIR=os.path.dirname(os.getcwd())
 # 1) initialize DB
 INITIALIZE_DB_JOB_FILE="logs/initialize_db/job_done.txt"
 rule initialize_db:
     input:
         # start initializing db only after all input TSVs generated
-        aid2descriptors=config["AID2DESCRIPTORS_TSV_PATH"],
-        o_assaystats=config["ACTIVITY_TSV_PATH"],
-        o_compound=config["BIOACTIVITY_COMPOUND_SET_TSV_PATH"],
-        o_sid2cid=config["SUB2CPD_TSV_PATH"],
-        compound_tsv=config["COMPOUND_TSV_PATH"],
-        scaffold_tsv=config["SCAFFOLD_TSV_PATH"],
-        scaf2cpd_tsv=config["SCAF2CPD_TSV_PATH"],
-        drug_tsv=config["DRUG_TSV_PATH"],
-        drug_scaffolds=config["DRUG_SCAFFOLD_TSV_PATH"],
-        scaf2drug_tsv=config["DRUG_SCAF2CPD_TSV_PATH"],
-        aid2target_table=config["AID2TARGET_TSV_PATH"],
-        target_table=config["TARGET_TSV_PATH"]
+        config["AID2DESCRIPTORS_TSV_PATH"],
+        config["ACTIVITY_TSV_PATH"],
+        config["BIOACTIVITY_COMPOUND_SET_TSV_PATH"],
+        config["SUB2CPD_TSV_PATH"],
+        config["COMPOUND_TSV_PATH"],
+        config["SCAFFOLD_TSV_PATH"],
+        config["SCAF2CPD_TSV_PATH"],
+        config["DRUG_TSV_PATH"],
+        config["DRUG_SCAFFOLD_TSV_PATH"],
+        config["DRUG_SCAF2CPD_TSV_PATH"],
+        config["AID2TARGET_TSV_PATH"],
+        config["TARGET_TSV_PATH"]
     output:
-        INITIALIZE_DB_JOB_FILE
+        touch(INITIALIZE_DB_JOB_FILE)
     params:
         db_name="badapple2",
         db_host="localhost",
@@ -55,54 +58,175 @@ rule initialize_db:
 
 
 # 2) load in PubChem TSV files (compounds, scaffolds, activity data)
-LOAD_PUBCHEM_DATA_JOB_FILE = "logs/initialize_db/job_done.txt"
+LOAD_PUBCHEM_DATA_JOB_FILE = "logs/load_pubchem_data/job_done.txt"
 rule load_pubchem_data:
     input:
         INITIALIZE_DB_JOB_FILE,
-        scaf_tsv_path=config["SCAFFOLD_TSV_PATH"],
-        scaf2cpd_tsv_path=config["SCAF2CPD_TSV_PATH"],
-        bioactivity_cpd_set_tsv_path=config["BIOACTIVITY_COMPOUND_SET_TSV_PATH"],
+        aid2descriptors_tsv=config["AID2DESCRIPTORS_TSV_PATH"],
+        activity_tsv=config["ACTIVITY_TSV_PATH"],
+        bioactivity_cpd_set=config["BIOACTIVITY_COMPOUND_SET_TSV_PATH"],
+        sub2cpd_tsv_path=config["SUB2CPD_TSV_PATH"],
         cpd_tsv_path=config["COMPOUND_TSV_PATH"],
-        cid2sid_tsv_path=config["SUB2CPD_TSV_PATH"],
-        activity_tsv_path=config["ACTIVITY_TSV_PATH"]
+        scaf_tsv_path=config["SCAFFOLD_TSV_PATH"],
+        scaf2cpd_tsv=config["SCAF2CPD_TSV_PATH"],
+        aid2target_tsv_path=config["AID2TARGET_TSV_PATH"],
+        target_tsv_path=config["TARGET_TSV_PATH"]
     output:
-        LOAD_PUBCHEM_DATA_JOB_FILE
+        touch(LOAD_PUBCHEM_DATA_JOB_FILE)
     params:
-        db_name="badapple2",
-        db_host="localhost",
-        schema="public",
-        
+        db_name=config["DB_NAME"],
+        db_host=config["DB_HOST"],
+        schema=config["DB_SCHEMA"],
     log:
-        "logs/initialize_db/all.log"
+        "logs/load_pubchem_data/all.log"
     benchmark:
-        "benchmark/initialize_db/all.tsv"
+        "benchmark/load_pubchem_data/all.tsv"
     shell:
         "bash ../sh_scripts/db/load_pubchem_tsvs.sh "
         "{params.db_name} {params.db_host} {params.schema} "
         "{input.scaf_tsv_path} "
         "{input.scaf2cpd_tsv_path} "
-        "{input.bioactivity_cpd_set_tsv_path} "
+        "{input.bioactivity_cpd_set} "
         "{input.cpd_tsv_path} "
-        "{input.cid2sid_tsv_path} "
-        "{input.activity_tsv_path} "
+        "{input.sub2cpd_tsv_path} "
+        "{input.activity_tsv} "
+        "{input.aid2descriptors_tsv} "
+        "{input.target_tsv_path} "
+        "{input.aid2target_tsv_path} "
         "> {log} 2>&1"
 
-# TODO:
-# include other Snakefiles as modules +...
-"""
-# 3) create mol tables for structural searching
-bash badapple1_comparison/sh_scripts/db/create_mol_tables.sh $DB_NAME $DB_HOST $SCHEMA $REPO_DIR
 
-# 4) index tables for better performance
-bash badapple1_comparison/sh_scripts/db/index_tables.sh $DB_NAME $DB_HOST $SCHEMA
+# 3) create mol tables for structural searching
+CREATE_MOL_TABLES_JOB_FILE = "logs/create_mol_tables/job_done.txt"
+rule create_mol_tables:
+    input:
+        LOAD_PUBCHEM_DATA_JOB_FILE,
+    output:
+        touch(CREATE_MOL_TABLES_JOB_FILE)
+    params:
+        db_name=config["DB_NAME"],
+        db_host=config["DB_HOST"],
+        schema=config["DB_SCHEMA"],
+        repo_dir=REPO_DIR
+    log:
+        "logs/create_mol_tables/all.log"
+    benchmark:
+        "benchmark/create_mol_tables/all.tsv"
+    shell:
+        "bash ../badapple1_comparison/sh_scripts/db/create_mol_tables.sh 
+        "{params.db_name} {params.db_host} {params.schema} {params.repo_dir} "
+        "> {log} 2>&1"
+
+
+# 4) index badapple1 tables for better performance in subsequent steps
+INDEX_TABLES_JOB_FILE = "logs/index_tables/job_done.txt"
+rule index_tables:
+    input:
+        CREATE_MOL_TABLES_JOB_FILE
+    output:
+        touch(INDEX_TABLES_JOB_FILE)
+    params:
+        db_name=config["DB_NAME"],
+        db_host=config["DB_HOST"],
+        schema=config["DB_SCHEMA"]
+    log:
+        "logs/index_tables/all.log"
+    benchmark:
+        "benchmark/index_tables/all.tsv"
+    shell:
+        "bash ../badapple1_comparison/sh_scripts/db/index_tables.sh "
+        "{params.db_name} {params.db_host} {params.schema} "
+        "> {log} 2>&1"
+
 
 # 5) annotate compound and scaffold table with activity stats
-bash badapple1_comparison/sh_scripts/db/annotate_assaystats.sh $DB_NAME $DB_HOST $SCHEMA $ASSAY_ID_TAG $DB_USER $DB_PASSWORD $REPO_DIR
+ANNOTATE_ASSAYSTATS_JOB_FILE = "logs/annotate_assaystats/job_done.txt"
+rule annotate_assaystats:
+    input:
+        INDEX_TABLES_JOB_FILE
+    output:
+        touch(ANNOTATE_ASSAYSTATS_JOB_FILE)
+    params:
+        db_name=config["DB_NAME"],
+        db_host=config["DB_HOST"],
+        schema=config["DB_SCHEMA"],
+        db_user=config["DB_USER"],
+        db_password=config["DB_PASSWORD"]
+    log:
+        "logs/annotate_assaystats/all.log"
+    benchmark:
+        "benchmark/annotate_assaystats/all.tsv"
+    shell:
+        "bash ../sh_scripts/db/annotate_assaystats2.sh "
+        "{params.db_name} {params.db_host} {params.schema} "
+        "> {log} 2>&1"
+
 
 # 6) annotate 'in_drug'
-bash badapple1_comparison/sh_scripts/db/annotate_in_drug.sh $DB_NAME $DB_HOST $SCHEMA $ASSAY_ID_TAG $DB_USER $DB_PASSWORD $REPO_DIR $DATA_DIR
+ANNOTATE_IN_DRUG_JOB_FILE = "logs/annotate_in_drug/job_done.txt"
+rule annotate_in_drug:
+    input:
+        INDEX_TABLES_JOB_FILE,
+        drug_scaffolds=config["DRUG_SCAFFOLD_TSV_PATH"],
+    output:
+        touch(ANNOTATE_IN_DRUG_JOB_FILE)
+    params:
+        db_name=config["DB_NAME"],
+        db_host=config["DB_HOST"],
+        schema=config["DB_SCHEMA"],
+        db_user=config["DB_USER"],
+        db_password=config["DB_PASSWORD"]
+    log:
+        "logs/annotate_in_drug/all.log"
+    benchmark:
+        "benchmark/annotate_in_drug/all.tsv"
+    shell:
+        "python3 ../src/annotate_db_in_drug.py "
+        "--dbname {params.db_name}  "
+        "--user {params.db_user} "
+        "--host {params.db_host} "
+        "--dbschema {params.schema} "
+        "--password {params.db_password} "
+        "--scaf_file_path {input.drug_scaffolds} "
+        "> {log} 2>&1"
+
+
 
 # 7) annotate scaffold scores+ranking
-bash badapple1_comparison/sh_scripts/db/annotate_scores.sh $DB_NAME $DB_HOST $SCHEMA $ASSAY_ID_TAG $DB_USER $DB_PASSWORD $REPO_DIR $DATA_DIR
-"""
+ANNOTATE_SCORES_JOB_FILE = "logs/annotate_scores/job_done.txt"
+rule annotate_scores:
+    input:
+        ANNOTATE_ASSAYSTATS_JOB_FILE
+    output:
+        touch(ANNOTATE_SCORES_JOB_FILE)
+    params:
+        db_name=config["DB_NAME"],
+        db_host=config["DB_HOST"],
+        schema=config["DB_SCHEMA"],
+        db_user=config["DB_USER"],
+        db_password=config["DB_PASSWORD"],
+        assay_id_tag="aid",
+        repo_dir=REPO_DIR,
+        data_dir=config["BASE_DATA_DIR"],
+        db_comment='Badapple2 DB (PubChem HTS assays w/ 20k+ compounds)'
+    log:
+        "logs/annotate_scores/all.log"
+    benchmark:
+        "benchmark/annotate_scores/all.tsv"
+    shell:
+        "bash ../sh_scripts/db/annotate_scores2.sh "
+        "{params.db_name} "
+        "{params.db_host} "
+        "{params.schema} "
+        "{params.assay_id_tag} "
+        "{params.db_user} "
+        "{params.db_password} "
+        "{params.repo_dir} "
+        "{params.data_dir} "
+        "{params.db_comment} "
+        "> {log} 2>&1"
+
+
+
+# TODO:
 # ...+ load in target tables and other new data
