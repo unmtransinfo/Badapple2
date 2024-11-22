@@ -29,14 +29,23 @@ def parse_args(parser: argparse.ArgumentParser):
 
 def main(args):
     column_map = {
-        "TargetID": "id",
+        "TargetID": "target_id",
         "TargetType": "type",
         "Name": "name",
         "Taxonomy": "taxonomy",
         "TaxonomyID": "taxonomy_id",
         "ProteinFamily": "protein_family",
     }
-    cols_to_keep = list(column_map.values()) + ["external_id", "external_id_type"]
+    column_order = [
+        "target_id",
+        "type",
+        "external_id",
+        "external_id_type",
+        "name",
+        "taxonomy",
+        "taxonomy_id",
+        "protein_family",
+    ]
     df = pd.read_csv(args.inp_tsv, sep="\t")
     df["external_id"] = df["NCBI_ID"]
     df["external_id_type"] = "NCBI"
@@ -50,9 +59,9 @@ def main(args):
     pathway_index = df.index[df["TargetType"] == TargetType.PATHWAY.value]
     df.loc[pathway_index, "external_id_type"] = "Other"
 
-    # rename columns and save
+    # rename and arrange columns and save
     df.rename(columns=column_map, inplace=True)
-    df = df[cols_to_keep]
+    df = df[column_order]
     df.to_csv(args.out_tsv, sep="\t", index=False)
 
 
