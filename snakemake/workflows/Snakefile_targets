@@ -38,7 +38,7 @@ rule target_json_to_tsv:
         "{input.json_file} {output.tsv_file} targets > {log} 2>&1"
 
 
-rule create_aid2target_table:
+rule create_aid2target:
     input:
         tsv_file=config["ASSAY_TARGET_SUMMARIES_TSV_PATH"]
     output:
@@ -84,7 +84,7 @@ rule get_protein_families:
         "{input.tsv_file} {output.family_tsv_file} > {log} 2>&1"
 
 
-rule create_target_table:
+rule create_target:
     input:
         tsv_file=config["ASSAY_TARGET_FAMILY_TSV_PATH"]
     output:
