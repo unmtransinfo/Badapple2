@@ -11,10 +11,32 @@ Note: If running from start->finish this workflow can take several hours!
 from utils.utils import update_config_paths
 configfile: "config.yaml"
 update_config_paths(config)
+from snakemake.utils import min_version
+min_version("6.0")
+include: "workflows/Snakefile_download_files"
+include: "workflows/Snakefile_assay_list"
+include: "workflows/Snakefile_assay_activities"
+include: "workflows/Snakefile_assay_descriptors"
+include: "workflows/Snakefile_scaffolds"
+include: "workflows/Snakefile_targets"
 
 # 1) initialize DB
 INITIALIZE_DB_JOB_FILE="logs/initialize_db/job_done.txt"
 rule initialize_db:
+    input:
+        # start initializing db only after all input TSVs generated
+        aid2descriptors=config["AID2DESCRIPTORS_TSV_PATH"],
+        o_assaystats=config["ACTIVITY_TSV_PATH"],
+        o_compound=config["BIOACTIVITY_COMPOUND_SET_TSV_PATH"],
+        o_sid2cid=config["SUB2CPD_TSV_PATH"],
+        compound_tsv=config["COMPOUND_TSV_PATH"],
+        scaffold_tsv=config["SCAFFOLD_TSV_PATH"],
+        scaf2cpd_tsv=config["SCAF2CPD_TSV_PATH"],
+        drug_tsv=config["DRUG_TSV_PATH"],
+        drug_scaffolds=config["DRUG_SCAFFOLD_TSV_PATH"],
+        scaf2drug_tsv=config["DRUG_SCAF2CPD_TSV_PATH"],
+        aid2target_table=config["AID2TARGET_TSV_PATH"],
+        target_table=config["TARGET_TSV_PATH"]
     output:
         INITIALIZE_DB_JOB_FILE
     params:
@@ -36,19 +58,20 @@ rule initialize_db:
 LOAD_PUBCHEM_DATA_JOB_FILE = "logs/initialize_db/job_done.txt"
 rule load_pubchem_data:
     input:
-        INITIALIZE_DB_JOB_FILE
-    output:
-        LOAD_PUBCHEM_DATA_JOB_FILE
-    params:
-        db_name="badapple2",
-        db_host="localhost",
-        schema="public",
+        INITIALIZE_DB_JOB_FILE,
         scaf_tsv_path=config["SCAFFOLD_TSV_PATH"],
         scaf2cpd_tsv_path=config["SCAF2CPD_TSV_PATH"],
         bioactivity_cpd_set_tsv_path=config["BIOACTIVITY_COMPOUND_SET_TSV_PATH"],
         cpd_tsv_path=config["COMPOUND_TSV_PATH"],
         cid2sid_tsv_path=config["SUB2CPD_TSV_PATH"],
         activity_tsv_path=config["ACTIVITY_TSV_PATH"]
+    output:
+        LOAD_PUBCHEM_DATA_JOB_FILE
+    params:
+        db_name="badapple2",
+        db_host="localhost",
+        schema="public",
+        
     log:
         "logs/initialize_db/all.log"
     benchmark:
@@ -56,12 +79,12 @@ rule load_pubchem_data:
     shell:
         "bash ../sh_scripts/db/load_pubchem_tsvs.sh "
         "{params.db_name} {params.db_host} {params.schema} "
-        "{params.scaf_tsv_path} "
-        "{params.scaf2cpd_tsv_path} "
-        "{params.bioactivity_cpd_set_tsv_path} "
-        "{params.cpd_tsv_path} "
-        "{params.cid2sid_tsv_path} "
-        "{params.activity_tsv_path} "
+        "{input.scaf_tsv_path} "
+        "{input.scaf2cpd_tsv_path} "
+        "{input.bioactivity_cpd_set_tsv_path} "
+        "{input.cpd_tsv_path} "
+        "{input.cid2sid_tsv_path} "
+        "{input.activity_tsv_path} "
         "> {log} 2>&1"
 
 # TODO:

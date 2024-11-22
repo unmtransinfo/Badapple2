@@ -7,15 +7,6 @@ Badapple2 DB.
 This table combines both assay annotations from BARD as well as assay
 description and protocol text from PubChem.
 """
-import os
-from utils.utils import update_config_paths
-configfile: "config.yaml"
-update_config_paths(config)
-
-
-rule all:
-    input:
-        config["AID2DESCRIPTORS_TSV_PATH"]
 
 
 rule get_assay_annotations:

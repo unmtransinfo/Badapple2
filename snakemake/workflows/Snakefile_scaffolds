@@ -7,20 +7,6 @@ from both PubChem bioassay compounds as well as compounds from DrugCentral.
 Will create the TSV files used to create the following tables:
 "compound", "scaf2cpd", "scaffold", "drug", "scaf2drug"
 """
-import os
-from utils.utils import update_config_paths
-configfile: "config.yaml"
-update_config_paths(config)
-
-
-rule all:
-    input:
-        compound_tsv=config["COMPOUND_TSV_PATH"],
-        scaffold_tsv=config["SCAFFOLD_TSV_PATH"],
-        scaf2cpd_tsv=config["SCAF2CPD_TSV_PATH"],
-        drug_tsv=config["DRUG_TSV_PATH"],
-        drug_scaffolds=config["DRUG_SCAFFOLD_TSV_PATH"],
-        scaf2drug_tsv=config["DRUG_SCAF2CPD_TSV_PATH"]
 
 
 rule get_pubchem_compound_scaffolds:
@@ -52,7 +38,7 @@ rule get_pubchem_compound_scaffolds:
 
 rule get_drugcentral_compound_scaffolds:
     input:
-        input_compounds_tsv=config["DRUG_CENTRAL_FILE"]
+        input_compounds_tsv=config["DRUG_CENTRAL_TSV_PATH"]
     output:
         compound_tsv=config["DRUG_TSV_PATH"],
         scaffold_tsv=config["DRUG_SCAFFOLD_TSV_PATH"],

@@ -6,17 +6,6 @@ Rule definitions for Snakemake workflow to create "aid2target" and
 "target" table.
 See: https://snakemake.readthedocs.io/en/stable/ for more info on Snakemake
 """
-import os
-from utils.utils import update_config_paths
-configfile: "config.yaml"
-update_config_paths(config)
-
-
-# rule definitions
-rule all:
-    input:
-        aid2target_table=config["AID2TARGET_TSV_PATH"],
-        target_table=config["TARGET_TSV_PATH"]
 
 
 rule pubchem_assay_target_summaries:
