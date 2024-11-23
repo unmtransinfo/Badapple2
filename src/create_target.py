@@ -62,6 +62,7 @@ def main(args):
     # rename and arrange columns and save
     df.rename(columns=column_map, inplace=True)
     df = df[column_order]
+    df["taxonomy_id"] = df["taxonomy_id"].astype("Int64")
     df.to_csv(args.out_tsv, sep="\t", index=False)
 
 
