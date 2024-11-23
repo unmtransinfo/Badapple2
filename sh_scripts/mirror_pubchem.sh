@@ -1,6 +1,6 @@
 # based on: https://depth-first.com/articles/2010/02/08/big-data-in-chemistry-mirroring-pubchem-the-easy-way/
 
-if [ $# -lt 4 ]; then
+if [ $# -lt 2 ]; then
 	printf "Syntax: %s WORK_DIR FTP_DIR\n" $0
 	exit
 fi
