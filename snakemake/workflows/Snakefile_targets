@@ -8,15 +8,15 @@ See: https://snakemake.readthedocs.io/en/stable/ for more info on Snakemake
 """
 
 
-rule pubchem_assay_target_summaries:
+rule get_assay_targets:
     input:
         aid_file=config["ASSAY_ID_FILE_PATH"]
     output:
         out_json_file=config["ASSAY_TARGET_SUMMARIES_JSON_PATH"]
     log:
-        "logs/pubchem_assay_target_summaries/all.log"
+        "logs/get_assay_targets/all.log"
     benchmark:
-        "benchmark/pubchem_assay_target_summaries/all.tsv"
+        "benchmark/get_assay_targets/all.tsv"
     shell:
         "python3 ../src/pubchem_assay_target_summaries.py "
         "--aid_file {input.aid_file} "

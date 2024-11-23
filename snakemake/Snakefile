@@ -76,7 +76,7 @@ rule initialize_db:
         "benchmark/initialize_db/all.tsv"
     shell:
         "bash ../sh_scripts/db/create_db.sh "
-        "{params.db_name} {params.db_host} {params.db_schema} '{params.comment}' "
+        "'{params.db_name}' '{params.db_host}' '{params.db_schema}' '{params.comment}' "
         "> {log} 2>&1"
 
 
@@ -105,16 +105,16 @@ rule load_pubchem_data:
         "benchmark/load_pubchem_data/all.tsv"
     shell:
         "bash ../sh_scripts/db/load_pubchem_tsvs.sh "
-        "{params.db_name} {params.db_host} {params.db_schema} "
-        "{input.scaf_tsv_path} "
-        "{input.scaf2cpd_tsv_path} "
-        "{input.bioactivity_cpd_set} "
-        "{input.cpd_tsv_path} "
-        "{input.sub2cpd_tsv_path} "
-        "{input.activity_tsv} "
-        "{input.aid2descriptors_tsv} "
-        "{input.target_tsv_path} "
-        "{input.aid2target_tsv_path} "
+        "'{params.db_name}' '{params.db_host}' '{params.db_schema}' "
+        "'{input.scaf_tsv_path}' "
+        "'{input.scaf2cpd_tsv_path}' "
+        "'{input.bioactivity_cpd_set}' "
+        "'{input.cpd_tsv_path}' "
+        "'{input.sub2cpd_tsv_path}' "
+        "'{input.activity_tsv}' "
+        "'{input.aid2descriptors_tsv}' "
+        "'{input.target_tsv_path}' "
+        "'{input.aid2target_tsv_path}' "
         "> {log} 2>&1"
 
 
@@ -136,9 +136,9 @@ rule load_drugcentral_data:
         "benchmark/load_drugcentral_data/all.tsv"
     shell:
         "bash ../sh_scripts/db/load_drug_table.sh "
-        "{params.db_name} {params.db_host} {params.db_schema} "
-        "{input.drugcentral_tsv} "
-        "{input.drug_tsv} "
+        "'{params.db_name}' '{params.db_host}' '{params.db_schema}' "
+        "'{input.drugcentral_tsv}' "
+        "'{input.drug_tsv}' "
         "> {log} 2>&1"
 
 
@@ -161,9 +161,9 @@ rule create_scaf2drug:
         "benchmark/create_scaf2drug/all.tsv"
     shell:
         "bash ../sh_scripts/db/load_scaf2drug_table.sh "
-        "{params.db_name} {params.db_host} {params.db_schema} "
-        "{input.drug_scaffold_tsv} "
-        "{input.drug_scaf2cpd_tsv} "
+        "'{params.db_name}' '{params.db_host}' '{params.db_schema}' "
+        "'{input.drug_scaffold_tsv}' "
+        "'{input.drug_scaf2cpd_tsv}' "
         "> {log} 2>&1"
 
 
@@ -184,7 +184,7 @@ rule create_mol_tables:
         "benchmark/create_mol_tables/all.tsv"
     shell:
         "bash ../sh_scripts/db/create_mol_tables2.sh "
-        "{params.db_name} {params.db_host} {params.db_schema} {params.repo_dir} "
+        "'{params.db_name}' '{params.db_host}' '{params.db_schema}' '{params.repo_dir}' "
         "> {log} 2>&1"
 
 
@@ -204,7 +204,7 @@ rule index_old_tables:
         "benchmark/index_old_tables/all.tsv"
     shell:
         "bash ../badapple1_comparison/sh_scripts/db/index_tables.sh "
-        "{params.db_name} {params.db_host} {params.db_schema} "
+        "'{params.db_name}' '{params.db_host}' '{params.db_schema}' "
         "> {log} 2>&1"
 
 
@@ -226,7 +226,7 @@ rule annotate_assaystats:
         "benchmark/annotate_assaystats/all.tsv"
     shell:
         "bash ../sh_scripts/db/annotate_assaystats2.sh "
-        "{params.db_name} {params.db_host} {params.db_schema} "
+        "'{params.db_name}' '{params.db_host}' '{params.db_schema}' "
         "> {log} 2>&1"
 
 
@@ -246,7 +246,7 @@ rule index_new_tables:
         "benchmark/index_new_tables/all.tsv"
     shell:
         "bash ../sh_scripts/db/index_tables2.sh "
-        "{params.db_name} {params.db_host} {params.db_schema} "
+        "'{params.db_name}' '{params.db_host}' '{params.db_schema}' "
         "> {log} 2>&1"
 
 
@@ -267,7 +267,7 @@ rule annotate_in_drug:
         "benchmark/annotate_in_drug/all.tsv"
     shell:
         "bash ../sh_scripts/db/annotate_in_drug2.sh "
-        "{params.db_name} {params.db_host} {params.db_schema}"
+        "'{params.db_name}' '{params.db_host}' '{params.db_schema}'"
         "> {log} 2>&1"
 
 
@@ -293,13 +293,13 @@ rule annotate_scores:
         "benchmark/annotate_scores/all.tsv"
     shell:
         "bash ../sh_scripts/db/annotate_scores2.sh "
-        "{params.db_name} "
-        "{params.db_host} "
-        "{params.db_schema} "
-        "{params.assay_id_tag} "
-        "{params.db_user} "
-        "{params.db_password} "
-        "{params.repo_dir} "
-        "{params.data_dir} "
-        "{params.db_comment} "
+        "'{params.db_name}' "
+        "'{params.db_host}' "
+        "'{params.db_schema}' "
+        "'{params.assay_id_tag}' "
+        "'{params.db_user}' "
+        "'{params.db_password}' "
+        "'{params.repo_dir}' "
+        "'{params.data_dir}' "
+        "'{params.db_comment}' "
         "> {log} 2>&1"

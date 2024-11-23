@@ -58,6 +58,6 @@ rule get_drugcentral_compound_scaffolds:
         "--o_scaf {output.scaffold_tsv} "
         "--o_mol2scaf {output.scaf2cpd_tsv} "
         "--max_rings {params.max_rings} "
-        "--name_column {params.name_column}"
+        "--name_column {params.name_column} "
         "--smiles_column {params.smiles_column} "
         "--log_fname {log} > {log} 2>&1"
