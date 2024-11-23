@@ -9,10 +9,10 @@ See: https://snakemake.readthedocs.io/en/stable/ for more info on Snakemake
 
 rule mirror_pubchem_records:
     output:
-        workdir=config["LOCAL_PUBCHEM_DIR"],
-        bioassay_file=config["BIOASSAY_FILE"],
+        workdir=protected(directory(config["LOCAL_PUBCHEM_DIR"])),
+        bioassay_file=protected(config["BIOASSAY_FILE"]),
         job_done=touch(config["MIRROR_PUBCHEM_DONE_FILE"]),
-        assay_records_dir=config["PUBCHEM_ASSAY_RECORDS_DIR"]
+        assay_records_dir=protected(directory(config["PUBCHEM_ASSAY_RECORDS_DIR"]))
     params:
         pubchem_ftp_dir=config["REMOTE_FTP_DIR"]
     log:
@@ -21,7 +21,7 @@ rule mirror_pubchem_records:
         "benchmark/mirror_pubchem_records/all.tsv"
     shell:
         "bash ../sh_scripts/mirror_pubchem.sh "
-        "{output.workdir} {params.pubchem_ftp_dir} > {log} 2>&1"
+        "'{output.workdir}' '{params.pubchem_ftp_dir}' > {log} 2>&1"
 
 
 rule get_pubchem_hts_assays:
@@ -32,8 +32,9 @@ rule get_pubchem_hts_assays:
     output:
         aid_out_file=config["ASSAY_ID_FILE_PATH"]
     params:
-        n_compound_thresh=20000,
-        data_source_category="NIH Initiatives"
+        n_compound_thresh=config["N_COMPOUND_THRESH"],
+        data_source_category=config["DATA_SOURCE_CATEGORY"],
+        deposit_date_cutoff=config["DEPOSIT_DATE_CUTOFF"]
     log:
         "logs/get_pubchem_hts_assays/all.log"
     benchmark:
@@ -45,4 +46,5 @@ rule get_pubchem_hts_assays:
         "--n_compound_thresh {params.n_compound_thresh} "
         "--data_source_category '{params.data_source_category}' "
         "--pubchem_data_sources_file {input.pubchem_data_sources_csv} "
+        "--deposit_date_cutoff {params.deposit_date_cutoff} "
         "--log_fname {log} > {log} 2>&1"
