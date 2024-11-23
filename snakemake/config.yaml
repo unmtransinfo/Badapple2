@@ -43,9 +43,9 @@ DRUG_SCAF2CPD_TSV: "drug_scaf2cpd.tsv"
 ### DOWNLOADED FILE NAMES + DIRECTORIES
 DRUG_CENTRAL_DIR: /home/jack/unm_gra/data/badapple/badapple2/drugcentral/ # where drugcentral file will be stored
 DRUG_CENTRAL_TSV: "structures.smiles.tsv"
-# where to store mirrored/downloaded pubchem files
+PUBCHEM_DATASOURCES_CSV: "PubChemDataSources_all.csv" # stored under assay dir
+# where to store mirrored pubchem files
 LOCAL_PUBCHEM_DIR: "/home/jack/unm_gra/data/pubchem"
-PUBCHEM_DATASOURCES_CSV: "PubChemDataSources_all.csv"
 
 
 ### FILE DOWNLOAD URLS
@@ -61,3 +61,9 @@ DB_SCHEMA: "public"
 DB_HOST: "localhost"
 DB_USER: "<your_user>"
 DB_PASSWORD: "<your_password>"
+
+
+# ASSAY PARAMS
+DATA_SOURCE_CATEGORY: "NIH Initiatives"
+N_COMPOUND_THRESH: 20000
+DEPOSIT_DATE_CUTOFF: 20240701 # July 1st, 2024 - AID 1963576 deposited July 10th, released in October 2024
