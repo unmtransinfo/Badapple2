@@ -10,7 +10,7 @@ for the Badapple2 DB.
 # get bioassay data + sets of pubchem compounds/substances
 rule get_pubchem_assay_activities:
     input:
-        assay_records_dir=directory(config["PUBCHEM_ASSAY_RECORDS_DIR"]),
+        assay_records_dir=config["PUBCHEM_ASSAY_RECORDS_DIR"],
         aid_file=config["ASSAY_ID_FILE_PATH"]
     output:
         o_assaystats=config["ACTIVITY_TSV_PATH"],
