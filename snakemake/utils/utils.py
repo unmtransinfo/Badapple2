@@ -41,7 +41,7 @@ def update_config_paths(config: dict):
 
     # save downloaded PubChem file to PubChem dir
     config["PUBCHEM_DATASOURCES_CSV_PATH"] = os.path.join(
-        config["LOCAL_PUBCHEM_DIR"], config["PUBCHEM_DATASOURCES_CSV"]
+        config["ASSAY_DATA_DIR"], config["PUBCHEM_DATASOURCES_CSV"]
     )
     # save downloaded DrugCentral file to designated dir
     config["DRUG_CENTRAL_TSV_PATH"] = os.path.join(
