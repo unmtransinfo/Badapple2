@@ -66,9 +66,9 @@ rule initialize_db:
     output:
         touch(INITIALIZE_DB_JOB_FILE)
     params:
-        db_name="badapple2",
-        db_host="localhost",
-        schema="public",
+        db_name=config["DB_NAME"],
+        db_host=config["DB_HOST"],
+        db_schema=config["DB_SCHEMA"],
         comment="Badapple2 DB (dev version, PubChem-based)"
     log:
         "logs/initialize_db/all.log"
@@ -76,7 +76,7 @@ rule initialize_db:
         "benchmark/initialize_db/all.tsv"
     shell:
         "bash ../sh_scripts/db/create_db.sh "
-        "{params.db_name} {params.db_host} {params.schema} '{params.comment}' "
+        "{params.db_name} {params.db_host} {params.db_schema} '{params.comment}' "
         "> {log} 2>&1"
 
 
@@ -90,7 +90,7 @@ rule load_pubchem_data:
         sub2cpd_tsv_path=config["SUB2CPD_TSV_PATH"],
         cpd_tsv_path=config["COMPOUND_TSV_PATH"],
         scaf_tsv_path=config["SCAFFOLD_TSV_PATH"],
-        scaf2cpd_tsv=config["SCAF2CPD_TSV_PATH"],
+        scaf2cpd_tsv_path=config["SCAF2CPD_TSV_PATH"],
         aid2target_tsv_path=config["AID2TARGET_TSV_PATH"],
         target_tsv_path=config["TARGET_TSV_PATH"]
     output:
@@ -98,14 +98,14 @@ rule load_pubchem_data:
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
-        schema=config["DB_SCHEMA"],
+        db_schema=config["DB_SCHEMA"],
     log:
         "logs/load_pubchem_data/all.log"
     benchmark:
         "benchmark/load_pubchem_data/all.tsv"
     shell:
         "bash ../sh_scripts/db/load_pubchem_tsvs.sh "
-        "{params.db_name} {params.db_host} {params.schema} "
+        "{params.db_name} {params.db_host} {params.db_schema} "
         "{input.scaf_tsv_path} "
         "{input.scaf2cpd_tsv_path} "
         "{input.bioactivity_cpd_set} "
@@ -129,14 +129,14 @@ rule load_drugcentral_data:
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
-        schema=config["DB_SCHEMA"],
+        db_schema=config["DB_SCHEMA"],
     log:
         "logs/load_drugcentral_data/all.log"
     benchmark:
         "benchmark/load_drugcentral_data/all.tsv"
     shell:
         "bash ../sh_scripts/db/load_drug_table.sh "
-        "{params.db_name} {params.db_host} {params.schema} "
+        "{params.db_name} {params.db_host} {params.db_schema} "
         "{input.drugcentral_tsv} "
         "{input.drug_tsv} "
         "> {log} 2>&1"
@@ -154,14 +154,14 @@ rule create_scaf2drug:
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
-        schema=config["DB_SCHEMA"],
+        db_schema=config["DB_SCHEMA"],
     log:
         "logs/create_scaf2drug/all.log"
     benchmark:
         "benchmark/create_scaf2drug/all.tsv"
     shell:
         "bash ../sh_scripts/db/load_scaf2drug_table.sh "
-        "{params.db_name} {params.db_host} {params.schema} "
+        "{params.db_name} {params.db_host} {params.db_schema} "
         "{input.drug_scaffold_tsv} "
         "{input.drug_scaf2cpd_tsv} "
         "> {log} 2>&1"
@@ -176,7 +176,7 @@ rule create_mol_tables:
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
-        schema=config["DB_SCHEMA"],
+        db_schema=config["DB_SCHEMA"],
         repo_dir=REPO_DIR
     log:
         "logs/create_mol_tables/all.log"
@@ -184,7 +184,7 @@ rule create_mol_tables:
         "benchmark/create_mol_tables/all.tsv"
     shell:
         "bash ../sh_scripts/db/create_mol_tables2.sh "
-        "{params.db_name} {params.db_host} {params.schema} {params.repo_dir} "
+        "{params.db_name} {params.db_host} {params.db_schema} {params.repo_dir} "
         "> {log} 2>&1"
 
 
@@ -197,14 +197,14 @@ rule index_old_tables:
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
-        schema=config["DB_SCHEMA"]
+        db_schema=config["DB_SCHEMA"]
     log:
         "logs/index_old_tables/all.log"
     benchmark:
         "benchmark/index_old_tables/all.tsv"
     shell:
         "bash ../badapple1_comparison/sh_scripts/db/index_tables.sh "
-        "{params.db_name} {params.db_host} {params.schema} "
+        "{params.db_name} {params.db_host} {params.db_schema} "
         "> {log} 2>&1"
 
 
@@ -217,7 +217,7 @@ rule annotate_assaystats:
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
-        schema=config["DB_SCHEMA"],
+        db_schema=config["DB_SCHEMA"],
         db_user=config["DB_USER"],
         db_password=config["DB_PASSWORD"]
     log:
@@ -226,7 +226,7 @@ rule annotate_assaystats:
         "benchmark/annotate_assaystats/all.tsv"
     shell:
         "bash ../sh_scripts/db/annotate_assaystats2.sh "
-        "{params.db_name} {params.db_host} {params.schema} "
+        "{params.db_name} {params.db_host} {params.db_schema} "
         "> {log} 2>&1"
 
 
@@ -239,14 +239,14 @@ rule index_new_tables:
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
-        schema=config["DB_SCHEMA"]
+        db_schema=config["DB_SCHEMA"]
     log:
         "logs/index_new_tables/all.log"
     benchmark:
         "benchmark/index_new_tables/all.tsv"
     shell:
         "bash ../sh_scripts/db/index_tables2.sh "
-        "{params.db_name} {params.db_host} {params.schema} "
+        "{params.db_name} {params.db_host} {params.db_schema} "
         "> {log} 2>&1"
 
 
@@ -260,7 +260,7 @@ rule annotate_in_drug:
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
-        schema=config["DB_SCHEMA"]
+        db_schema=config["DB_SCHEMA"]
     log:
         "logs/annotate_in_drug/all.log"
     benchmark:
@@ -280,7 +280,7 @@ rule annotate_scores:
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
-        schema=config["DB_SCHEMA"],
+        db_schema=config["DB_SCHEMA"],
         db_user=config["DB_USER"],
         db_password=config["DB_PASSWORD"],
         assay_id_tag="aid",
@@ -295,7 +295,7 @@ rule annotate_scores:
         "bash ../sh_scripts/db/annotate_scores2.sh "
         "{params.db_name} "
         "{params.db_host} "
-        "{params.schema} "
+        "{params.db_schema} "
         "{params.assay_id_tag} "
         "{params.db_user} "
         "{params.db_password} "
