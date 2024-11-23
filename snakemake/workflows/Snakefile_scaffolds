@@ -45,7 +45,7 @@ rule get_drugcentral_compound_scaffolds:
         scaf2cpd_tsv=config["DRUG_SCAF2CPD_TSV_PATH"],
     params:
         max_rings=5,
-        name_column=4,
+        name_column=3,
         smiles_column=0,
     log:
         "logs/get_drugcentral_compound_scaffolds/all.log"
