@@ -48,6 +48,12 @@ def parse_args(parser: argparse.ArgumentParser):
         help="Path to file downloaded from: https://pubchem.ncbi.nlm.nih.gov/sources/#sort=Last-Updated-Latest-First. Required if using data_source_category.",
     )
     parser.add_argument(
+        "--deposit_date_cutoff",
+        type=int,
+        default=None,
+        help="If provided, won't include bioassay records which have a deposit date later than the provided date. Date should be provided in format {year}{month}{day}, for example July 4th 2006 would be 20060604. For month and day be sure to include 2 digits (the 4th is 04 not 4, June is 06 not 6, etc).",
+    )
+    parser.add_argument(
         "--log_fname",
         help="File to save logs to. If not given will log to stdout.",
         default=None,
@@ -84,8 +90,13 @@ def main(args):
         data_sources_df = data_sources_df[
             data_sources_df["Source Category"].str.contains(args.data_source_category)
         ]
-        bioassays_df = bioassays_df = bioassays_df[
+        bioassays_df = bioassays_df[
             bioassays_df["Source Name"].isin(data_sources_df["Source Name"])
+        ]
+    if args.deposit_date_cutoff is not None:
+        logger.info(f"Filtering by Date Cutoff: {args.deposit_date_cutoff}")
+        bioassays_df = bioassays_df[
+            bioassays_df["Deposit Date"] <= args.deposit_date_cutoff
         ]
     # get and save list of HTS AIDs
     hts_aids_list = bioassays_df["AID"].tolist()
