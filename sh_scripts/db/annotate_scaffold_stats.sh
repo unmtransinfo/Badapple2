@@ -29,7 +29,7 @@ psql -d $DB_NAME -c "UPDATE $SCHEMA.scaffold SET (nsub_total, nsub_tested, nsub_
 psql -d $DB_NAME -c "UPDATE $SCHEMA.scaffold SET (nass_tested, nass_active)  = (NULL, NULL)"
 psql -d $DB_NAME -c "UPDATE $SCHEMA.scaffold SET (nsam_tested, nsam_active)  = (NULL, NULL)"
 psql -d $DB_NAME -c "UPDATE $SCHEMA.scaffold SET in_drug  = NULL"
-
+psql -d $DB_NAME -c "TRUNCATE TABLE $SCHEMA.scaf2activeaid" # this is in case we're re-rerunning the workflow
 
 python src/annotate_db_assaystats.py \
 	--annotate_scaffolds \
