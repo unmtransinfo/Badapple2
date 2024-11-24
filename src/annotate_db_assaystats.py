@@ -491,7 +491,12 @@ def AnnotateScaffold(
             logger.error(e)
             n_err += 1
 
-    if ok_write and write_scaf2activeaid:
+    if (
+        ok_write
+        and write_scaf2activeaid
+        and activeAssayIDs is not None
+        and len(activeAssayIDs) > 0
+    ):
         try:
             cur1 = db.cursor()
             insert_query = "INSERT INTO scaf2activeaid (scafid, aid) VALUES (%s, %s)"
