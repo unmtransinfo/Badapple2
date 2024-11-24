@@ -26,7 +26,7 @@ CREATE TEMP TABLE temp_scaf2drug (
     mol_id INTEGER NOT NULL,
     drug_id INTEGER NOT NULL,
     scafid INTEGER NOT NULL,
-    canon_smiles VARCHAR(512) NOT NULL
+    canon_smiles VARCHAR(512)
 );
 CREATE TEMP TABLE temp_drug_scaf (
     scafid INTEGER,
@@ -47,6 +47,9 @@ UPDATE temp_scaf2drug ts
 SET scafid = s.id
 FROM scaffold s
 WHERE ts.canon_smiles = s.scafsmi;
+-- remove entries in temp_scaf2drug if ts.canon_smiles is not in s.scafsmi
+DELETE FROM temp_scaf2drug
+WHERE canon_smiles NOT IN (SELECT scafsmi FROM scaffold);
 -- now create scaf2drug
 INSERT INTO ${SCHEMA}.scaf2drug (scafid, drug_id) SELECT scafid, drug_id FROM temp_scaf2drug;
 DROP TABLE temp_scaf2drug;
