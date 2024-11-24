@@ -176,9 +176,10 @@ def write_dfs(
         new_sid2cid_rows = [
             row for row in sid2cid_rows if tuple(row) not in written_sid2cid_pairs
         ]
-        new_cid_rows = [row for row in compound_rows if tuple(row) not in written_cids]
+        # row[0] = CID
+        new_cid_rows = [row for row in compound_rows if row[0] not in written_cids]
         written_sid2cid_pairs.update(tuple(row) for row in new_sid2cid_rows)
-        written_cids.update(tuple(row) for row in new_cid_rows)
+        written_cids.update(row[0] for row in new_cid_rows)
 
         # write to files
         compounds_writer.writerows(new_cid_rows)
