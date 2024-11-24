@@ -29,7 +29,8 @@ LOAD_DRUGCENTRAL_DATA_JOB_FILE = "logs/load_drugcentral_data/job_done.txt"
 CREATE_SCAF2DRUG_JOB_FILE = "logs/create_scaf2drug/job_done.txt"
 CREATE_MOL_TABLES_JOB_FILE = "logs/create_mol_tables/job_done.txt"
 INDEX_OLD_TABLES_JOB_FILE = "logs/index_old_tables/job_done.txt"
-ANNOTATE_ASSAYSTATS_JOB_FILE = "logs/annotate_assaystats/job_done.txt"
+ANNOTATE_COMPOUNDS_JOB_FILE = "logs/annotate_compound_stats/job_done.txt"
+ANNOTATE_SCAFFOLDS_JOB_FILE = "logs/annotate_scaffold_stats/job_done.txt"
 INDEX_NEW_TABLES_JOB_FILE = "logs/index_new_tables/job_done.txt"
 ANNOTATE_IN_DRUG_JOB_FILE = "logs/annotate_in_drug/job_done.txt"
 ANNOTATE_SCORES_JOB_FILE = "logs/annotate_scores/job_done.txt"
@@ -99,6 +100,7 @@ rule load_pubchem_data:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
         db_schema=config["DB_SCHEMA"],
+        repo_dir=REPO_DIR,
     log:
         "logs/load_pubchem_data/all.log"
     benchmark:
@@ -115,6 +117,7 @@ rule load_pubchem_data:
         "'{input.aid2descriptors_tsv}' "
         "'{input.target_tsv_path}' "
         "'{input.aid2target_tsv_path}' "
+        "'{params.repo_dir}' "
         "> {log} 2>&1"
 
 
@@ -209,31 +212,64 @@ rule index_old_tables:
 
 
 # 5) annotate compound and scaffold table with activity stats
-rule annotate_assaystats:
+rule annotate_compound_stats:
     input:
         INDEX_OLD_TABLES_JOB_FILE
     output:
-        touch(ANNOTATE_ASSAYSTATS_JOB_FILE)
+        touch(ANNOTATE_COMPOUNDS_JOB_FILE)
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
         db_schema=config["DB_SCHEMA"],
         db_user=config["DB_USER"],
-        db_password=config["DB_PASSWORD"]
+        db_password=config["DB_PASSWORD"],
+        repo_dir=REPO_DIR,
+        assay_id_tag="aid"
     log:
-        "logs/annotate_assaystats/all.log"
+        "logs/annotate_compound_stats/all.log"
     benchmark:
-        "benchmark/annotate_assaystats/all.tsv"
+        "benchmark/annotate_compound_stats/all.tsv"
     shell:
-        "bash ../sh_scripts/db/annotate_assaystats2.sh "
+        "bash ../sh_scripts/db/annotate_compound_stats.sh "
         "'{params.db_name}' '{params.db_host}' '{params.db_schema}' "
+        "'{params.assay_id_tag}' "
+        "'{params.db_user}' "
+        "'{params.db_password}' "
+        "'{params.repo_dir}' "
+        "> {log} 2>&1"
+
+
+rule annotate_scaffold_stats:
+    input:
+        ANNOTATE_COMPOUNDS_JOB_FILE
+    output:
+        touch(ANNOTATE_SCAFFOLDS_JOB_FILE)
+    params:
+        db_name=config["DB_NAME"],
+        db_host=config["DB_HOST"],
+        db_schema=config["DB_SCHEMA"],
+        db_user=config["DB_USER"],
+        db_password=config["DB_PASSWORD"],
+        repo_dir=REPO_DIR,
+        assay_id_tag="aid"
+    log:
+        "logs/annotate_scaffold_stats/all.log"
+    benchmark:
+        "benchmark/annotate_scaffold_stats/all.tsv"
+    shell:
+        "bash ../sh_scripts/db/annotate_scaffold_stats.sh "
+        "'{params.db_name}' '{params.db_host}' '{params.db_schema}' "
+        "'{params.assay_id_tag}' "
+        "'{params.db_user}' "
+        "'{params.db_password}' "
+        "'{params.repo_dir}' "
         "> {log} 2>&1"
 
 
 # 6) index new tables
 rule index_new_tables:
     input:
-        ANNOTATE_ASSAYSTATS_JOB_FILE
+        ANNOTATE_SCAFFOLDS_JOB_FILE
     output:
         touch(INDEX_NEW_TABLES_JOB_FILE)
     params:
@@ -274,7 +310,7 @@ rule annotate_in_drug:
 # 8) annotate scaffold scores+ranking
 rule annotate_scores:
     input:
-        ANNOTATE_ASSAYSTATS_JOB_FILE
+        ANNOTATE_SCAFFOLDS_JOB_FILE
     output:
         touch(ANNOTATE_SCORES_JOB_FILE)
     params:
