@@ -61,6 +61,21 @@ echo "Loaded scaf2scaf table."
 # will be using mol_name as CID (original "names" given to mols was CID, mol_id is just from counting)
 # (output from ${HIERS_SCRIPT})
 psql -h $DB_HOST -d $DB_NAME <<EOF
+CREATE TEMP TABLE temp_scaf2cpd (
+    mol_id INTEGER NOT NULL,
+    mol_name INTEGER NOT NULL,
+    scaffold_id INTEGER
+);
+\COPY temp_scaf2cpd (mol_id, mol_name, scaffold_id) FROM '$SCAF2CPD_TSV_PATH' WITH (FORMAT CSV, DELIMITER E'\t', HEADER true);
+INSERT INTO ${SCHEMA}.scaf2cpd (scafid, cid) SELECT scaffold_id, mol_name FROM temp_scaf2cpd;
+DROP TABLE temp_scaf2cpd;
+EOF
+psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.scaf2cpd IS 'From ${SCAF2CPD_TSV_PATH} via ${HIERS_SCRIPT}.'"
+echo "Loaded scaf2cpd table."
+
+
+# Step 3b) Load compounds with CIDs
+psql -h $DB_HOST -d $DB_NAME <<EOF
 -- have to use additional staging tables because in some extreme edge cases
 -- CID is not included in the PubChem assay record even though SMILES are
 -- these entries (where CID is <NA>) are removed before being passed to the compound table
