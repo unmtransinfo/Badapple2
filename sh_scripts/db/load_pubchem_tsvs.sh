@@ -7,7 +7,7 @@
 # files are likely only ever going to be run once is it really worth it?
 
 if [ $# -lt 12 ]; then
-	printf "Syntax: %s DB_NAME DB_HOST SCHEMA SCAF_TSV_PATH SCAF2CPD_TSV_PATH BIOACTIVITY_CPD_SET_TSV_PATH CPD_TSV_PATH CID2SID_TSV_PATH ACTIVITY_TSV_PATH AID2DESCRIPTORS_TSV_PATH TARGET_TSV_PATH AID2TARGET_TSV_PATH\n" $0
+	printf "Syntax: %s DB_NAME DB_HOST SCHEMA SCAF_TSV_PATH SCAF2CPD_TSV_PATH BIOACTIVITY_CPD_SET_TSV_PATH CPD_TSV_PATH CID2SID_TSV_PATH ACTIVITY_TSV_PATH AID2DESCRIPTORS_TSV_PATH TARGET_TSV_PATH AID2TARGET_TSV_PATH REPO_DIR\n" $0
 	exit
 fi
 
@@ -23,6 +23,7 @@ ACTIVITY_TSV_PATH=$9
 AID2DESCRIPTORS_TSV_PATH=${10}
 TARGET_TSV_PATH=${11}
 AID2TARGET_TSV_PATH=${12}
+REPO_DIR=${13}
 
 # NOTE: using temp tables in psql commands to rename/drop columns from input TSVs
 
@@ -49,7 +50,7 @@ echo "Loaded scafs table."
 
 
 # Step 2) Load scaf2scaf table, uses "scaftree" column from "scaffold" table
-SCAF2SCAF_SCRIPT="src/sql/fill_scaf2scaf.sql"
+SCAF2SCAF_SCRIPT="$REPO_DIR/src/sql/fill_scaf2scaf.sql"
 psql -h $DB_HOST -d $DB_NAME -f $SCAF2SCAF_SCRIPT
 psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.scaf2scaf IS 'Scaffold parentage from scaftree column in scaffold table, see ${SCAF2SCAF_SCRIPT}.'"
 echo "Loaded scaf2scaf table."
@@ -60,42 +61,59 @@ echo "Loaded scaf2scaf table."
 # will be using mol_name as CID (original "names" given to mols was CID, mol_id is just from counting)
 # (output from ${HIERS_SCRIPT})
 psql -h $DB_HOST -d $DB_NAME <<EOF
-CREATE TEMP TABLE temp_scaf2cpd (
-    mol_id INTEGER NOT NULL,
-    mol_name INTEGER NOT NULL,
-    scaffold_id INTEGER
+-- have to use additional staging tables because in some extreme edge cases
+-- CID is not included in the PubChem assay record even though SMILES are
+-- these entries (where CID is <NA>) are removed before being passed to the compound table
+CREATE TEMP TABLE staging_temp_compound (
+    CID TEXT,
+    SMILES VARCHAR(2048),
+    ISOMERIC_SMILES VARCHAR(2048) NOT NULL
 );
-\COPY temp_scaf2cpd (mol_id, mol_name, scaffold_id) FROM '$SCAF2CPD_TSV_PATH' WITH (FORMAT CSV, DELIMITER E'\t', HEADER true);
-INSERT INTO ${SCHEMA}.scaf2cpd (scafid, cid) SELECT scaffold_id, mol_name FROM temp_scaf2cpd;
-DROP TABLE temp_scaf2cpd;
-EOF
-psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.scaf2cpd IS 'From ${SCAF2CPD_TSV_PATH} via ${HIERS_SCRIPT}.'"
-echo "Loaded scaf2cpd table."
 
-
-# Step 3b) Load compounds with CIDs
-psql -h $DB_HOST -d $DB_NAME <<EOF
-CREATE TEMP TABLE temp_compound (
-    CID INTEGER PRIMARY KEY,
-    SMILES VARCHAR(512),
-    ISOMERIC_SMILES VARCHAR(512) NOT NULL
-);
--- to load in canon smiles
-CREATE TEMP TABLE temp_compound2 (
+CREATE TEMP TABLE staging_temp_compound2 (
     mol_id INTEGER PRIMARY KEY,
-    SMILES VARCHAR(512) NOT NULL,
-    CID INTEGER NOT NULL
+    SMILES VARCHAR(2048) NOT NULL,
+    CID TEXT
 );
-\COPY temp_compound (CID, ISOMERIC_SMILES) FROM '$BIOACTIVITY_CPD_SET_TSV_PATH' WITH (FORMAT CSV, DELIMITER E'\t', HEADER true);
-\COPY temp_compound2 (mol_id, SMILES, CID) FROM '$CPD_TSV_PATH' WITH (FORMAT CSV, DELIMITER E'\t', HEADER true);
+\COPY staging_temp_compound (CID, ISOMERIC_SMILES) FROM '$BIOACTIVITY_CPD_SET_TSV_PATH' WITH (FORMAT CSV, DELIMITER E'\t', HEADER true);
+\COPY staging_temp_compound2 (mol_id, SMILES, CID) FROM '$CPD_TSV_PATH' WITH (FORMAT CSV, DELIMITER E'\t', HEADER true);
+
+CREATE TEMP TABLE temp_compound AS
+SELECT
+    CAST(CID AS INTEGER) AS CID,
+    SMILES,
+    ISOMERIC_SMILES
+FROM
+    staging_temp_compound
+WHERE
+    CID != '<NA>';
+
+CREATE TEMP TABLE temp_compound2 AS
+SELECT
+    mol_id,
+    SMILES,
+    CAST(CID AS INTEGER) AS CID
+FROM
+    staging_temp_compound2
+WHERE
+    CID != '<NA>';
+
 -- add canonical (non-isomeric) SMILES from rdkit into temp_compound table
 UPDATE temp_compound tc
 SET SMILES = tc2.SMILES
 FROM temp_compound2 tc2
 WHERE tc.CID = tc2.CID;
+
+-- this is for the compound with CID 28117 and (invalid) SMILES "F[Si-2](F)(F)(F)(F)F"
+DELETE FROM temp_compound
+WHERE SMILES IS NULL;
+
 INSERT INTO ${SCHEMA}.compound (cid, cansmi, isosmi) SELECT CID, SMILES, ISOMERIC_SMILES FROM temp_compound;
+
 DROP TABLE temp_compound;
 DROP TABLE temp_compound2;
+DROP TABLE staging_temp_compound;
+DROP TABLE staging_temp_compound2;
 EOF
 psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.compound IS 'From ${BIOACTIVITY_CPD_SET_TSV_PATH} via ${HIERS_SCRIPT}, annotate_db_assaystats.py.'"
 echo "Loaded compound table."
