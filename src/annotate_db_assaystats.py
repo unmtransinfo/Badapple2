@@ -422,8 +422,8 @@ def AnnotateScaffold(
         (SELECT COUNT(*) FROM active_compounds) AS cActive,
         (SELECT COUNT(*) FROM tested_assays) AS aTested,
         (SELECT COUNT(*) FROM active_assays) AS aActive,
-        total_results.nres_total,
-        (SELECT * FROM active_assays) AS activeAssayIDs,
+        (SELECT array_agg(aid) FROM active_assays) AS activeAssayIDs,
+        total_results.nres_total
     FROM counts, total_results
     """
 
@@ -443,8 +443,8 @@ def AnnotateScaffold(
         cActive,
         aTested,
         aActive,
-        nres_total,
         activeAssayIDs,
+        nres_total,
     ) = result
 
     # Update scaffold row
@@ -494,7 +494,7 @@ def AnnotateScaffold(
     if ok_write and write_scaf2activeaid:
         try:
             cur1 = db.cursor()
-            insert_query = "INSERT INTO scaf2activeaid (scafid, aid) VALUES (?, ?)"
+            insert_query = "INSERT INTO scaf2activeaid (scafid, aid) VALUES (%s, %s)"
             data = [(scaf_id, aid) for aid in activeAssayIDs]
             cur1.executemany(insert_query, data)
             db.commit()
