@@ -75,11 +75,11 @@ CREATE TABLE $SCHEMA.scaf2cpd (
 CREATE TABLE $SCHEMA.metadata (
 	db_description VARCHAR(2048),
 	db_date_built TIMESTAMP WITH TIME ZONE,
-	median_ncpd_tested INTEGER NOT NULL,
-	median_nsub_tested INTEGER NOT NULL,
-	median_nass_tested INTEGER NOT NULL,
-	median_nsam_tested INTEGER NOT NULL,
-	nass_total INTEGER NOT NULL
+	median_ncpd_tested INTEGER,
+	median_nsub_tested INTEGER,
+	median_nass_tested INTEGER,
+	median_nsam_tested INTEGER,
+	nass_total INTEGER
 	);
 -- start of Badapple2 tables:
 CREATE TABLE $SCHEMA.aid2descriptors (
