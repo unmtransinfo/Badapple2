@@ -26,22 +26,23 @@ CREATE TEMP TABLE temp_drug (
 );
 CREATE TEMP TABLE temp_drug2 (
     SMILES VARCHAR(2048),
-    InChI VARCHAR(2028),
+    InChI TEXT,
+    InChIKey VARCHAR(2048),
     ID INTEGER NOT NULL,
     INN VARCHAR(128),
     CAS_RN VARCHAR(128)
 );
 \COPY temp_drug (temp_id, cansmi, drug_id) FROM '$DRUG_TSV_PATH' WITH (FORMAT CSV, DELIMITER E'\t', HEADER true);
-\COPY temp_drug2 (SMILES, InChI, ID, INN, CASE_RN) FROM '$DRUG_CENTRAL_TSV_PATH' WITH (FORMAT CSV, DELIMITER E'\t', HEADER true);
+\COPY temp_drug2 (SMILES, InChI, InChIKey, ID, INN, CAS_RN) FROM '$DRUG_CENTRAL_TSV_PATH' WITH (FORMAT CSV, DELIMITER E'\t', HEADER true);
 -- add drug name (INN) using original drugcentral file
 UPDATE temp_drug td
-SET inn = tc2.INN
+SET inn = td2.INN
 FROM temp_drug2 td2
 WHERE td.drug_id = td2.ID;
 --now can insert completed data into drug table
-INSERT INTO ${SCHEMA}.drug (drug_id, drug_id, inn) SELECT drug_id, drug_id, inn FROM temp_drug;
+INSERT INTO ${SCHEMA}.drug (drug_id, cansmi, inn) SELECT drug_id, cansmi, inn FROM temp_drug;
 DROP TABLE temp_drug;
 DROP TABLE temp_drug2;
 EOF
-psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.scaffold IS 'Scaffold definitions from HierS, see ${HIERS_SCRIPT}. Input file is ${SCAF_TSV_PATH}'"
-echo "Loaded scafs table."
+psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON TABLE ${SCHEMA}.drug IS 'Drug information from DrugCentral. The drug_id column matches ids from DrugCentral. The inn column is the International Nonproprietary Name (INN)'"
+echo "Loaded drug table."
