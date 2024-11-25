@@ -3,15 +3,21 @@ This subdirectory contains [Snakemake](https://snakemake.readthedocs.io/en/stabl
 
 ## badapple2
 The steps below describe how to recreate the Badapple2 DB "from-scratch".
-1. Modify the file paths in `config.yaml` to match your system
-    * You really only need to modify `BASE_DATA_DIR`, `ASSAY_DATA_DIR`, `DRUG_CENTRAL_DIR`, and `LOCAL_PUBCHEM_DIR`.
+1. Modify the params in `config.yaml` to match your system
+    * You really only need to modify the following:
+        * `BASE_DATA_DIR`
+        * `ASSAY_DATA_DIR`
+        * `DRUG_CENTRAL_DIR`
+        * `LOCAL_PUBCHEM_DIR`
+        * `DB_USER`
+        * `DB_PASSWORD`
     * **NOTE:** Do not use spaces (' ') or other whitespace in any file names/paths. It will cause issues with paths being interpreted as multiple arguments.
-2. Modify the DB params in `config.yaml`, in particular `DB_USER` and `DB_PASSWORD`
+2. Activate the badapple2 conda environment: `conda activate badapple2`
 3. (Optional): Verify the snakemake workflow will run smoothly: `snakemake -np`
 4. (Optional): Run run `export PGPASSWORD=<your_password>` - avoids password prompts during the DB build process.
 5. Run the first part of the workflow (downloading PubChem files/data): `snakemake --until get_assay_descriptions get_assay_annotations get_assay_targets --cores 1`
     * Have to run this first part of the workflow with 1 core because fetching information using the PubChem API is rate limited to 5 requests/second (see [here](https://pubchem.ncbi.nlm.nih.gov/docs/programmatic-access)). Will get error along the lines of "Network is unreachable" if trying to run multiple API calls in parallel.
-    * Tip: If you want to monitor the progress of a specific rule `<rule_name>`, you can use the following command: `watch -n 1 "tail -c 70 logs/<rule_name>all.log"`
+    * Tip: If you want to monitor the progress of a specific rule `<rule_name>`, you can use the following command: `watch -n 1 "tail -c 70 logs/<rule_name>/all.log"`
 6. Run rest of snakemake workflow to build the badapple2 DB: `snakemake`
     * If you want to limit the number of CPU cores used by the workflow, use
     `snakemake --cores <n>`
