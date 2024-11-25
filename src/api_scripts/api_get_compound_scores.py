@@ -2,13 +2,14 @@
 @author Jack Ringer
 Date: 9/25/2024
 Description:
-Get the promiscuity scores for compounds from a given TSV file. Uses
+Get the promiscuity scores for all scaffolds for compounds from a given TSV file. Uses
 Badapple2-API: https://github.com/unmtransinfo/Badapple2-API
 """
 
 import argparse
 import json
 
+import numpy as np
 import pandas as pd
 import requests
 from tqdm import tqdm
@@ -30,77 +31,84 @@ def parse_args(parser: argparse.ArgumentParser):
         help="output file, will include all info from input TSV + two new columns: molecule pscore and corresponding scaffold",
     )
     parser.add_argument(
-        "--include_all_scaffolds",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Report all scaffolds/scores for each input molecule. If False will only report highest-scoring scaffold.",
+        "--idelim",
+        type=str,
+        default="\t",
+        help="delim for input SMI/TSV file (default is tab)",
+    )
+    parser.add_argument(
+        "--iheader",
+        action="store_true",
+        help="input SMILES/TSV has header line",
+    )
+    parser.add_argument(
+        "--smiles_column",
+        type=int,
+        default=0,
+        help="(integer) column where SMILES are located (for input SMI file)",
+    )
+    parser.add_argument(
+        "--name_column",
+        type=int,
+        default=1,
+        help="(integer) column where molecule names are located (for input SMI file). Names should be unique!",
+    )
+    parser.add_argument(
+        "--max_rings",
+        type=int,
+        required=False,
+        default=5,
+        help="Maximum number of ring systems allowed in input compounds. Compounds with > max_rings will not be processed",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        required=False,
+        default=100,
+        help="Number of compounds to fetch scaffold details on with each request. Note that the API will hard cap you at 1000, recommended to be <=100",
     )
     return parser.parse_args()
 
 
 def main(args):
-    # TODO: update from localhost to actual website once API deployed
-    if args.include_all_scaffolds:
-        API_URL = (
-            "http://localhost:8000/api/v1/compound_search/get_associated_scaffolds"
-        )
+    batch_size = args.batch_size
+    if batch_size <= 0 or batch_size > 100:
+        raise ValueError(f"Batch size must be within [1,100]. Given: {batch_size}")
+
+    API_URL = "https://chiltepin.health.unm.edu/badapple2/api/v1/compound_search/get_associated_scaffolds_ordered"
+    cpd_df = None
+    if args.iheader:
+        cpd_df = pd.read_csv(args.input_tsv, sep=args.idelim)
     else:
-        API_URL = "http://localhost:8000/api/v1/compound_search/get_high_scores"
-
-    cpd_df = pd.read_csv(args.input_tsv, sep="\t")
-
+        cpd_df = pd.read_csv(args.input_tsv, sep=args.idelim, header=None)
+    smiles_col_name = cpd_df.columns[args.smiles_column]
+    names_col_name = cpd_df.columns[args.name_column]
+    n_compound_total = len(cpd_df)
+    batches = np.arange(n_compound_total) // batch_size
     with open(args.output_tsv, "w") as output_file:
+        # TODO: change header
         original_header = cpd_df.columns.tolist()
-        new_columns = ["scafsmi", "in_drug", "id", "pscore"]
+        new_columns = ["scafsmi", "scafid", "in_drug", "pscore"]
         output_file.write("\t".join(original_header + new_columns) + "\n")
-
-        for _, row in tqdm(
-            cpd_df.iterrows(), desc="Processing rows...", total=cpd_df.shape[0]
+        for _, sub_df in tqdm(
+            cpd_df.groupby(batches),
+            desc="Processing batches of compounds",
+            total=len(batches),
         ):
-            smiles = row["SMILES"]
-            response = requests.get(API_URL, params={"SMILES": smiles})
-            data = json.loads(response.text)
-            if data is None:
-                print(f"Invalid SMILES given: {smiles}, skipping to next row...")
-                continue
-            if args.include_all_scaffolds:
-                data = data[smiles]
-            else:
-                data = [data[0]["highest_scoring_scaf"]]
-
-            original_row = row.tolist()
-            for scaffold_info in data:
-                scaffold_smiles = scaffold_info.get("scafsmi")
-                scaffold_indrug = scaffold_info.get("in_drug")
-                scaffold_id = scaffold_info.get("id")
-                pscore = scaffold_info.get("pscore")
-
-                output_file.write(
-                    "\t".join(
-                        map(
-                            str,
-                            original_row
-                            + [scaffold_smiles, scaffold_indrug, scaffold_id, pscore],
-                        )
-                    )
-                    + "\n"
-                )
-            if len(data) == 0:
-                # include row w/ none
-                output_file.write(
-                    "\t".join(
-                        map(
-                            str,
-                            original_row + [None, None, None, None],
-                        )
-                    )
-                    + "\n"
-                )
+            smiles_list = ",".join(sub_df[smiles_col_name].tolist())
+            names_list = ",".join(sub_df[names_col_name].tolist())
+            response = requests.get(
+                API_URL, params={"SMILES": smiles_list, "Names": names_list}
+            )
+            data = json.loads(response.text)[0]
+            print(data)
+            # TODO: finish writing
+            break
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Get pscores for input SMILES from a TSV file. For each compound, the corresponding pscore is from scaffold which had the highest pscore (this scaffold's SMILES included in output).",
+        description="Get scaffold pscores for input compound SMILES from a TSV file.",
         epilog="",
     )
     args = parse_args(parser)
