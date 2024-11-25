@@ -31,3 +31,11 @@ For more information about Snakemake and additional arguments/commands see the [
 * Running the workflow until a certain rule completes: `snakemake --until <rule_name>` 
 * Re-run a particular rule and all rules which come after: `snakemake -R <rule_name>`
 * Re-run the entire workflow: `snakemake --forceall`
+
+### Workflow Diagram
+Below is a the output of `snakemake --forceall --rulegraph | dot -Tsvg > rulegraph.svg`:
+
+
+
+
+![rulegraph](https://github.com/user-attachments/assets/2746ddd0-fdda-4f12-80c6-0f15a5793619)
