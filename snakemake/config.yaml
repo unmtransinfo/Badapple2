@@ -67,3 +67,12 @@ DB_PASSWORD: "<your_password>"
 DATA_SOURCE_CATEGORY: "NIH Initiatives"
 N_COMPOUND_THRESH: 20000
 DEPOSIT_DATE_CUTOFF: 20240701 # July 1st, 2024 - AID 1963576 deposited July 10th, released in October 2024
+
+
+# MEDIAN STATS FROM badapple_classic
+# Re-using these median stats to do score normalization in badapple2
+# to ensure that our criteria for small vs large amounts of evidence remains consistent
+# (don't want adding new scaffolds w/ low n_ass_tested etc to alter other scaffold scores)
+BADAPPLE_CLASSIC_MEDIAN_NSUB_TESTED: 2
+BADAPPLE_CLASSIC_MEDIAN_NASS_TESTED: 633
+BADAPPLE_MEDIAN_NSAM_TESTED: 773
