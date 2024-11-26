@@ -126,6 +126,7 @@ def main(args):
         )
     # write output
     df = df[[smiles_col, names_col, filter_col_name]]
+    df = df.drop_duplicates(subset=names_col)
     df.to_csv(args.output_tsv, sep="\t", index=False)
 
 
