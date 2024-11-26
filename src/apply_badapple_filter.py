@@ -113,7 +113,7 @@ def main(args):
     filter_col_name = "passesFilter"
     for _, sub_df in df.groupby(names_col):
         # sub_df is a dataframe for a given compound (based on name) and all its scaffolds + their info from badapple
-        df.loc[sub_df.index, filter_col_name] = sub_df.apply(
+        filter_results = sub_df.apply(
             lambda row: passes_filter(
                 row,
                 in_db_col,
@@ -124,6 +124,9 @@ def main(args):
             ),
             axis=1,
         )
+        # all scaffolds should pass
+        passed_filter = filter_results.all()
+        df.loc[sub_df.index, filter_col_name] = passed_filter
     # write output
     df = df[[smiles_col, names_col, filter_col_name]]
     df = df.drop_duplicates(subset=names_col)
