@@ -7,4 +7,5 @@ python3 src/api_get_compound_scores.py \
     --idelim "," \
     --iheader \
     --smiles_column 3 \
-    --name_column 2
+    --name_column 2 \
+    --batch_size 20
