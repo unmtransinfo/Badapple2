@@ -127,6 +127,10 @@ def main(args):
                     "max_rings": args.max_rings,
                 },
             )
+            if response.status_code != 200:
+                raise ValueError(
+                    f"Received bad response from API (you may need to lower batch_size): {response}"
+                )
             # data will be list of dictionaries, 1 for each mol in batch
             data = json.loads(response.text)
             rows = []
