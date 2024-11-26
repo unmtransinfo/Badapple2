@@ -59,8 +59,8 @@ REMOTE_FTP_DIR: "ftp.ncbi.nlm.nih.gov/pubchem/"
 DB_NAME: "badapple2"
 DB_SCHEMA: "public"
 DB_HOST: "localhost"
-DB_USER: "jack"
-DB_PASSWORD: "Fletcher12"
+DB_USER: "<your_user>"
+DB_PASSWORD: "<your_password>"
 
 
 # ASSAY PARAMS
