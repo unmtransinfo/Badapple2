@@ -15,6 +15,8 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 
+from utils.file_utils import read_input_compound_df
+
 
 def parse_args(parser: argparse.ArgumentParser):
     parser.add_argument(
@@ -77,21 +79,12 @@ def main(args):
         raise ValueError(f"Batch size must be within [1,100]. Given: {batch_size}")
 
     API_URL = "https://chiltepin.health.unm.edu/badapple2/api/v1/compound_search/get_associated_scaffolds_ordered"
-    cpd_df = None
-    if args.iheader:
-        cpd_df = pd.read_csv(args.input_tsv, sep=args.idelim)
-    else:
-        cpd_df = pd.read_csv(args.input_tsv, sep=args.idelim, header=None)
+    cpd_df = read_input_compound_df(
+        args.input_tsv, args.idelim, args.iheader, args.smiles_column, args.name_column
+    )
     smiles_col_name = cpd_df.columns[args.smiles_column]
     names_col_name = cpd_df.columns[args.name_column]
-    if cpd_df[smiles_col_name].isna().any():
-        raise ValueError(
-            "SMILES column cannot contain blank (None) entries, please check input"
-        )
-    if cpd_df[names_col_name].isna().any():
-        raise ValueError(
-            "Name column cannot contain blank (None) entries, please check input"
-        )
+
     n_compound_total = len(cpd_df)
     batches = np.arange(n_compound_total) // batch_size
     total_batches = (n_compound_total // batch_size) + 1
