@@ -16,9 +16,15 @@ from psycopg2.extensions import cursor as Psycopg2Cursor
 from utils.custom_logging import get_and_set_logger
 
 
-def get_medians(cursor: Psycopg2Cursor, schema: str) -> dict[str, int]:
+def get_medians(
+    cursor: Psycopg2Cursor, schema: str, badapple_version: int
+) -> dict[str, int]:
     medians = {}
     sql = f"SELECT median_ncpd_tested, median_nsub_tested, median_nass_tested, median_nsam_tested FROM {schema}.metadata"
+    if badapple_version >= 2:
+        # for later versions of badapple use "classic" stats to ensure that our evidence level criteria remains consistent
+        logger.info("Using classic median stats")
+        sql = f"SELECT median_ncpd_tested_classic, median_nsub_tested_classic, median_nass_tested_classic, median_nsam_tested_classic FROM {schema}.metadata"
 
     cursor.execute(sql)
     result = cursor.fetchone()
@@ -70,9 +76,10 @@ def annotate_scaffold_scores(
     scafid_min: int,
     scafid_max: int,
     verbose: int,
+    badapple_version: int,
 ) -> int:
 
-    medians = get_medians(cursor, schema)
+    medians = get_medians(cursor, schema, badapple_version)
     if verbose > 0:
         for key, value in medians.items():
             logger.info(f"medians[{key}]: {value}")
@@ -164,8 +171,14 @@ def parse_arguments():
     parser.add_argument(
         "-d",
         "--dbname",
-        default="badapple2",
-        help="Database name (default: %(default)s)",
+        default=argparse.SUPPRESS,
+        help="Database name",
+    )
+    parser.add_argument(
+        "--badapple_version",
+        type=int,
+        default=1,
+        help="Version of Badapple (default: %(default)s)",
     )
     parser.add_argument(
         "--dbschema", default="public", help="Database schema (default: public)"
@@ -214,6 +227,7 @@ def main(args):
         logger.error(e)
         sys.exit(2)
     try:
+        logger.info(f"badapple_version: {args.badapple_version}")
         scafid_min, scafid_max = get_min_max_scaf_id(cursor, args.dbschema)
         n_scaf_done = annotate_scaffold_scores(
             db_connection,
@@ -222,6 +236,7 @@ def main(args):
             scafid_min,
             scafid_max,
             args.verbose,
+            args.badapple_version,
         )
         logger.info(f"scafs processed: {n_scaf_done}")
     finally:

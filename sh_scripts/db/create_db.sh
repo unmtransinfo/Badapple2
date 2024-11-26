@@ -72,6 +72,7 @@ CREATE TABLE $SCHEMA.scaf2cpd (
 	scafid INTEGER NOT NULL,
 	cid INTEGER NOT NULL
 	);
+-- will include medians from badapple_classic DB to keep score criteria consistent
 CREATE TABLE $SCHEMA.metadata (
 	db_description VARCHAR(2048),
 	db_date_built TIMESTAMP WITH TIME ZONE,
@@ -79,7 +80,11 @@ CREATE TABLE $SCHEMA.metadata (
 	median_nsub_tested INTEGER,
 	median_nass_tested INTEGER,
 	median_nsam_tested INTEGER,
-	nass_total INTEGER
+	nass_total INTEGER,
+	median_ncpd_tested_classic INTEGER,
+	median_nsub_tested_classic INTEGER,
+	median_nass_tested_classic INTEGER,
+	median_nsam_tested_classic INTEGER
 	);
 -- start of Badapple2 tables:
 CREATE TABLE $SCHEMA.aid2descriptors (

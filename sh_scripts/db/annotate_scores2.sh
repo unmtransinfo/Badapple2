@@ -3,8 +3,8 @@
 # Description:
 # Generate scaffold scores + rankings using badapple formula for Badapple2 DB.
 
-if [ $# -lt 9 ]; then
-	printf "Syntax: %s DB_NAME DB_HOST SCHEMA ASSAY_ID_TAG DB_USER DB_PASSWORD REPO_DIR DATA_DIR DB_COMMENT\n" $0
+if [ $# -lt 12 ]; then
+	printf "Syntax: %s DB_NAME DB_HOST SCHEMA ASSAY_ID_TAG DB_USER DB_PASSWORD REPO_DIR DATA_DIR DB_COMMENT BADAPPLE_CLASSIC_MEDIAN_NSUB_TESTED BADAPPLE_CLASSIC_MEDIAN_NASS_TESTED BADAPPLE_CLASSIC_MEDIAN_NSAM_TESTED\n" $0
 	exit
 fi
 
@@ -17,6 +17,10 @@ DB_PASSWORD=$6
 REPO_DIR=$7
 DATA_DIR=$8
 DB_COMMENT=$9
+BADAPPLE_CLASSIC_MEDIAN_NCPD_TESTED=${10}
+BADAPPLE_CLASSIC_MEDIAN_NSUB_TESTED=${11}
+BADAPPLE_CLASSIC_MEDIAN_NASS_TESTED=${12}
+BADAPPLE_CLASSIC_MEDIAN_NSAM_TESTED=${13}
 
 # make working dir to call scripts
 cd $REPO_DIR
@@ -37,10 +41,15 @@ psql -q --no-align -d $DB_NAME \
 # Step 1) Load metadata.  Postgres 9.4+
 psql -d $DB_NAME -c "COMMENT ON DATABASE ${DB_NAME} IS '$DBCOMMENT'"
 bash badapple1_comparison/sh_scripts/db/metadata_update.sh $DB_NAME $SCHEMA $ASSAY_ID_FILE "$DB_COMMENT"
+psql -d $DB_NAME -c "UPDATE $SCHEMA.metadata SET median_ncpd_tested_classic = $BADAPPLE_CLASSIC_MEDIAN_NCPD_TESTED"
+psql -d $DB_NAME -c "UPDATE $SCHEMA.metadata SET median_nsub_tested_classic = $BADAPPLE_CLASSIC_MEDIAN_NSUB_TESTED"
+psql -d $DB_NAME -c "UPDATE $SCHEMA.metadata SET median_nass_tested_classic = $BADAPPLE_CLASSIC_MEDIAN_NASS_TESTED"
+psql -d $DB_NAME -c "UPDATE $SCHEMA.metadata SET median_nsam_tested_classic = $BADAPPLE_CLASSIC_MEDIAN_NSAM_TESTED"
 
 # Step 2a) Annotate scaffold table with computed scores, add column "pscore".
 psql -d $DB_NAME -c "ALTER TABLE $SCHEMA.scaffold ADD COLUMN IF NOT EXISTS pscore FLOAT NULL"
 python src/annotate_db_scores.py \
+	--badapple_version 2 \
 	--host $DB_HOST \
 	--dbname $DB_NAME \
 	--dbschema $SCHEMA \

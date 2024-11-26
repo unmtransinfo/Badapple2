@@ -322,7 +322,11 @@ rule annotate_scores:
         assay_id_tag="aid",
         repo_dir=REPO_DIR,
         data_dir=config["BASE_DATA_DIR"],
-        db_comment='Badapple2 DB (PubChem HTS assays w/ 20k+ compounds)'
+        db_comment='Badapple2 DB (PubChem HTS assays w/ 20k+ compounds)',
+        ba_classic_med_ncpd_tested=config["BADAPPLE_CLASSIC_MEDIAN_NCPD_TESTED"],
+        ba_classic_med_nsub_tested=config["BADAPPLE_CLASSIC_MEDIAN_NSUB_TESTED"],
+        ba_classic_med_nsass_tested=config["BADAPPLE_CLASSIC_MEDIAN_NASS_TESTED"],
+        ba_classic_med_nsam_tested=config["BADAPPLE_CLASSIC_MEDIAN_NSAM_TESTED"],
     log:
         "logs/annotate_scores/all.log"
     benchmark:
@@ -338,4 +342,8 @@ rule annotate_scores:
         "'{params.repo_dir}' "
         "'{params.data_dir}' "
         "'{params.db_comment}' "
+        "{params.ba_classic_med_ncpd_tested} "
+        "{params.ba_classic_med_nsub_tested} "
+        "{params.ba_classic_med_nsass_tested} "
+        "{params.ba_classic_med_nsam_tested} "
         "> {log} 2>&1"
