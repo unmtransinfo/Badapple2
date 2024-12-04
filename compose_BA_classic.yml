@@ -3,13 +3,14 @@ services:
   classic_db:
     build:
       context: .
-      dockerfile: Dockerfile_BA_classic
+      dockerfile: Dockerfile
       args:
         - DB_PORT=${DB_PORT}
         - DB_NAME=${DB_NAME}
         - DB_USER=${DB_USER}
         - DB_PASSWORD=${DB_PASSWORD}
         - TZ=${TZ}
+        - PGDUMP_URL=${PGDUMP_URL}
     env_file:
       - ./docker/.env_BA_classic
     ports:
@@ -20,6 +21,7 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - TZ=${TZ}
+      - PGDUMP_URL=${PGDUMP_URL}
     volumes:
       - postgres_data_BA_classic:/var/lib/postgresql/data
     networks:
