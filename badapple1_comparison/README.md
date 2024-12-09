@@ -32,16 +32,10 @@ Use this option to install the DB directly on your system using PostgreSQL.
 
 1. Follow the PostgreSQL setup instructions [here](../README.md#postgresql-setup)
 2. Download [badapple_classic.pgdump](https://unmtid-dbs.net/download/Badapple2/badapple_classic.pgdump).
+    * **Note:** If your use case needs the "activity" table, then instead download [badapple_classic_full.pgdump](https://unmtid-dbs.net/download/Badapple2/badapple_classic_full.pgdump)
 3. Create the DB: `createdb badapple_classic`
 3. Load DB from dump file: `pg_restore -O -x -v -d badapple_classic badapple_classic.pgdump`
-4. If you followed (Option 2) in the setup, then you can grant permissions for user `<username>` to badapple_classic like so:
-    ```
-    sudo -i -u postgres
-    psql -d badapple_classic -c "CREATE ROLE <username> WITH LOGIN PASSWORD '<password>'"
-    psql -d badapple_classic -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO <username>"
-    psql -d badapple_classic -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO <username>"
-    psql -d badapple_classic -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO <username>"
-    ```
+    * **Note:** If you're including the "activity" table then use: `pg_restore -O -x -v -d badapple_classic badapple_classic_full.pgdump`
 
 ## DB Advanced Setup (Development/from-scratch)
 **You can skip this section if you setup the DB using the steps from above**
@@ -55,13 +49,16 @@ You will need ~3.5 GB of space to store the CSV files used to initialize the DB.
 ~12 GB of space, although this is reduced if one drops the "activity" table after constructing the rest of the DB.
 
 ### (1) Setup
-See [here](../README.md#1-setup).
+See [here](../README.md#code-usage).
 
 ### (2) Preliminary
 First we'll gather the data used for badapple_classic.
 
 1. Change your directory to where you want to save the files.
-2. Download the input files for badapple_classic from [this directory](https://unmtid-dbs.net/download/Badapple2/badapple_classic_files/).
+2. Download the input files for badapple_classic from [this directory](https://unmtid-dbs.net/download/Badapple2/badapple_classic_files/) using the following command:
+```
+wget -r -np -nH --cut-dirs=3 -R "index.html*" https://unmtid-dbs.net/download/Badapple2/badapple_classic_files/
+```
 
 ### (3) Generate Scaffolds
 Run `bash badapple1_comparison/sh_scripts/run_generate_scaffolds.sh`. This will generate 3 output files:
