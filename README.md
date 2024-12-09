@@ -35,6 +35,21 @@ Use this option to install the DB directly on your system using PostgreSQL.
 
 If you would like to run the entire workflow used to create the badapple2 DB, then please follow the instructions [here](snakemake/README.md)
 
+## badapple_classic vs badapple2
+Although badapple_classic and badapple2 have similar structure, the data within each is not identical. The most significant differences between badapple_classic and badapple2 are as follows:
+* badapple_classic uses the same set of (823) assays as the original badapple DB, whereas badapple2 incorporates an additional 83 new assay records (906 total). 
+    * For both cases, assay records are restricted to HTS (>= 20k compounds) and come from NIH centers.
+    * You can compare the files [badapple_classic_tested.aid](https://unmtid-dbs.net/download/Badapple2/badapple_classic_files/badapple_classic_tested.aid) and [badapple2_tested.aid](https://unmtid-dbs.net/download/Badapple2/badapple2_files/badapple2_tested.aid) to see the exact difference.
+* badapple_classic was restricted to substances from [MLSMR](https://pubchem.ncbi.nlm.nih.gov/source/MLSMR), whereas badapple2 uses all bioactivity data present in the provided assay records.
+* In terms of pScores, badapple2 uses the badapple_classic medians to normalize scores in order to ensure that our criteria for what constitutes a "high" amounts of evidence remains consistent.
+    * If you would like to view a detailed comparison of the pScores between badapple_classic and badapple2 please see [this notebook](src/notebooks/badapple2-vs-badapple_classic.ipynb).
+    * Note that because we no longer use the MLSMR filter, there are many scaffolds present in badapple2 which have a low amount of evidence. Using the badapple2 medians to normalize scores would significantly lower the bar for what is considered enough evidence to assign a high pScore.
+
+In addition to the items above, badapple2 stores information not present in badapple_classic, including:
+* Biological target information for each assay
+* A record of the specific approved drug(s) a scaffold is present in if `inDrug==True`
+* Assay descriptors (description and protocol text + annotations from [BARD](https://pmc.ncbi.nlm.nih.gov/articles/PMC4383997/))
+
 ## Code Usage
 If you'd like to run the scripts/code contained within this repository then you will need to follow the setup guidelines outlined below.
 
