@@ -54,12 +54,16 @@ def get_target_tables(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # now that duplicates combined can assign id map between AID and targets
     # TargetID is unique to badapple2 DB (can't use NCBI_ID because depositor info is inconsistent, e.g. some use UniProtID others use NIH accession etc)
     aid2target = []
+    pair_seen = set()
     for i in tqdm(range(len(df)), "Creating aid2target table"):
         aid = df.at[i, "AID"]
-        if i in indices_to_drop:
+        was_dropped = i in indices_to_drop
+        if was_dropped and not ((aid, dropped_to_first[i]) in pair_seen):
             first_i = dropped_to_first[i]
+            pair_seen.add((aid, first_i))
             aid2target.append((aid, target_df.at[first_i, "TargetID"]))
-        else:
+        elif not (was_dropped) and not ((aid, i) in pair_seen):
+            pair_seen.add((aid, i))
             aid2target.append(
                 (aid, target_df.at[i, "TargetID"])
             )  # note we did not reset index
