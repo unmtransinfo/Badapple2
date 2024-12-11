@@ -45,8 +45,26 @@ Below is a the output of `snakemake --forceall --rulegraph | dot -Tsvg > rulegra
 
 
 ### Note on reproducibility
-PubChem is a living database, and assay records can be updated over time. Although we don't expect these changes to make a significant impact, if you would like to guarantee that your version of badapple2 is the exact same as the version used by the Badapple2 webapp, then it is advised to download and use all of the original input files:
+PubChem is a living database, and assay records can be updated over time. Although we don't expect these changes to make a significant impact, if you would like to guarantee that your version of badapple2 is the exact same as the version used by the web app, then it is advised to download and use all of the original input files:
 
 https://unmtid-dbs.net/download/Badapple2/badapple2_files/
 
-<!--- TODO: add separate workflow for downloading input files -->
+Follow these steps to run the workflow using the original files:
+1. Create an empty `LOCAL_PUBCHEM_DIR`: `mkdir -p <LOCAL_PUBCHEM_DIR>`
+    * We won't actually be adding data to this directory - we just create it to tell Snakemake that it exists
+2. Go to your `BASE_DATA_DIR`: `cd <BASE_DATA_DIR>`
+3. Download all the original input files:
+```
+wget -r -np -nH --cut-dirs=3 -R "index.html*" https://unmtid-dbs.net/download/Badapple2/badapple2_files/
+```
+4. Set `ASSAY_DATA_DIR` to `<BASE_DATA_DIR>/assays/` and `DRUG_CENTRAL_DIR` to `<BASE_DATA_DIR>/drugcentral/`
+5. Touch the appropriate rules (tells Snakemake they don't need to be run): 
+```
+snakemake --touch --until get_assay_descriptions get_assay_annotations get_assay_targets get_pubchem_assay_activities download_drugcentral_struct_file
+```
+6. Verify that the appropriate rules will be run: `snakemake -np`
+    * There should be 20 rules total to be run
+    * You can use `snakemake --dag | dot -Tsvg > dag_sub.svg` and verify that it looks like the diagram below
+7. Run the rest of the workflow: `snakemake`
+
+#### Workflow diagram after downloading files
