@@ -239,6 +239,7 @@ def AnnotateScaffolds(
     no_write,
     n_max=0,
     n_skip=0,
+    write_scaf2activeaid=False,
 ):
     """Loop over scaffolds.  For each scaffold call AnnotateScaffold().
     NOTE: This function presumes that the compound annotations have already been accomplished
@@ -289,6 +290,7 @@ def AnnotateScaffolds(
             assay_id_tag,
             assay_ids,
             no_write,
+            write_scaf2activeaid,
         )
         n_cpd_total += cTotal
         n_sub_total += sTotal
@@ -321,6 +323,7 @@ def AnnotateScaffold(
     assay_id_tag,
     assay_ids,
     no_write,
+    write_scaf2activeaid: bool = False,
 ):
     """Annotate scaffold with assay statistics using aggregated SQL queries.
 
@@ -332,6 +335,7 @@ def AnnotateScaffold(
     assay_id_tag (str): The column name for the assay ID
     assay_ids (set or None): Optional set of assay IDs to filter on
     no_write (bool): If True, don't update the database
+    write_scaf2activeaid (bool): If True and not(no_write), write updates to the scaf2activeaid table
 
     Returns:
     Tuple[int, int, int, int, int, int, int, int, int, int, int, bool, int]:
@@ -418,6 +422,7 @@ def AnnotateScaffold(
         (SELECT COUNT(*) FROM active_compounds) AS cActive,
         (SELECT COUNT(*) FROM tested_assays) AS aTested,
         (SELECT COUNT(*) FROM active_assays) AS aActive,
+        (SELECT array_agg(aid) FROM active_assays) AS activeAssayIDs,
         total_results.nres_total
     FROM counts, total_results
     """
@@ -438,6 +443,7 @@ def AnnotateScaffold(
         cActive,
         aTested,
         aActive,
+        activeAssayIDs,
         nres_total,
     ) = result
 
@@ -481,6 +487,23 @@ def AnnotateScaffold(
             db.commit()
             cur1.close()
             ok_write = True
+        except Exception as e:
+            logger.error(e)
+            n_err += 1
+
+    if (
+        ok_write
+        and write_scaf2activeaid
+        and activeAssayIDs is not None
+        and len(activeAssayIDs) > 0
+    ):
+        try:
+            cur1 = db.cursor()
+            insert_query = "INSERT INTO scaf2activeaid (scafid, aid) VALUES (%s, %s)"
+            data = [(scaf_id, aid) for aid in activeAssayIDs]
+            cur1.executemany(insert_query, data)
+            db.commit()
+            cur1.close()
         except Exception as e:
             logger.error(e)
             n_err += 1
@@ -579,6 +602,11 @@ def parse_arguments():
         help="Disable database writes (updates will be skipped)",
     )
     parser.add_argument(
+        "--write_scafid2activeaid",
+        action="store_true",
+        help="Write to the scaf2activeaid table (Badapple2+ versions of DB)",
+    )
+    parser.add_argument(
         "--log_fname",
         help="File to save logs to. If not given will log to stdout.",
         default=None,
@@ -633,6 +661,7 @@ def main(args):
                 args.no_write,
                 args.nmax,
                 args.nskip,
+                args.write_scafid2activeaid,
             )
         )
 

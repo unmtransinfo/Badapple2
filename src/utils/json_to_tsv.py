@@ -79,8 +79,22 @@ def unpack_annotations_json_to_tsv(json_path: str, tsv_path: str):
     df.to_csv(tsv_path, sep="\t", index=False)
 
 
+def get_taxonomy_with_common_name(taxid: int):
+    # these are from the NCBI:
+    # https://www.ncbi.nlm.nih.gov/taxonomy/
+    # given small number of missing entries in original set don't have to
+    # include many taxids, but for larger DB would want to rethink this
+    if taxid == 9606:
+        return "Homo sapiens (human)"
+    elif taxid == 11269:
+        return "Orthomarburgvirus marburgense (Marburg virus)"
+    elif taxid == "" or taxid is None:
+        return ""  # not specified
+    Warning(f"Unrecognized taxid: {taxid}")
+    return ""
+
+
 def unpack_target_json_to_tsv(json_path: str, tsv_path: str):
-    # Read JSON file
     with open(json_path, "r") as file:
         data = json.load(file)
 
@@ -89,21 +103,34 @@ def unpack_target_json_to_tsv(json_path: str, tsv_path: str):
 
     # Iterate through JSON data
     for aid, items in data.items():
-        if items is None:
+        if items is None or len(items) == 0:
             rows.append([aid, None, None, None, None, None])  # no target
             continue
         for item in items:
-            name = item.get("name", "")
-            organism_taxname = (
-                item.get("organism", {}).get("org", {}).get("taxname", "")
-            )
-            is_protein = "protein_accession" in item
-            protein_accession = item.get("protein_accession", "") if is_protein else ""
-            uniprot_id = item.get("uniprot_id", "") if is_protein else ""
+            name = item["Name"]
+            target_type = item["TargetType"]
+            pubchem_id = item["NCBI_ID"]
+            organism_taxonomy = item["Taxonomy"]
+            taxonomy_id = item["TaxonomyID"]
+            if "(" not in organism_taxonomy:
+                # PubChem API will fill in common name in parens, but if could not fetch
+                # info using PubChemAPI (e.g., for nucleotides/pathways) then common name
+                # info was not included, so including here
+                organism_taxonomy = get_taxonomy_with_common_name(taxonomy_id)
+            uniprot_id = item.get(
+                "UniProtID", ""
+            )  # not included for non-protein entries
 
-            # Append row to list
             rows.append(
-                [aid, name, organism_taxname, is_protein, protein_accession, uniprot_id]
+                [
+                    aid,
+                    name,
+                    organism_taxonomy,
+                    taxonomy_id,
+                    target_type,
+                    pubchem_id,
+                    uniprot_id,
+                ]
             )
 
     # Create DataFrame
@@ -112,18 +139,16 @@ def unpack_target_json_to_tsv(json_path: str, tsv_path: str):
         columns=[
             "AID",
             "Name",
-            "Organism TaxName",
-            "isProtein",
-            "Protein Accession",
-            "UniProt ID",
+            "Taxonomy",
+            "TaxonomyID",
+            "TargetType",
+            "NCBI_ID",
+            "UniProtID",
         ],
     )
 
     df["AID"] = pd.to_numeric(df["AID"], errors="coerce").astype("Int64")
-    # Sort DataFrame by AID column
     df = df.sort_values(by="AID")
-
-    # Save DataFrame to TSV
     df.to_csv(tsv_path, sep="\t", index=False)
 
 

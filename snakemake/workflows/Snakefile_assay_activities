@@ -1,0 +1,33 @@
+"""
+@author Jack Ringer
+Date: 11/21/2024
+Description:
+Snakefile defining how to generate the "activity" and "sub2cpd" tables
+for the Badapple2 DB.
+"""
+
+
+# get bioassay data + sets of pubchem compounds/substances
+rule get_pubchem_assay_activities:
+    input:
+        assay_records_dir=config["PUBCHEM_ASSAY_RECORDS_DIR"],
+        aid_file=config["ASSAY_ID_FILE_PATH"]
+    output:
+        o_assaystats=config["ACTIVITY_TSV_PATH"],
+        o_compound=config["BIOACTIVITY_COMPOUND_SET_TSV_PATH"],
+        o_sid2cid=config["SUB2CPD_TSV_PATH"]
+    log:
+        "logs/get_pubchem_assay_activities/all.log"
+    benchmark:
+        "benchmark/get_pubchem_assay_activities/all.tsv"
+    shell:
+        "python3 ../src/pubchem_assay_activities.py "
+        "--aid_file {input.aid_file} "
+        "--assay_zip_dir {input.assay_records_dir} "
+        "--o_assaystats {output.o_assaystats} "
+        "--o_sid2cid {output.o_sid2cid} "
+        "--o_compound {output.o_compound} "
+        "--log_fname {log} "
+        "> {log} 2>&1"
+    
+

@@ -1,0 +1,79 @@
+# configuration file with file path definitions
+
+# base directory where all tables (for DB) are stored in TSV format
+BASE_DATA_DIR: "/home/jack/unm_gra/data/badapple/badapple2"
+
+### ASSAY DATA (assay list + additional info from assays)
+ASSAY_DATA_DIR: "/home/jack/unm_gra/data/badapple/badapple2/assays/"
+ASSAY_ID_FILE: "assay_set.aid"
+
+# assay target data
+ASSAY_TARGET_SUMMARIES_JSON: "aid2target_hts_20000.json"
+ASSAY_TARGET_SUMMARIES_TSV: "aid2target_hts_20000.tsv"
+AID2TARGET_TSV: "aid2target.tsv"
+ASSAY_TARGET_UNIQUE_TSV: "unique_target.tsv"
+ASSAY_TARGET_CONSISTENT_TSV: "unique_target_consistent.tsv"
+ASSAY_TARGET_FAMILY_TSV: "unique_target_consistent_fam.tsv"
+TARGET_TSV: "target.tsv"
+
+# assay description/annotation data
+ASSAY_ANNOTATIONS_JSON: "assay_annotations_hts_20000.json"
+ASSAY_DESCRIPTIONS_JSON: "assay_descriptions_hts_20000.json"
+AID2DESCRIPTORS_TSV: "aid2descriptors.tsv"
+
+
+### ACTIVITY DATA (processed activity info from assay data)
+ACTIVITY_TSV: "activity.tsv"
+SUB2CPD_TSV: "sid2cid.tsv" # maps substance id (sid)<->compound id (cid)
+BIOACTIVITY_COMPOUND_SET_TSV: "cpds_set.tsv" # set of compounds from the assays
+
+
+### SCAFFOLD DATA (scaffold-compound relationships for PubChem)
+COMPOUND_TSV: "cpds.tsv" # compounds from bioassay data
+SCAFFOLD_TSV: "scafs.tsv" # scaffolds ""
+SCAF2CPD_TSV: "scaf2cpd.tsv"
+
+
+### DRUG DATA
+DRUG_TSV: "drug.tsv"
+DRUG_SCAFFOLD_TSV: "drug_scafs.tsv"
+DRUG_SCAF2CPD_TSV: "drug_scaf2cpd.tsv"
+
+
+### DOWNLOADED FILE NAMES + DIRECTORIES
+DRUG_CENTRAL_DIR: /home/jack/unm_gra/data/badapple/badapple2/drugcentral/ # where drugcentral file will be stored
+DRUG_CENTRAL_TSV: "structures.smiles.tsv"
+PUBCHEM_DATASOURCES_CSV: "PubChemDataSources_all.csv" # stored under assay dir
+# where to store mirrored pubchem files
+LOCAL_PUBCHEM_DIR: "/home/jack/unm_gra/data/pubchem"
+
+
+### FILE DOWNLOAD URLS
+### DO NOT CHANGE - unless you know these urls have been updated
+PUBCHEM_DATASOURCES_CSV_URL: "https://pubchem.ncbi.nlm.nih.gov/rest/pug/sourcetable/all/CSV/?response_type=save&response_basename=PubChemDataSources_all"
+DRUG_CENTRAL_TSV_URL: "https://unmtid-dbs.net/download/DrugCentral/2021_09_01/structures.smiles.tsv"
+REMOTE_FTP_DIR: "ftp.ncbi.nlm.nih.gov/pubchem/"
+
+
+### DB PARAMS
+DB_NAME: "badapple2"
+DB_SCHEMA: "public"
+DB_HOST: "localhost"
+DB_USER: "<your_user>"
+DB_PASSWORD: "<your_password>"
+
+
+# ASSAY PARAMS
+DATA_SOURCE_CATEGORY: "NIH Initiatives"
+N_COMPOUND_THRESH: 20000
+DEPOSIT_DATE_CUTOFF: 20240701 # July 1st, 2024 - AID 1963576 deposited July 10th, released in October 2024
+
+
+# MEDIAN STATS FROM badapple_classic
+# Re-using these median stats to do score normalization in badapple2
+# to ensure that our criteria for small vs large amounts of evidence remains consistent
+# (don't want adding new scaffolds w/ low n_ass_tested etc to alter other scaffold scores)
+BADAPPLE_CLASSIC_MEDIAN_NCPD_TESTED: 2
+BADAPPLE_CLASSIC_MEDIAN_NSUB_TESTED: 2
+BADAPPLE_CLASSIC_MEDIAN_NASS_TESTED: 633
+BADAPPLE_CLASSIC_MEDIAN_NSAM_TESTED: 773

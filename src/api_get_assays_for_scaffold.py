@@ -8,14 +8,8 @@ assay IDs (AID) associated with the scaffold.
 
 import argparse
 import json
-import sys
 
 import requests
-
-# solution from: https://stackoverflow.com/questions/714063/importing-modules-from-parent-folder/50194143#50194143
-# not the best solution, but avoids having to create a package
-sys.path.append("..")
-
 
 from utils.file_utils import write_aid_file
 

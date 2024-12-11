@@ -1,0 +1,99 @@
+"""
+@author Jack Ringer
+Date: 11/20/2024
+Description:
+Rule definitions for Snakemake workflow to create "aid2target" and
+"target" table.
+See: https://snakemake.readthedocs.io/en/stable/ for more info on Snakemake
+"""
+
+
+rule get_assay_targets:
+    input:
+        aid_file=config["ASSAY_ID_FILE_PATH"]
+    output:
+        out_json_file=config["ASSAY_TARGET_SUMMARIES_JSON_PATH"]
+    log:
+        "logs/get_assay_targets/all.log"
+    benchmark:
+        "benchmark/get_assay_targets/all.tsv"
+    shell:
+        "python3 ../src/pubchem_assay_target_summaries.py "
+        "--aid_file {input.aid_file} "
+        "--out_json_file {output.out_json_file} "
+        "--fetch_uniprot_ids > {log} 2>&1"
+
+
+rule target_json_to_tsv:
+    input:
+        json_file=config["ASSAY_TARGET_SUMMARIES_JSON_PATH"]
+    output:
+        tsv_file=config["ASSAY_TARGET_SUMMARIES_TSV_PATH"]
+    log:
+        "logs/target_json_to_tsv/all.log"
+    benchmark:
+        "benchmark/target_json_to_tsv/all.tsv"
+    shell:
+        "python3 ../src/utils/json_to_tsv.py "
+        "{input.json_file} {output.tsv_file} targets > {log} 2>&1"
+
+
+rule create_aid2target:
+    input:
+        tsv_file=config["ASSAY_TARGET_SUMMARIES_TSV_PATH"]
+    output:
+        unique_target_tsv_file=config["ASSAY_TARGET_UNIQUE_TSV_PATH"],
+        aid2target_file=config["AID2TARGET_TSV_PATH"]
+    log:
+        "logs/create_aid2target_table/all.log"
+    benchmark:
+        "benchmark/create_aid2target_table/all.tsv"
+    shell:
+        "python3 ../src/create_aid2target.py "
+        "--inp_tsv {input.tsv_file} "
+        "--unique_target_out_path {output.unique_target_tsv_file} "
+        "--aid2target_out_path {output.aid2target_file} > {log} 2>&1"
+
+
+rule get_consistent_target_summaries:
+    input:
+        tsv_file=config["ASSAY_TARGET_UNIQUE_TSV_PATH"]
+    output:
+        consistent_tsv_file=config["ASSAY_TARGET_CONSISTENT_TSV_PATH"]
+    log:
+        "logs/get_consistent_target_summaries/all.log"
+    benchmark:
+        "benchmark/get_consistent_target_summaries/all.tsv"
+    shell:
+        "python3 ../src/get_consistent_target_summaries.py "
+        "--input_tsv {input.tsv_file} "
+        "--out_tsv {output.consistent_tsv_file} > {log} 2>&1"
+
+
+rule get_protein_families:
+    input:
+        tsv_file=config["ASSAY_TARGET_CONSISTENT_TSV_PATH"]
+    output:
+        family_tsv_file=config["ASSAY_TARGET_FAMILY_TSV_PATH"]
+    log:
+        "logs/get_protein_families/all.log"
+    benchmark:
+        "benchmark/get_protein_families/all.tsv"
+    shell:
+        "python3 ../src/get_protein_families.py "
+        "{input.tsv_file} {output.family_tsv_file} > {log} 2>&1"
+
+
+rule create_target:
+    input:
+        tsv_file=config["ASSAY_TARGET_FAMILY_TSV_PATH"]
+    output:
+        target_tsv_file=config["TARGET_TSV_PATH"]
+    log:
+        "logs/create_target_table/all.log"
+    benchmark:
+        "benchmark/create_target_table/all.tsv"
+    shell:
+        "python3 ../src/create_target.py "
+        "--inp_tsv {input.tsv_file} "
+        "--out_tsv {output.target_tsv_file} > {log} 2>&1"

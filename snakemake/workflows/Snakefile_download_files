@@ -1,0 +1,42 @@
+"""
+@author Jack Ringer
+Date: 11/22/2024
+Description:
+Simple workflow to download the PubChem DataSources file 
+(https://pubchem.ncbi.nlm.nih.gov/sources/) and the
+DrugCentral structures file (https://drugcentral.org/download).
+"""
+
+
+rule download_pubchem_datasources_file:
+    output:
+        config["PUBCHEM_DATASOURCES_CSV_PATH"]
+    params:
+        url=config["PUBCHEM_DATASOURCES_CSV_URL"],
+        file_name=config["PUBCHEM_DATASOURCES_CSV"],
+        destination_dir=config["ASSAY_DATA_DIR"]
+    log:
+        "logs/download_pubchem_file/all.log"
+    benchmark:
+        "benchmark/download_pubchem_file/all.tsv"
+    shell:
+        "bash ../sh_scripts/download_file.sh "
+        "'{params.url}' '{params.file_name}' '{params.destination_dir}' "
+        "> {log} 2>&1"
+
+
+rule download_drugcentral_struct_file:
+    output:
+        config["DRUG_CENTRAL_TSV_PATH"]
+    params:
+        url=config["DRUG_CENTRAL_TSV_URL"],
+        file_name=config["DRUG_CENTRAL_TSV"],
+        destination_dir=config["DRUG_CENTRAL_DIR"]
+    log:
+        "logs/download_drugcentral_file/all.log"
+    benchmark:
+        "benchmark/download_drugcentral_file/all.tsv"
+    shell:
+        "bash ../sh_scripts/download_file.sh "
+        "'{params.url}' '{params.file_name}' '{params.destination_dir}' "
+        "> {log} 2>&1"

@@ -8,6 +8,7 @@ https://docs.docker.com/engine/install/
 
 ## badapple_classic
 1. (Optional) modify the `.env_BA_classic` file to your desired requirements. 
+    * Note: If you want to include the "activity" table in the DB, then change `PGDUMP_URL` to "https://unmtid-dbs.net/download/Badapple2/badapple_classic_full.pgdump"
 2. The badapple_classic DB can be setup using the following command:
 ```
 docker-compose --env-file ./docker/.env_BA_classic -f compose_BA_classic.yml up --build -d
@@ -15,6 +16,18 @@ docker-compose --env-file ./docker/.env_BA_classic -f compose_BA_classic.yml up 
 3. You can test that the DB is accessible using the following command (adjust the user/port if you've changed them):
 ```
 psql -d badapple_classic -p 5443 -U robin -h localhost
+```
+
+## badapple2
+1. (Optional) modify the `.env_BA2` file to your desired requirements. 
+    * Note: If you want to include the "activity" table in the DB, then change `PGDUMP_URL` to "https://unmtid-dbs.net/download/Badapple2/badapple2_full.pgdump"
+2. The badapple2 DB can be setup using the following command:
+```
+docker-compose --env-file ./docker/.env_BA2 -f compose_BA2.yml up --build -d
+```
+3. You can test that the DB is accessible using the following command (adjust the user/port if you've changed them):
+```
+psql -d badapple2 -p 5443 -U frog -h localhost
 ```
 
 

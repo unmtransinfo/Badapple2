@@ -10,13 +10,14 @@ separated by a newline.
 import argparse
 import json
 import os
-import re
+from typing import Tuple
 
 import pubchempy as pcp
 import requests
 from tqdm import tqdm
 
 from utils.file_utils import read_aid_file
+from utils.target_utils import TargetType, is_valid_uniprot_id, strip_version
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -41,22 +42,19 @@ def parse_args(parser: argparse.ArgumentParser):
     return parser.parse_args()
 
 
-def strip_version(protein_accession: str):
-    # some accession strings include version at the end
-    # e.g., "NP_004408.1" indicates version 1 (".1")
-    # remove these versions so the accession can be used w/ PubChem API
-    pos = protein_accession.rfind(".")
-    if pos != -1:
-        return protein_accession[:pos]
-    return protein_accession
-
-
-UNIPROT_REGEX = r"[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}"
-
-
-def is_valid_uniprot_id(uniprot_candidate: str):
-    # see https://www.uniprot.org/help/accession_number
-    return re.match(UNIPROT_REGEX, uniprot_candidate)
+def get_target_type_and_id(item: dict) -> Tuple[str, str]:
+    if "mol_id" in item:
+        id_info = item["mol_id"]
+        if "protein_accession" in id_info:
+            return TargetType.PROTEIN.value, id_info["protein_accession"]
+        if "nucleotide_accession" in id_info:
+            return TargetType.NUCLEOTIDE.value, id_info["nucleotide_accession"]
+        elif "gene_id" in id_info:
+            return TargetType.GENE.value, id_info["gene_id"]
+        elif "other" in id_info and id_info["other"].startswith("Pathway"):
+            return TargetType.PATHWAY.value, id_info["other"]
+        raise ValueError(f"Unrecognized target type in item: {item}")
+    return None, None
 
 
 def extract_uniprot_id(json_data: dict):
@@ -85,10 +83,44 @@ def get_uniprot_id(protein_accession: str) -> str:
     return None
 
 
-def has_protein_accession(target_details: dict):
-    return (
-        "mol_id" in target_details and "protein_accession" in target_details["mol_id"]
-    )
+def get_target_name(target_info: dict):
+    possible_name_keys = ["name", "Name", "descr"]
+    name = ""
+    for name_key in possible_name_keys:
+        name_candidate = target_info.get(name_key, "")
+        if name_candidate != "":
+            name = name_candidate
+            break
+    return name
+
+
+def get_target_taxonomy(target_info: dict):
+    organism_taxname = target_info.get("organism", {}).get("org", {}).get("taxname", "")
+    return organism_taxname
+
+
+def get_target_taxonomy_id(target_info: dict):
+    db_entry = target_info.get("organism", {}).get("org", {}).get("db", [None])[0]
+    taxon_id = ""
+    if db_entry is not None:
+        taxon_id = db_entry.get("tag", {}).get("id", "")
+    return taxon_id
+
+
+def fill_summary(summary: dict, target_info: dict):
+    summary["Name"] = get_target_name(target_info)
+    summary["Taxonomy"] = get_target_taxonomy(target_info)
+    summary["TaxonomyID"] = get_target_taxonomy_id(target_info)
+
+
+def get_target_summary(target_info: dict):
+    summary = {}
+    target_type, target_id = get_target_type_and_id(target_info)
+    summary["TargetType"] = target_type
+    summary["NCBI_ID"] = target_id
+    # use information present in existing dict to try and fill in information
+    fill_summary(summary, target_info)
+    return summary
 
 
 def main(args):
@@ -102,19 +134,20 @@ def main(args):
     aid2target = {}
     for aid in tqdm(assay_ids, desc="Processing list of assay ids..."):
         assay = pcp.Assay.from_aid(aid)
-        target_info = assay.target
-        # default format has target accession under 'mol_id' - fixing this
-        if target_info is not None:
-            protein_targets = list(filter(has_protein_accession, target_info))
-            for target_details in protein_targets:
-                protein_accession = target_details["mol_id"]["protein_accession"]
-                target_details["protein_accession"] = protein_accession
-                del target_details["mol_id"]
-                if args.fetch_uniprot_ids:
-                    target_details["uniprot_id"] = get_uniprot_id(protein_accession)
-            if len(protein_targets) != len(target_info):
-                print(f"Non protein target for AID {aid}")
-        aid2target[aid] = target_info
+        target_infos = assay.target
+        target_summaries = []
+        if target_infos is not None:
+            for target_info in target_infos:
+                target_summary = get_target_summary(target_info)
+                if (
+                    target_summary["TargetType"] == TargetType.PROTEIN.value
+                    and args.fetch_uniprot_ids
+                ):
+                    target_summary["UniProtID"] = get_uniprot_id(
+                        target_summary["NCBI_ID"]
+                    )
+                target_summaries.append(target_summary)
+        aid2target[aid] = target_summaries
 
     # save output to JSON file
     out_dir = os.path.dirname(args.out_json_file)

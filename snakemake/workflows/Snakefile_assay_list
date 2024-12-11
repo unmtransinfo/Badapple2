@@ -1,0 +1,50 @@
+"""
+@author Jack Ringer
+Date: 11/21/2024
+Description:
+Snakefile defining how to get list of assays (AssayIDs) for Badapple2.
+See: https://snakemake.readthedocs.io/en/stable/ for more info on Snakemake
+"""
+
+
+rule mirror_pubchem_records:
+    output:
+        workdir=protected(directory(config["LOCAL_PUBCHEM_DIR"])),
+        bioassay_file=protected(config["BIOASSAY_FILE"]),
+        job_done=touch(config["MIRROR_PUBCHEM_DONE_FILE"]),
+        assay_records_dir=protected(directory(config["PUBCHEM_ASSAY_RECORDS_DIR"]))
+    params:
+        pubchem_ftp_dir=config["REMOTE_FTP_DIR"]
+    log:
+        "logs/mirror_pubchem_records/all.log"
+    benchmark:
+        "benchmark/mirror_pubchem_records/all.tsv"
+    shell:
+        "bash ../sh_scripts/mirror_pubchem.sh "
+        "'{output.workdir}' '{params.pubchem_ftp_dir}' > {log} 2>&1"
+
+
+rule get_pubchem_hts_assays:
+    input:
+        mirror_done=config["MIRROR_PUBCHEM_DONE_FILE"],
+        bioassay_file=config["BIOASSAY_FILE"],
+        pubchem_data_sources_csv=config["PUBCHEM_DATASOURCES_CSV_PATH"]
+    output:
+        aid_out_file=config["ASSAY_ID_FILE_PATH"]
+    params:
+        n_compound_thresh=config["N_COMPOUND_THRESH"],
+        data_source_category=config["DATA_SOURCE_CATEGORY"],
+        deposit_date_cutoff=config["DEPOSIT_DATE_CUTOFF"]
+    log:
+        "logs/get_pubchem_hts_assays/all.log"
+    benchmark:
+        "benchmark/get_pubchem_hts_assays/all.tsv"
+    shell:
+        "python3 ../src/pubchem_HTS_assays.py "
+        "--bioassays_file {input.bioassay_file} "
+        "--aid_out_file {output.aid_out_file} "
+        "--n_compound_thresh {params.n_compound_thresh} "
+        "--data_source_category '{params.data_source_category}' "
+        "--pubchem_data_sources_file {input.pubchem_data_sources_csv} "
+        "--deposit_date_cutoff {params.deposit_date_cutoff} "
+        "--log_fname {log} > {log} 2>&1"

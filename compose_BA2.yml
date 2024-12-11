@@ -1,6 +1,6 @@
-# docker compose file for badapple_classic
+# docker compose file for badapple2
 services:
-  classic_db:
+  badapple2_db:
     build:
       context: .
       dockerfile: Dockerfile
@@ -12,7 +12,7 @@ services:
         - TZ=${TZ}
         - PGDUMP_URL=${PGDUMP_URL}
     env_file:
-      - ./docker/.env_BA_classic
+      - ./docker/.env_BA2
     ports:
       - "${DB_PORT}:${DB_PORT}"
     environment:
@@ -23,12 +23,12 @@ services:
       - TZ=${TZ}
       - PGDUMP_URL=${PGDUMP_URL}
     volumes:
-      - postgres_data_BA_classic:/var/lib/postgresql/data
+      - postgres_data_BA2:/var/lib/postgresql/data
     networks:
-      - BA_classic
+      - BA2
 
 volumes:
-  postgres_data_BA_classic:
+  postgres_data_BA2:
 
 networks:
-  BA_classic:
+  BA2:

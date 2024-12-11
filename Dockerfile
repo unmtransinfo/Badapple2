@@ -1,4 +1,4 @@
-# docker file to setup badapple_classic DB
+# docker file to setup badapple DBs (badapple_classic & badapple2 at time of writing)
 # have to keep docker file in main dir (instead of under docker/) because
 # docker-compose does not support subdirs when reading from git repositories
 
@@ -12,11 +12,13 @@ ARG DB_NAME
 ARG DB_USER
 ARG DB_PASSWORD
 ARG TZ
+ARG PGDUMP_URL=${PGDUMP_URL}
 ENV DB_PORT=${DB_PORT}
 ENV DB_NAME=${DB_NAME}
 ENV DB_USER=${DB_USER}
 ENV DB_PASSWORD=${DB_PASSWORD}
 ENV TZ=${TZ}
+ENV PGDUMP_URL=${PGDUMP_URL}
 
 
 RUN apt-get update
@@ -58,9 +60,7 @@ RUN echo "---Updated postgresql.conf to use correct port"
 
 
 # download pgdump file
-RUN wget --no-cache -O /tmp/badapple_classic.pgdump https://unmtid-dbs.net/download/Badapple2/badapple_classic.pgdump
-RUN echo "pgdump file stat:"
-RUN stat /tmp/badapple_classic.pgdump
+RUN wget -O /tmp/${DB_NAME}.pgdump ${PGDUMP_URL}
 RUN echo "---Downloaded pgdump file"
 
 
@@ -68,11 +68,10 @@ RUN echo "---Downloaded pgdump file"
 USER postgres
 RUN pg_config
 RUN /etc/init.d/postgresql start && \
-	psql -p ${DB_PORT} -c "DROP DATABASE IF EXISTS ${DB_NAME};" && \
 	psql -p ${DB_PORT} -c "CREATE ROLE ${DB_USER} WITH LOGIN PASSWORD '${DB_PASSWORD}'" && \
 	createdb -p ${DB_PORT} -O postgres ${DB_NAME} && \
 	psql -p ${DB_PORT} -d ${DB_NAME} -c "CREATE EXTENSION rdkit" && \
-	pg_restore -p ${DB_PORT} -O -x -v -d ${DB_NAME} /tmp/badapple_classic.pgdump && \
+	pg_restore -p ${DB_PORT} -O -x -v -d ${DB_NAME} /tmp/${DB_NAME}.pgdump && \
 	psql -p ${DB_PORT} -d ${DB_NAME} -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${DB_USER}" && \
 	psql -p ${DB_PORT} -d ${DB_NAME} -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO ${DB_USER}" && \
 	psql -p ${DB_PORT} -d ${DB_NAME} -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO ${DB_USER}" && \
@@ -82,6 +81,6 @@ RUN service postgresql stop
 RUN echo "---Done instantiating and loading db."
 
 # cleanup pgdump file
-RUN rm /tmp/badapple_classic.pgdump
+RUN rm /tmp/${DB_NAME}.pgdump
 
 CMD ["sudo", "-u", "postgres", "/usr/lib/postgresql/14/bin/postgres", "-D", "/var/lib/postgresql/14/main", "-c", "config_file=/etc/postgresql/14/main/postgresql.conf"]

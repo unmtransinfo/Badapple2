@@ -1,41 +1,32 @@
-#!/bin/sh
-#############################################################################
-### Go_badapple_CreateDB.sh
-### 
-### RDKit version
-### 
-### "CREATE SCHEMA IF NOT EXISTS" requires PG 9.3+.
-### 
-### *Note*: scaffold and scaf2scaf tables now created by HScaf process.
-###         May have only columns: id, scafsmi, scaftree
-### 
-### Jeremy Yang
-###  6 Feb 2017
-### Edited by Jack Ringer
-### 22 July 2024
-#############################################################################
-###   1 = inactive
-###   2 = active
-###   3 = inconclusive
-###   4 = unspecified
-###   5 = probe
-###   multiple & differing 1, 2 or 3 = discrepant
-###   not 4 = tested
-#############################################################################
-set -e
-DB="badapple2"
-DBCOMMENT="Badapple DB (dev version, PubChem-based)"
-SCHEMA="public"
+# Author: Jack Ringer
+# Date: 11/21/2024
+# Description:
+# Initialize Badapple2 database
+# NOTE: If using this script to DB with new data you may want to
+# double-check the VARCHAR limits (in parens). Be careful
+# with the assay description and protocol (type TEXT means no size limit!)
 
-if [ ! `psql -P pager=off -Al | grep '|' | sed -e 's/|.*$//' | grep "^${DB}$"` ]; then
-	createdb $DB
+if [ $# -lt 4 ]; then
+	printf "Syntax: %s DB_NAME DB_HOST SCHEMA COMMENT\n" $0
+	exit
 fi
 
-psql -d $DB -c "COMMENT ON DATABASE ${DB} IS '$DBCOMMENT'"
-psql -d $DB <<__EOF__
-CREATE TABLE IF NOT EXISTS $SCHEMA.scaffold (
+DB_NAME=$1
+DB_HOST=$2
+SCHEMA=$3
+COMMENT=$4
+
+
+if [ ! `psql -P pager=off -Al | grep '|' | sed -e 's/|.*$//' | grep "^${DB_NAME}$"` ]; then
+	createdb -h $DB_HOST $DB_NAME 
+fi
+
+psql -h $DB_HOST -d $DB_NAME -c "COMMENT ON DATABASE ${DB_NAME} IS '$COMMENT'"
+psql -h $DB_HOST -d $DB_NAME <<EOF
+CREATE TABLE $SCHEMA.scaffold (
 	id INTEGER PRIMARY KEY,
-	scafsmi VARCHAR(512) NOT NULL,
+	scafsmi VARCHAR(512) NOT NULL UNIQUE,
+	kekule_scafsmi VARCHAR(512) NOT NULL UNIQUE,
 	scaftree VARCHAR(2048),
 	ncpd_total INTEGER,
 	ncpd_tested INTEGER,
@@ -50,9 +41,9 @@ CREATE TABLE IF NOT EXISTS $SCHEMA.scaffold (
 	in_drug BOOLEAN,
 	pscore FLOAT
 	) ;
-CREATE TABLE IF NOT EXISTS $SCHEMA.scaf2scaf (
-	parent_id INTEGER,
-	child_id INTEGER
+CREATE TABLE $SCHEMA.scaf2scaf (
+	parent_id INTEGER NOT NULL,
+	child_id INTEGER NOT NULL
 	);
 --
 CREATE TABLE $SCHEMA.compound (
@@ -66,21 +57,22 @@ CREATE TABLE $SCHEMA.compound (
 	nass_active INTEGER,
 	nsam_tested INTEGER,
 	nsam_active INTEGER
-	) ;
+	);
 CREATE TABLE $SCHEMA.sub2cpd (
 	sid INTEGER PRIMARY KEY,
-	cid INTEGER
+	cid INTEGER NOT NULL
 	) ;
 --
 CREATE TABLE $SCHEMA.activity (
-	aid INTEGER,
-	sid INTEGER,
-	outcome INTEGER
+	aid INTEGER NOT NULL,
+	sid INTEGER NOT NULL,
+	outcome INTEGER NOT NULL
 	) ;
 CREATE TABLE $SCHEMA.scaf2cpd (
-	scafid INTEGER,
-	cid INTEGER
+	scafid INTEGER NOT NULL,
+	cid INTEGER NOT NULL
 	);
+-- will include medians from badapple_classic DB to keep score criteria consistent
 CREATE TABLE $SCHEMA.metadata (
 	db_description VARCHAR(2048),
 	db_date_built TIMESTAMP WITH TIME ZONE,
@@ -88,7 +80,46 @@ CREATE TABLE $SCHEMA.metadata (
 	median_nsub_tested INTEGER,
 	median_nass_tested INTEGER,
 	median_nsam_tested INTEGER,
-	nass_total INTEGER
+	nass_total INTEGER,
+	median_ncpd_tested_classic INTEGER,
+	median_nsub_tested_classic INTEGER,
+	median_nass_tested_classic INTEGER,
+	median_nsam_tested_classic INTEGER
 	);
-__EOF__
-#
+-- start of Badapple2 tables:
+CREATE TABLE $SCHEMA.aid2descriptors (
+	aid INTEGER PRIMARY KEY,
+	description TEXT NOT NULL,
+	protocol TEXT NOT NULL,
+	assay_format VARCHAR(128),
+	assay_type VARCHAR(128),
+	detection_method VARCHAR(128)
+	);
+CREATE TABLE $SCHEMA.aid2target (
+	aid INTEGER NOT NULL,
+	target_id INTEGER NOT NULL
+	);
+CREATE TABLE $SCHEMA.drug (
+	drug_id INTEGER PRIMARY KEY,
+	cansmi VARCHAR(2048) NOT NULL,
+	inn VARCHAR(128) NOT NULL
+	);
+CREATE TABLE $SCHEMA.scaf2activeaid (
+	scafid INTEGER NOT NULL,
+	aid INTEGER NOT NULL
+	);
+CREATE TABLE $SCHEMA.scaf2drug (
+	scafid INTEGER NOT NULL,
+	drug_id INTEGER NOT NULL
+	);
+CREATE TABLE $SCHEMA.target (
+	target_id INTEGER PRIMARY KEY,
+	type VARCHAR(64) NOT NULL,
+	external_id VARCHAR(64) NOT NULL,
+	external_id_type VARCHAR(64) NOT NULL,
+	name VARCHAR(256),
+	taxonomy VARCHAR(128),
+	taxonomy_id INTEGER,
+	protein_family VARCHAR(64)
+	);
+EOF
