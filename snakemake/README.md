@@ -68,3 +68,6 @@ snakemake --touch --until get_assay_descriptions get_assay_annotations get_assay
 7. Run the rest of the workflow: `snakemake`
 
 #### Workflow diagram after downloading files
+
+![dag_sub](https://github.com/user-attachments/assets/a2d465ab-ba3c-4224-bbb2-c7f76d651f19)
+
