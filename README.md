@@ -1,7 +1,7 @@
 # Badapple2
 Bioassay data associative promiscuity pattern learning engine V2. 
 
-For general use cases one can use the Badapple2 web app: https://chiltepin.health.unm.edu/badapple2 
+For smaller use cases one can use the Badapple2 web app: https://chiltepin.health.unm.edu/badapple2 
 
 ## About
 Badapple is a method for detecting likely promiscuous compounds via their associated scaffolds, using public bioassay data from [PubChem](https://pubchem.ncbi.nlm.nih.gov/). For more information please see the [About Page](https://chiltepin.health.unm.edu/badapple2/about.html).
