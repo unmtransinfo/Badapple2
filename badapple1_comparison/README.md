@@ -84,5 +84,4 @@ psql -d badapple -c "CREATE EXTENSION IF NOT EXISTS rdkit;UPDATE scaffold SET sc
     * You can compare the sets of compounds and scaffolds between the original badapple DB and badapple_classic using `psql -d badapple -f src/sql/compare_compounds.sql` and `psql -d badapple -f src/sql/compare_scaffolds.sql`. You can also compare the compound<->scaffold relationships using `psql -d badapple -f src/sql/compare_compound_scaf_relationships.sql`.
     * You can use `psql -d badapple -f src/sql/compare_compounds_stats.sql` and `psql -d badapple -f src/sql/compare_scaffold_stats.sql` to compare the two DB activity annotations.
     * You can run `python src/check_scaf_diffs.py` to check that any differences in scaffold annotations are due only to differences in compound<->scaffold relationships.
-    * [assay_comparison.ipynb](src/notebooks/assay_comparison.ipynb) reviews assay statistics between badapple and badapple_classic
-    * [score_comparison.ipynb](src/notebooks/score_comparison.ipynb) reviews the differences in scaffold scores between badapple and badapple_classic
+    * [badapple-vs-badapple_classic.ipynb](src/notebooks/badapple-vs-badapple_classic.ipynb) reviews the differences in pScores and other info between badapple and badapple_classic
