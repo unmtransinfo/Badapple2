@@ -34,7 +34,7 @@ AS row FIELDTERMINATOR '\t' WITH row
 WHERE row.id IS NOT NULL AND row.scafsmi IS NOT NULL
 CREATE (g:Scaffold { ID:row.id, SMILES:trim(row.scafsmi), inDrug:row.in_drug, pScore:row.pscore}) ;
 
-Assay:
+// Assay:
 LOAD CSV WITH HEADERS FROM "file:///badapple/aid2descriptors.tsv"
 AS row FIELDTERMINATOR '\t' WITH row
 WHERE row.aid IS NOT NULL AND row.assay_type IS NOT NULL
@@ -82,4 +82,7 @@ CREATE (g:Drug { ID:row.drug_id, SMILES:row.cansmi, INN:trim(row.inn)}) ;
 
 // Report node counts:
 MATCH (c:Compound) RETURN COUNT(c) AS COMPOUND_COUNT ;
+MATCH (d:Drug) RETURN COUNT(d) AS DRUG_COUNT ;
 MATCH (s:Scaffold) RETURN COUNT(s) AS SCAFFOLD_COUNT ;
+MATCH (a:Assay) RETURN COUNT(a) AS ASSAY_COUNT ;
+MATCH (t:Target) RETURN COUNT(t) AS TARGET_COUNT ;

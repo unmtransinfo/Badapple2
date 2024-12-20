@@ -25,6 +25,7 @@ NEO4J_HOST="localhost"
 NEO4J_PORT="7687"
 NEO4J_DATABASE="neo4j"
 NEO4J_USERNAME="neo4j"
+# Connect manually to set Neo4j password.
 NEO4J_PASSWORD="neo4jjyang"
 #
 NEO4J_URL="bolt://${NEO4J_HOST}:${NEO4J_PORT}"
@@ -48,7 +49,7 @@ docker exec $DOCKER_NEO4J_CID chown neo4j "$DOCKER_DATADIR"
 docker exec $DOCKER_NEO4J_CID chmod g+w "$DOCKER_DATADIR"
 #
 #
-./ba2_export.sh
+./sh/ba2_export.sh
 #
 # Copy TSVs into Docker container:
 DATADIR="$(cd $HOME/../data/Badapple/data/neo4j; pwd)"
@@ -60,6 +61,7 @@ docker container cp $DATADIR/scaf2scaf.tsv $DOCKER_NEO4J_CID:$DOCKER_DATADIR
 docker container cp $DATADIR/aid2descriptors.tsv $DOCKER_NEO4J_CID:$DOCKER_DATADIR
 docker container cp $DATADIR/aid2target.tsv $DOCKER_NEO4J_CID:$DOCKER_DATADIR
 docker container cp $DATADIR/drug.tsv $DOCKER_NEO4J_CID:$DOCKER_DATADIR
+docker container cp $DATADIR/scaf2drug.tsv $DOCKER_NEO4J_CID:$DOCKER_DATADIR
 docker container cp $DATADIR/scaf2activeaid.tsv $DOCKER_NEO4J_CID:$DOCKER_DATADIR
 docker container cp $DATADIR/sub2cpd.tsv $DOCKER_NEO4J_CID:$DOCKER_DATADIR
 docker container cp $DATADIR/target.tsv $DOCKER_NEO4J_CID:$DOCKER_DATADIR
