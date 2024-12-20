@@ -48,7 +48,7 @@ docker exec $DOCKER_NEO4J_CID chown neo4j "$DOCKER_DATADIR"
 docker exec $DOCKER_NEO4J_CID chmod g+w "$DOCKER_DATADIR"
 #
 #
-./ba_export.sh
+./bac_export.sh
 #
 # Copy TSVs into Docker container:
 DATADIR="$(cd $HOME/../data/Badapple/data/neo4j; pwd)"
