@@ -4,10 +4,22 @@
 # Docker Neo4j server should be installed and running.
 # See https://hub.docker.com/_/neo4j/
 # docker pull neo4j
+# docker run -p 7474:7474 -p 7687:7687 -v $HOME/neo4j/data:/data neo4j
+###
+# To include APOC:
+# wget https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/download/4.1.0.11/apoc-4.1.0.11-all.jar
 # docker run \
-#   --publish=7474:7474 --publish=7687:7687 \
-#   --volume=$HOME/neo4j/data:/data \
-#   neo4j
+#     -p 7474:7474 -p 7687:7687 \
+#     -v $HOME/neo4j/data:/data -v $HOME/neo4j/plugins:/plugins \
+#     --name neo4j-apoc \
+#     -e NEO4J_apoc_export_file_enabled=true \
+#     -e NEO4J_apoc_import_file_enabled=true \
+#     -e NEO4J_apoc_import_file_use__neo4j__config=true \
+#     -e NEO4JLABS_PLUGINS=\[\"apoc\"\] \
+#     neo4j
+###
+# Or
+# docker container cp $HOME/neo4j/plugins/apoc-4.1.0.11-all.jar <CID>:/var/lib/neo4j/plugins
 ###
 #
 function MessageBreak {
@@ -26,6 +38,7 @@ NEO4J_PORT="7687"
 NEO4J_DATABASE="neo4j"
 NEO4J_USERNAME="neo4j"
 # Connect manually to set Neo4j password.
+# cypher-shell -a neo4j://localhost:7687 -d neo4j -u neo4j (initial pw=neo4j)
 NEO4J_PASSWORD="neo4jjyang"
 #
 NEO4J_URL="bolt://${NEO4J_HOST}:${NEO4J_PORT}"
@@ -49,7 +62,7 @@ docker exec $DOCKER_NEO4J_CID chown neo4j "$DOCKER_DATADIR"
 docker exec $DOCKER_NEO4J_CID chmod g+w "$DOCKER_DATADIR"
 #
 #
-./sh/ba2_export.sh
+${cwd}/sh/ba2_export.sh
 #
 # Copy TSVs into Docker container:
 DATADIR="$(cd $HOME/../data/Badapple/data/neo4j; pwd)"
@@ -75,13 +88,13 @@ $CYSH -a neo4j://${NEO4J_HOST}:${NEO4J_PORT} -d ${NEO4J_DATABASE} -u ${NEO4J_USE
 #
 ###
 MessageBreak "LOAD NODES:"
-$CYSH -a neo4j://${NEO4J_HOST}:${NEO4J_PORT} -d ${NEO4J_DATABASE} -u ${NEO4J_USERNAME} -p ${NEO4J_PASSWORD} <cql/load_main_node_ba2.cql
+$CYSH -a neo4j://${NEO4J_HOST}:${NEO4J_PORT} -d ${NEO4J_DATABASE} -u ${NEO4J_USERNAME} -p ${NEO4J_PASSWORD} <${cwd}/cql/load_main_node_ba2.cql
 #
 MessageBreak "LOAD EDGES:"
-$CYSH -a neo4j://${NEO4J_HOST}:${NEO4J_PORT} -d ${NEO4J_DATABASE} -u ${NEO4J_USERNAME} -p ${NEO4J_PASSWORD} <cql/load_main_edge_ba2.cql
+$CYSH -a neo4j://${NEO4J_HOST}:${NEO4J_PORT} -d ${NEO4J_DATABASE} -u ${NEO4J_USERNAME} -p ${NEO4J_PASSWORD} <${cwd}/cql/load_main_edge_ba2.cql
 #
-#$CYSH <cql/load_extras.cql
-#$CYSH <cql/db_describe.cql
+#$CYSH <${cwd}/cql/load_extras.cql
+#$CYSH <${cwd}/cql/db_describe.cql
 #
 ###
 # Delete edges with:

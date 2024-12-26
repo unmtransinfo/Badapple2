@@ -23,6 +23,15 @@ CREATE CONSTRAINT scafid_unique FOR (n:Scaffold) REQUIRE n.ID IS UNIQUE ;
 // SHOW CONSTRAINTS ;
 
 // Compound:
+// ERROR (Neo4j, MacOS): The allocation of an extra 2.0 MiB would use more than the limit 3.1 GiB. Currently using 3.1 GiB. dbms.memory.transaction.total.max threshold reached
+// docker container cp 4fa9e313c00c:/var/lib/neo4j/conf/neo4j.conf .
+// Edit neo4j.conf then replace with:
+// docker container cp neo4j.conf 4fa9e313c00c:/var/lib/neo4j/conf/
+// Then restart container.
+// The allocation of an extra 241.6 MiB would use more than the limit 7.0 GiB. Currently using 6.8 GiB. dbms.memory.transaction.total.max threshold reached
+// 10g not sufficient!
+// 20g?
+//
 LOAD CSV WITH HEADERS FROM "file:///badapple/compound.tsv"
 AS row FIELDTERMINATOR '\t' WITH row
 WHERE row.cid IS NOT NULL AND row.cansmi IS NOT NULL
