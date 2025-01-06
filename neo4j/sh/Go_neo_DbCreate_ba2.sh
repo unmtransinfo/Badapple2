@@ -39,7 +39,7 @@ NEO4J_DATABASE="neo4j"
 NEO4J_USERNAME="neo4j"
 # Connect manually to set Neo4j password.
 # cypher-shell -a neo4j://localhost:7687 -d neo4j -u neo4j (initial pw=neo4j)
-NEO4J_PASSWORD="neo4jjyang"
+NEO4J_PASSWORD="neo4jjjj"
 #
 NEO4J_URL="bolt://${NEO4J_HOST}:${NEO4J_PORT}"
 #
