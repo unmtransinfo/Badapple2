@@ -37,6 +37,7 @@ import psycopg2
 import psycopg2.extras
 
 from utils.custom_logging import get_and_set_logger
+from utils.file_utils import read_aid_file
 
 
 #############################################################################
@@ -607,6 +608,12 @@ def parse_arguments():
         help="Write to the scaf2activeaid table (Badapple2+ versions of DB)",
     )
     parser.add_argument(
+        "--aid_file",
+        type=str,
+        default=None,
+        help="(Optional) If given, will only annotate compounds/scaffolds using statistics from AssayIDs contained in the given file",
+    )
+    parser.add_argument(
         "--log_fname",
         help="File to save logs to. If not given will log to stdout.",
         default=None,
@@ -630,7 +637,9 @@ def main(args):
 
     # Get the assay IDs if applicable
     assay_ids = None
-    # (Implement any specific logic to fetch assay_ids if necessary)
+    if args.aid_file is not None and len(args.aid_file) > 0:
+        logger.info(f"Will only annotate using AIDs from: {args.aid_file}")
+        assay_ids = read_aid_file(args.aid_file)
 
     # Annotate compounds
     if args.annotate_compounds:
@@ -649,6 +658,7 @@ def main(args):
         )
         if n_err > 0:
             logger.info(f"Errors encountered: {n_err}")
+
     # Annotate scaffolds
     if args.annotate_scaffolds:
         n_scaf_total, n_cpd_total, n_sub_total, n_res_total, n_write, n_err = (
@@ -665,7 +675,6 @@ def main(args):
             )
         )
 
-        # Print summary
         logger.info(
             f"Scaffolds annotated: {n_scaf_total} ({n_cpd_total} compounds, {n_sub_total} substances, {n_res_total} results), {n_write} rows updated"
         )

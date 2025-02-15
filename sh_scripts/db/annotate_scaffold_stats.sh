@@ -16,6 +16,7 @@ ASSAY_ID_TAG=$4
 DB_USER=$5
 DB_PASSWORD=$6
 REPO_DIR=$7
+AID_FILE=${8:-"")} # optional
 
 # cd to run scripts using relative path
 cd $REPO_DIR
@@ -40,6 +41,7 @@ python src/annotate_db_assaystats.py \
 	--activity $SCHEMA \
 	--user $DB_USER \
 	--password $DB_PASSWORD \
+	--aid_file $AID_FILE \
 	--v \
 	--write_scafid2activeaid
 
