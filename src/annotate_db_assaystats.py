@@ -149,6 +149,10 @@ def AnnotateCompound(
     # Group results by substance
     current_sid = None
     for sid, aid, outcome in cur.fetchall():
+        # Skip if assay not in custom selection
+        if assay_ids and aid not in assay_ids:
+            continue
+
         # Count new substance
         if sid != current_sid:
             sTotal += 1
@@ -163,10 +167,6 @@ def AnnotateCompound(
         if not substances[sid]["tested"]:
             substances[sid]["tested"] = True
             sTested += 1
-
-        # Skip if assay not in custom selection
-        if assay_ids and aid not in assay_ids:
-            continue
 
         # Count this well/sample
         wTested += 1
