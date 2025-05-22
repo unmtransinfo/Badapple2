@@ -26,7 +26,7 @@ ANNOTATE_COMPOUNDS_JOB_FILE = "logs/annotate_compound_stats/job_done.txt" # gene
 CREATE_ALT_SCAFFOLD_TABLE_JOB_FILE = "logs/NATA/create_alt_scaffold_table/done_{NASS_TESTED_MIN}.txt"
 ANNOTATE_SCAFFOLDS_JOB_FILE = "logs/NATA/annotate_alt_scaffold_stats/done_{NASS_TESTED_MIN}.txt"
 ANNOTATE_SCORES_JOB_FILE = "logs/NATA/annotate_scores/done_{NASS_TESTED_MIN}.txt"
-print(expand(ANNOTATE_SCORES_JOB_FILE, NASS_TESTED_MIN=NAT_VALS))
+FIGURES_DIR = os.path.join(config["FIGURES_DIR"], "NAT{NASS_TESTED_MIN}")
 
 # for running some scripts in src/sql need path to the code repo
 REPO_DIR=os.path.dirname(os.getcwd())
@@ -34,7 +34,7 @@ REPO_DIR=os.path.dirname(os.getcwd())
 
 rule all:
     input:
-        expand(ANNOTATE_SCORES_JOB_FILE, NASS_TESTED_MIN=NAT_VALS)
+        expand(FIGURES_DIR, NASS_TESTED_MIN=NAT_VALS)
 
 
 # currently this assumes the given user has admin privileges
@@ -126,4 +126,45 @@ rule annotate_alt_scores:
         "--password '{params.db_password}' "
         "--v "
         "--scaffold_table '{params.scaffold_table}' "
+        "> {log} 2>&1"
+
+# create figures
+print(FIGURES_DIR)
+rule create_figures:
+    input:
+        ANNOTATE_SCORES_JOB_FILE
+    output:
+        save_dir=directory(FIGURES_DIR)
+    params:
+        original_db_name=config["PREV_DB_NAME"],
+        original_db_host=config["PREV_DB_HOST"],
+        original_db_user=config["PREV_DB_USER"],
+        original_db_password=config["PREV_DB_PASSWORD"],
+        original_db_port=config["PREV_DB_PORT"],
+        original_scaffold_table="scaffold",
+        comparison_db_name=config["DB_NAME"],
+        comparison_db_host=config["DB_HOST"],
+        comparison_db_user=config["DB_USER"],
+        comparison_db_password=config["DB_PASSWORD"],
+        comparison_db_port=config["DB_PORT"],
+        comparison_scaffold_table=lambda w: f"scaffold_NAT{w.NASS_TESTED_MIN}"
+    log:
+        "logs/NATA/create_figures/nat_{NASS_TESTED_MIN}.log"
+    benchmark:
+        "benchmark/NATA/create_figures/nat_{NASS_TESTED_MIN}.tsv"
+    shell:
+        "python ../src/plot_db_comparison.py "
+        "--save_dir '{output.save_dir}' "
+        "--original_db_name '{params.original_db_name}' "
+        "--original_db_host '{params.original_db_host}' "
+        "--original_db_user '{params.original_db_user}' "
+        "--original_db_password '{params.original_db_password}' "
+        "--original_db_port '{params.original_db_port}' "
+        "--original_scaffold_table '{params.original_scaffold_table}' "
+        "--comparison_db_name '{params.comparison_db_name}' "
+        "--comparison_db_host '{params.comparison_db_host}' "
+        "--comparison_db_user '{params.comparison_db_user}' "
+        "--comparison_db_password '{params.comparison_db_password}' "
+        "--comparison_db_port '{params.comparison_db_port}' "
+        "--comparison_scaffold_table '{params.comparison_scaffold_table}' "
         "> {log} 2>&1"
