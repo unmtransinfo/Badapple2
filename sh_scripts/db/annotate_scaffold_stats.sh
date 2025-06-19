@@ -16,7 +16,8 @@ ASSAY_ID_TAG=$4
 DB_USER=$5
 DB_PASSWORD=$6
 REPO_DIR=$7
-AID_FILE=${8:-"")} # optional
+AID_FILE=${8:-""} # optional
+NASS_TESTED_MIN=${9:-0} # optional
 
 # cd to run scripts using relative path
 cd $REPO_DIR
@@ -43,6 +44,7 @@ python src/annotate_db_assaystats.py \
 	--password $DB_PASSWORD \
 	--aid_file $AID_FILE \
 	--v \
-	--write_scafid2activeaid
+	--write_scafid2activeaid \
+	--nass_tested_min $NASS_TESTED_MIN
 
 echo "Done annotating scaffolds."

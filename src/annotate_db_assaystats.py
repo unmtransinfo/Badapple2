@@ -507,6 +507,7 @@ def AnnotateScaffold(
             logger.error(e)
             n_err += 1
 
+    # TODO: this logic needs to be modified if nass_tested_min is > 1 because we want to be inclusive in the scaf2activeaid table
     if (
         ok_write
         and write_scaf2activeaid
