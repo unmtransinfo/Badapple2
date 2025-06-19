@@ -1,5 +1,5 @@
 # configuration file for `Snakefile_NATA`
-FIGURES_DIR: "/home/jack/unm_gra/data/badapple/NATA/"
+OUTPUT_DIR: "/home/jack/unm_gra/data/badapple/NATA/"
 
 ### DB PARAMS
 DB_NAME: "badapple2"
