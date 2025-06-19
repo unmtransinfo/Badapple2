@@ -24,6 +24,8 @@ PREV_DB_PORT: 5432
 NASS_TESTED_MIN_VALUES: # will test out all of these values - make sure to end line with :
   25:
   50:
+  75:
+  100:
 # MEDIAN STATS FROM badapple_classic
 # Re-using these median stats to do score normalization in badapple2
 # to ensure that our criteria for small vs large amounts of evidence remains consistent
