@@ -22,6 +22,7 @@ PREV_DB_PORT: 5432
 # will only label scaffold stats from compounds which were tested in at least this many assays
 # will create a table "scaffold_NAT{NASS_TESTED_MIN}" to store results
 NASS_TESTED_MIN_VALUES: # will test out all of these values - make sure to end line with :
+  1:
   25:
   50:
   75:
