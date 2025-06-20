@@ -362,11 +362,6 @@ def AnnotateScaffold(
         assay_ids_str = ",".join(map(str, assay_ids))
         assay_filter = f"AND a.{assay_id_tag} IN ({assay_ids_str})"
 
-    # Add compound filter if provided
-    compound_filter = ""
-    if nass_tested_min > 0:
-        compound_filter = f"AND c.nass_tested >= {nass_tested_min}"
-
     # SQL query to aggregate counts
     sql = f"""
     WITH compound_data AS (
@@ -381,7 +376,7 @@ def AnnotateScaffold(
             c.nsam_active
         FROM {dbschema}.compound c
         JOIN {dbschema}.scaf2cpd sc ON sc.cid = c.cid
-        WHERE sc.scafid = %s {compound_filter}
+        WHERE sc.scafid = %s AND c.nass_tested >= %s
     ),
     activity_data AS (
         SELECT
@@ -423,6 +418,27 @@ def AnnotateScaffold(
         FROM activity_data
         WHERE outcome IN (2, 5)
     ),
+    all_compound_data AS (
+        SELECT c.cid
+        FROM {dbschema}.compound c
+        JOIN {dbschema}.scaf2cpd sc ON sc.cid = c.cid
+        WHERE sc.scafid = %s
+    ),
+    activity_data_all AS (
+        SELECT
+            c.cid,
+            a.{assay_id_tag} AS aid,
+            a.outcome
+        FROM all_compound_data c
+        JOIN {dbschema}.sub2cpd s2c ON s2c.cid = c.cid
+        LEFT JOIN {dbschema_activity}.activity a ON a.sid = s2c.sid
+        WHERE a.{assay_id_tag} IS NOT NULL {assay_filter}
+    ),
+    active_assays_all AS (
+        SELECT DISTINCT aid
+        FROM activity_data_all
+        WHERE outcome IN (2, 5)
+    ),
     total_results AS (
         SELECT COUNT(*) AS nres_total
         FROM activity_data
@@ -434,17 +450,19 @@ def AnnotateScaffold(
         counts.sActive,
         counts.wTested,
         counts.wActive,
-        (SELECT COUNT(*) FROM tested_compounds) AS cTested,
-        (SELECT COUNT(*) FROM active_compounds) AS cActive,
-        (SELECT COUNT(*) FROM tested_assays) AS aTested,
-        (SELECT COUNT(*) FROM active_assays) AS aActive,
-        (SELECT array_agg(aid) FROM active_assays) AS activeAssayIDs,
+        (SELECT COUNT(*) FROM tested_compounds),
+        (SELECT COUNT(*) FROM active_compounds),
+        (SELECT COUNT(*) FROM tested_assays),
+        (SELECT COUNT(*) FROM active_assays),
+        CASE WHEN %s THEN (SELECT array_agg(aid) FROM active_assays_all) ELSE NULL END,
         total_results.nres_total
     FROM counts, total_results
     """
-
+    # for scaf2activeaid table we want to be inclusive - ok to include results from less-seen compounds
+    include_unfiltered_active_assays = write_scaf2activeaid and nass_tested_min > 1
+    params = (scaf_id, nass_tested_min, scaf_id, include_unfiltered_active_assays)
     cur = db.cursor()
-    cur.execute(sql, (scaf_id,))
+    cur.execute(sql, params)
     result = cur.fetchone()
     cur.close()
 
@@ -507,7 +525,6 @@ def AnnotateScaffold(
             logger.error(e)
             n_err += 1
 
-    # TODO: this logic needs to be modified if nass_tested_min is > 1 because we want to be inclusive in the scaf2activeaid table
     if (
         ok_write
         and write_scaf2activeaid
@@ -665,7 +682,7 @@ def main(args):
 
     # Get the assay IDs if applicable
     assay_ids = None
-    if args.aid_file is not None and len(args.aid_file) > 0:
+    if args.aid_file is not None and len(args.aid_file) > 0 and args.aid_file != "NULL":
         logger.info(f"Will only annotate using AIDs from: {args.aid_file}")
         assay_ids = read_aid_file(args.aid_file)
 

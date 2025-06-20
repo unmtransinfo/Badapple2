@@ -274,7 +274,7 @@ rule annotate_scaffold_stats:
         "'{params.db_password}' "
         "'{params.repo_dir}' "
         "'{params.aid_file}' "
-        "{params.nass_tested_min} "
+        "'{params.nass_tested_min}' "
         "> {log} 2>&1"
 
 

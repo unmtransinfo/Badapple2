@@ -16,7 +16,10 @@ ASSAY_ID_TAG=$4
 DB_USER=$5
 DB_PASSWORD=$6
 REPO_DIR=$7
-AID_FILE=${8:-""} # optional
+AID_FILE=${8:-"NULL"} # optional
+if [ -z "$AID_FILE" ]; then
+	AID_FILE="NULL"
+fi
 NASS_TESTED_MIN=${9:-0} # optional
 
 # cd to run scripts using relative path
