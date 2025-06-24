@@ -94,3 +94,7 @@ To run the workflow yourself follow these steps:
 ### Workflow Diagram
 
 Below is the output of `snakemake --snakefile Snakefile_NATA --forceall --rulegraph | dot -Tsvg > rulegraph_NATA.svg`:
+
+![rulegraph_NATA](https://github.com/user-attachments/assets/eb4e5c8b-b5f9-4baf-9f05-7721670bc160)
+
+
