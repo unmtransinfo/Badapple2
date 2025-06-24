@@ -77,6 +77,7 @@ def annotate_scaffold_scores(
     scafid_max: int,
     verbose: int,
     badapple_version: int,
+    scaffold_table: str = "scaffold",
 ) -> int:
 
     medians = get_medians(cursor, schema, badapple_version)
@@ -88,7 +89,7 @@ def annotate_scaffold_scores(
     SELECT id, scafsmi, scaftree, ncpd_total, ncpd_tested, ncpd_active, 
            nsub_total, nsub_tested, nsub_active, nass_tested, nass_active, 
            nsam_tested, nsam_active, in_drug 
-    FROM {schema}.scaffold 
+    FROM {schema}.{scaffold_table} 
     WHERE id >= %s AND id <= %s 
     ORDER BY id ASC
     """
@@ -142,7 +143,7 @@ def annotate_scaffold_scores(
 
     # execute updates in batch (better performance):
     logger.info("Committing changes..")
-    update_sql = f"UPDATE {schema}.scaffold SET pscore = %s WHERE id = %s"
+    update_sql = f"UPDATE {schema}.{scaffold_table} SET pscore = %s WHERE id = %s"
     cursor.executemany(update_sql, updates)
     db_connection.commit()
 
@@ -158,8 +159,10 @@ def annotate_scaffold_scores(
     return n_scaf
 
 
-def get_min_max_scaf_id(cursor: Psycopg2Cursor, schema: str) -> tuple[int, int]:
-    sql = f"SELECT MIN(id), MAX(id) FROM {schema}.scaffold"
+def get_min_max_scaf_id(
+    cursor: Psycopg2Cursor, schema: str, scaffold_table: str
+) -> tuple[int, int]:
+    sql = f"SELECT MIN(id), MAX(id) FROM {schema}.{scaffold_table}"
     cursor.execute(sql)
     result = cursor.fetchone()
     scafid_min, scafid_max = result if result else (0, 0)
@@ -210,6 +213,12 @@ def parse_arguments():
         help="File to save logs to. If not given will log to stdout.",
         default=None,
     )
+    parser.add_argument(
+        "--scaffold_table",
+        type=str,
+        default="scaffold",
+        help="Name of scaffolds table. Included as an argument in case DB has multiple scaffold tables to test different configurations (e.g., different args to --nass_tested_min) ",
+    )
     return parser.parse_args()
 
 
@@ -228,7 +237,9 @@ def main(args):
         sys.exit(2)
     try:
         logger.info(f"badapple_version: {args.badapple_version}")
-        scafid_min, scafid_max = get_min_max_scaf_id(cursor, args.dbschema)
+        scafid_min, scafid_max = get_min_max_scaf_id(
+            cursor, args.dbschema, args.scaffold_table
+        )
         n_scaf_done = annotate_scaffold_scores(
             db_connection,
             cursor,
@@ -237,6 +248,7 @@ def main(args):
             scafid_max,
             args.verbose,
             args.badapple_version,
+            args.scaffold_table,
         )
         logger.info(f"scafs processed: {n_scaf_done}")
     finally:

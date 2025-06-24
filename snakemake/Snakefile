@@ -8,12 +8,20 @@ with data.
 
 Note: If running from start->finish this workflow can take several hours!
 """
+
 import os
 from utils.utils import update_config_paths
 from snakemake.utils import min_version
+
 min_version("6.0")
+
+
 configfile: "config.yaml"
+
+
 update_config_paths(config)
+
+
 include: "workflows/Snakefile_download_files"
 include: "workflows/Snakefile_assay_list"
 include: "workflows/Snakefile_assay_activities"
@@ -23,7 +31,7 @@ include: "workflows/Snakefile_targets"
 
 
 # define job files (all these jobs are updating a Postgres DB)
-INITIALIZE_DB_JOB_FILE="logs/initialize_db/job_done.txt"
+INITIALIZE_DB_JOB_FILE = "logs/initialize_db/job_done.txt"
 LOAD_PUBCHEM_DATA_JOB_FILE = "logs/load_pubchem_data/job_done.txt"
 LOAD_DRUGCENTRAL_DATA_JOB_FILE = "logs/load_drugcentral_data/job_done.txt"
 CREATE_SCAF2DRUG_JOB_FILE = "logs/create_scaf2drug/job_done.txt"
@@ -37,14 +45,14 @@ ANNOTATE_SCORES_JOB_FILE = "logs/annotate_scores/job_done.txt"
 
 
 # for running some scripts in src/sql need path to the code repo
-REPO_DIR=os.path.dirname(os.getcwd())
+REPO_DIR = os.path.dirname(os.getcwd())
 
 
 rule all:
     input:
         ANNOTATE_SCORES_JOB_FILE,
         ANNOTATE_IN_DRUG_JOB_FILE,
-        INDEX_NEW_TABLES_JOB_FILE
+        INDEX_NEW_TABLES_JOB_FILE,
 
 
 # 1) initialize DB
@@ -63,16 +71,16 @@ rule initialize_db:
         config["DRUG_SCAFFOLD_TSV_PATH"],
         config["DRUG_SCAF2CPD_TSV_PATH"],
         config["AID2TARGET_TSV_PATH"],
-        config["TARGET_TSV_PATH"]
+        config["TARGET_TSV_PATH"],
     output:
-        touch(INITIALIZE_DB_JOB_FILE)
+        touch(INITIALIZE_DB_JOB_FILE),
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
         db_schema=config["DB_SCHEMA"],
-        comment="Badapple2 DB (dev version, PubChem-based)"
+        comment="Badapple2 DB (dev version, PubChem-based)",
     log:
-        "logs/initialize_db/all.log"
+        "logs/initialize_db/all.log",
     benchmark:
         "benchmark/initialize_db/all.tsv"
     shell:
@@ -93,16 +101,16 @@ rule load_pubchem_data:
         scaf_tsv_path=config["SCAFFOLD_TSV_PATH"],
         scaf2cpd_tsv_path=config["SCAF2CPD_TSV_PATH"],
         aid2target_tsv_path=config["AID2TARGET_TSV_PATH"],
-        target_tsv_path=config["TARGET_TSV_PATH"]
+        target_tsv_path=config["TARGET_TSV_PATH"],
     output:
-        touch(LOAD_PUBCHEM_DATA_JOB_FILE)
+        touch(LOAD_PUBCHEM_DATA_JOB_FILE),
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
         db_schema=config["DB_SCHEMA"],
         repo_dir=REPO_DIR,
     log:
-        "logs/load_pubchem_data/all.log"
+        "logs/load_pubchem_data/all.log",
     benchmark:
         "benchmark/load_pubchem_data/all.tsv"
     shell:
@@ -126,15 +134,15 @@ rule load_drugcentral_data:
     input:
         INITIALIZE_DB_JOB_FILE,
         drugcentral_tsv=config["DRUG_CENTRAL_TSV_PATH"],
-        drug_tsv=config["DRUG_TSV_PATH"] # this is from HierS, ids used to get scaffold->drug relationships
+        drug_tsv=config["DRUG_TSV_PATH"],  # this is from HierS, ids used to get scaffold->drug relationships
     output:
-        touch(LOAD_DRUGCENTRAL_DATA_JOB_FILE)
+        touch(LOAD_DRUGCENTRAL_DATA_JOB_FILE),
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
         db_schema=config["DB_SCHEMA"],
     log:
-        "logs/load_drugcentral_data/all.log"
+        "logs/load_drugcentral_data/all.log",
     benchmark:
         "benchmark/load_drugcentral_data/all.tsv"
     shell:
@@ -149,17 +157,17 @@ rule load_drugcentral_data:
 rule create_scaf2drug:
     input:
         LOAD_DRUGCENTRAL_DATA_JOB_FILE,
-        LOAD_PUBCHEM_DATA_JOB_FILE, # have to use scafids from PubChem data
+        LOAD_PUBCHEM_DATA_JOB_FILE,  # have to use scafids from PubChem data
         drug_scaffold_tsv=config["DRUG_SCAFFOLD_TSV_PATH"],
-        drug_scaf2cpd_tsv=config["DRUG_SCAF2CPD_TSV_PATH"]
+        drug_scaf2cpd_tsv=config["DRUG_SCAF2CPD_TSV_PATH"],
     output:
-        touch(CREATE_SCAF2DRUG_JOB_FILE)
+        touch(CREATE_SCAF2DRUG_JOB_FILE),
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
         db_schema=config["DB_SCHEMA"],
     log:
-        "logs/create_scaf2drug/all.log"
+        "logs/create_scaf2drug/all.log",
     benchmark:
         "benchmark/create_scaf2drug/all.tsv"
     shell:
@@ -175,14 +183,14 @@ rule create_mol_tables:
     input:
         LOAD_PUBCHEM_DATA_JOB_FILE,
     output:
-        touch(CREATE_MOL_TABLES_JOB_FILE)
+        touch(CREATE_MOL_TABLES_JOB_FILE),
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
         db_schema=config["DB_SCHEMA"],
-        repo_dir=REPO_DIR
+        repo_dir=REPO_DIR,
     log:
-        "logs/create_mol_tables/all.log"
+        "logs/create_mol_tables/all.log",
     benchmark:
         "benchmark/create_mol_tables/all.tsv"
     shell:
@@ -194,15 +202,15 @@ rule create_mol_tables:
 # 4) index badapple1 tables for better performance in subsequent steps
 rule index_old_tables:
     input:
-        CREATE_MOL_TABLES_JOB_FILE
+        CREATE_MOL_TABLES_JOB_FILE,
     output:
-        touch(INDEX_OLD_TABLES_JOB_FILE)
+        touch(INDEX_OLD_TABLES_JOB_FILE),
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
-        db_schema=config["DB_SCHEMA"]
+        db_schema=config["DB_SCHEMA"],
     log:
-        "logs/index_old_tables/all.log"
+        "logs/index_old_tables/all.log",
     benchmark:
         "benchmark/index_old_tables/all.tsv"
     shell:
@@ -214,9 +222,9 @@ rule index_old_tables:
 # 5) annotate compound and scaffold table with activity stats
 rule annotate_compound_stats:
     input:
-        INDEX_OLD_TABLES_JOB_FILE
+        INDEX_OLD_TABLES_JOB_FILE,
     output:
-        touch(ANNOTATE_COMPOUNDS_JOB_FILE)
+        touch(ANNOTATE_COMPOUNDS_JOB_FILE),
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
@@ -224,9 +232,9 @@ rule annotate_compound_stats:
         db_user=config["DB_USER"],
         db_password=config["DB_PASSWORD"],
         repo_dir=REPO_DIR,
-        assay_id_tag="aid"
+        assay_id_tag="aid",
     log:
-        "logs/annotate_compound_stats/all.log"
+        "logs/annotate_compound_stats/all.log",
     benchmark:
         "benchmark/annotate_compound_stats/all.tsv"
     shell:
@@ -241,9 +249,9 @@ rule annotate_compound_stats:
 
 rule annotate_scaffold_stats:
     input:
-        ANNOTATE_COMPOUNDS_JOB_FILE
+        ANNOTATE_COMPOUNDS_JOB_FILE,
     output:
-        touch(ANNOTATE_SCAFFOLDS_JOB_FILE)
+        touch(ANNOTATE_SCAFFOLDS_JOB_FILE),
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
@@ -251,9 +259,11 @@ rule annotate_scaffold_stats:
         db_user=config["DB_USER"],
         db_password=config["DB_PASSWORD"],
         repo_dir=REPO_DIR,
-        assay_id_tag="aid"
+        assay_id_tag="aid",
+        nass_tested_min=config["NASS_TESTED_MIN_VALUE"],
+        aid_file="",  # include all assays
     log:
-        "logs/annotate_scaffold_stats/all.log"
+        "logs/annotate_scaffold_stats/all.log",
     benchmark:
         "benchmark/annotate_scaffold_stats/all.tsv"
     shell:
@@ -263,21 +273,23 @@ rule annotate_scaffold_stats:
         "'{params.db_user}' "
         "'{params.db_password}' "
         "'{params.repo_dir}' "
+        "'{params.aid_file}' "
+        "'{params.nass_tested_min}' "
         "> {log} 2>&1"
 
 
 # 6) index new tables
 rule index_new_tables:
     input:
-        ANNOTATE_SCAFFOLDS_JOB_FILE
+        ANNOTATE_SCAFFOLDS_JOB_FILE,
     output:
-        touch(INDEX_NEW_TABLES_JOB_FILE)
+        touch(INDEX_NEW_TABLES_JOB_FILE),
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
-        db_schema=config["DB_SCHEMA"]
+        db_schema=config["DB_SCHEMA"],
     log:
-        "logs/index_new_tables/all.log"
+        "logs/index_new_tables/all.log",
     benchmark:
         "benchmark/index_new_tables/all.tsv"
     shell:
@@ -290,15 +302,15 @@ rule index_new_tables:
 rule annotate_in_drug:
     input:
         INDEX_NEW_TABLES_JOB_FILE,
-        CREATE_SCAF2DRUG_JOB_FILE
+        CREATE_SCAF2DRUG_JOB_FILE,
     output:
-        touch(ANNOTATE_IN_DRUG_JOB_FILE)
+        touch(ANNOTATE_IN_DRUG_JOB_FILE),
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
-        db_schema=config["DB_SCHEMA"]
+        db_schema=config["DB_SCHEMA"],
     log:
-        "logs/annotate_in_drug/all.log"
+        "logs/annotate_in_drug/all.log",
     benchmark:
         "benchmark/annotate_in_drug/all.tsv"
     shell:
@@ -310,9 +322,9 @@ rule annotate_in_drug:
 # 8) annotate scaffold scores+ranking
 rule annotate_scores:
     input:
-        ANNOTATE_SCAFFOLDS_JOB_FILE
+        ANNOTATE_SCAFFOLDS_JOB_FILE,
     output:
-        touch(ANNOTATE_SCORES_JOB_FILE)
+        touch(ANNOTATE_SCORES_JOB_FILE),
     params:
         db_name=config["DB_NAME"],
         db_host=config["DB_HOST"],
@@ -322,13 +334,13 @@ rule annotate_scores:
         assay_id_tag="aid",
         repo_dir=REPO_DIR,
         data_dir=config["BASE_DATA_DIR"],
-        db_comment='Badapple2 DB (PubChem HTS assays w/ 20k+ compounds)',
+        db_comment="Badapple2 DB (PubChem HTS assays w/ 20k+ compounds)",
         ba_classic_med_ncpd_tested=config["BADAPPLE_CLASSIC_MEDIAN_NCPD_TESTED"],
         ba_classic_med_nsub_tested=config["BADAPPLE_CLASSIC_MEDIAN_NSUB_TESTED"],
         ba_classic_med_nsass_tested=config["BADAPPLE_CLASSIC_MEDIAN_NASS_TESTED"],
         ba_classic_med_nsam_tested=config["BADAPPLE_CLASSIC_MEDIAN_NSAM_TESTED"],
     log:
-        "logs/annotate_scores/all.log"
+        "logs/annotate_scores/all.log",
     benchmark:
         "benchmark/annotate_scores/all.tsv"
     shell:

@@ -48,6 +48,7 @@ psql -d $DB_NAME -c "UPDATE $SCHEMA.metadata SET median_nsam_tested_classic = $B
 
 # Step 2a) Annotate scaffold table with computed scores, add column "pscore".
 psql -d $DB_NAME -c "ALTER TABLE $SCHEMA.scaffold ADD COLUMN IF NOT EXISTS pscore FLOAT NULL"
+psql -d "$DB_NAME" -c "UPDATE $SCHEMA.scaffold SET pscore = NULL;"
 python src/annotate_db_scores.py \
 	--badapple_version 2 \
 	--host $DB_HOST \

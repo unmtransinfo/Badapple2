@@ -7,7 +7,7 @@ After badapple database has been otherwise fully populated, with:
    -> scaffold table (id, ... )
    -> scaf2cpd table (scafid, cid )
    -> activity table (sid, aid, outcome )
- 
+
 Generate activity statistics and annotate compound and scaffold tables.
 
 Optional: Selected assays for custom score, e.g. date or target criteria.
@@ -241,6 +241,8 @@ def AnnotateScaffolds(
     n_max=0,
     n_skip=0,
     write_scaf2activeaid=False,
+    nass_tested_min: int = -1,
+    scaffold_table: str = "scaffold",
 ):
     """Loop over scaffolds.  For each scaffold call AnnotateScaffold().
     NOTE: This function presumes that the compound annotations have already been accomplished
@@ -254,7 +256,9 @@ def AnnotateScaffolds(
     n_err = 0
 
     cur = db.cursor()
-    sql = """SELECT id FROM {DBSCHEMA}.scaffold ORDER BY id""".format(DBSCHEMA=dbschema)
+    sql = """SELECT id FROM {DBSCHEMA}.{SCAFFOLD_TABLE} ORDER BY id""".format(
+        SCAFFOLD_TABLE=scaffold_table, DBSCHEMA=dbschema
+    )
     cur.execute(sql)
     scaf_rowcount = cur.rowcount  # use for progress msgs
     row = cur.fetchone()
@@ -292,6 +296,8 @@ def AnnotateScaffolds(
             assay_ids,
             no_write,
             write_scaf2activeaid,
+            nass_tested_min,
+            scaffold_table,
         )
         n_cpd_total += cTotal
         n_sub_total += sTotal
@@ -325,6 +331,8 @@ def AnnotateScaffold(
     assay_ids,
     no_write,
     write_scaf2activeaid: bool = False,
+    nass_tested_min: int = -1,
+    scaffold_table: str = "scaffold",
 ):
     """Annotate scaffold with assay statistics using aggregated SQL queries.
 
@@ -337,6 +345,8 @@ def AnnotateScaffold(
     assay_ids (set or None): Optional set of assay IDs to filter on
     no_write (bool): If True, don't update the database
     write_scaf2activeaid (bool): If True and not(no_write), write updates to the scaf2activeaid table
+    nass_tested_min (int): If > 0 then will only annotate stats from compounds which have been tested in >= nass_tested_min different assays
+    scaffold_table (str): Table to be updated if no_write = False
 
     Returns:
     Tuple[int, int, int, int, int, int, int, int, int, int, int, bool, int]:
@@ -366,7 +376,7 @@ def AnnotateScaffold(
             c.nsam_active
         FROM {dbschema}.compound c
         JOIN {dbschema}.scaf2cpd sc ON sc.cid = c.cid
-        WHERE sc.scafid = %s
+        WHERE sc.scafid = %s AND c.nass_tested >= %s
     ),
     activity_data AS (
         SELECT
@@ -408,6 +418,27 @@ def AnnotateScaffold(
         FROM activity_data
         WHERE outcome IN (2, 5)
     ),
+    all_compound_data AS (
+        SELECT c.cid
+        FROM {dbschema}.compound c
+        JOIN {dbschema}.scaf2cpd sc ON sc.cid = c.cid
+        WHERE sc.scafid = %s
+    ),
+    activity_data_all AS (
+        SELECT
+            c.cid,
+            a.{assay_id_tag} AS aid,
+            a.outcome
+        FROM all_compound_data c
+        JOIN {dbschema}.sub2cpd s2c ON s2c.cid = c.cid
+        LEFT JOIN {dbschema_activity}.activity a ON a.sid = s2c.sid
+        WHERE a.{assay_id_tag} IS NOT NULL {assay_filter}
+    ),
+    active_assays_all AS (
+        SELECT DISTINCT aid
+        FROM activity_data_all
+        WHERE outcome IN (2, 5)
+    ),
     total_results AS (
         SELECT COUNT(*) AS nres_total
         FROM activity_data
@@ -419,17 +450,19 @@ def AnnotateScaffold(
         counts.sActive,
         counts.wTested,
         counts.wActive,
-        (SELECT COUNT(*) FROM tested_compounds) AS cTested,
-        (SELECT COUNT(*) FROM active_compounds) AS cActive,
-        (SELECT COUNT(*) FROM tested_assays) AS aTested,
-        (SELECT COUNT(*) FROM active_assays) AS aActive,
-        (SELECT array_agg(aid) FROM active_assays) AS activeAssayIDs,
+        (SELECT COUNT(*) FROM tested_compounds),
+        (SELECT COUNT(*) FROM active_compounds),
+        (SELECT COUNT(*) FROM tested_assays),
+        (SELECT COUNT(*) FROM active_assays),
+        CASE WHEN %s THEN (SELECT array_agg(aid) FROM active_assays_all) ELSE NULL END,
         total_results.nres_total
     FROM counts, total_results
     """
-
+    # for scaf2activeaid table we want to be inclusive - ok to include results from less-seen compounds
+    include_unfiltered_active_assays = write_scaf2activeaid and nass_tested_min > 1
+    params = (scaf_id, nass_tested_min, scaf_id, include_unfiltered_active_assays)
     cur = db.cursor()
-    cur.execute(sql, (scaf_id,))
+    cur.execute(sql, params)
     result = cur.fetchone()
     cur.close()
 
@@ -450,7 +483,7 @@ def AnnotateScaffold(
 
     # Update scaffold row
     update_sql = f"""
-    UPDATE {dbschema}.scaffold
+    UPDATE {dbschema}.{scaffold_table}
     SET
         ncpd_total = %s,
         ncpd_tested = %s,
@@ -614,6 +647,18 @@ def parse_arguments():
         help="(Optional) If given, will only annotate compounds/scaffolds using statistics from AssayIDs contained in the given file",
     )
     parser.add_argument(
+        "--nass_tested_min",
+        type=int,
+        default=-1,
+        help="(Optional) If given, will only annotate scaffold statistics using compounds which were tested in at least --nass_tested_min different assays (nass_tested >= --nass_tested_min assays)",
+    )
+    parser.add_argument(
+        "--scaffold_table",
+        type=str,
+        default="scaffold",
+        help="Name of scaffolds table. Included as an argument in case DB has multiple scaffold tables to test different configurations (e.g., different args to --nass_tested_min) ",
+    )
+    parser.add_argument(
         "--log_fname",
         help="File to save logs to. If not given will log to stdout.",
         default=None,
@@ -637,7 +682,7 @@ def main(args):
 
     # Get the assay IDs if applicable
     assay_ids = None
-    if args.aid_file is not None and len(args.aid_file) > 0:
+    if args.aid_file is not None and len(args.aid_file) > 0 and args.aid_file != "NULL":
         logger.info(f"Will only annotate using AIDs from: {args.aid_file}")
         assay_ids = read_aid_file(args.aid_file)
 
@@ -672,6 +717,8 @@ def main(args):
                 args.nmax,
                 args.nskip,
                 args.write_scafid2activeaid,
+                args.nass_tested_min,
+                args.scaffold_table,
             )
         )
 

@@ -1,0 +1,37 @@
+# configuration file for `Snakefile_NATA`
+OUTPUT_DIR: "/home/jack/unm_gra/data/badapple/NATA/"
+
+### DB PARAMS
+DB_NAME: "badapple2"
+DB_SCHEMA: "public"
+DB_HOST: "localhost"
+DB_USER: "<your_usr>"
+DB_PASSWORD: "<your_pw>"
+DB_PORT: 5432
+BA_VERSION: 2
+
+# for creating comparison plots
+# this DB will not be modified
+PREV_DB_NAME: "badapple_classic"
+PREV_DB_HOST: "localhost"
+PREV_DB_USER: "<your_usr>"
+PREV_DB_PASSWORD: "<your_pw>"
+PREV_DB_PORT: 5432
+
+# MINIMUM NUMBER of TESTED ASSAYS
+# will only label scaffold stats from compounds which were tested in at least this many assays
+# will create a table "scaffold_NAT{NASS_TESTED_MIN}" to store results
+NASS_TESTED_MIN_VALUES: # will test out all of these values - make sure to end line with :
+  1:
+  25:
+  50:
+  75:
+  100:
+# MEDIAN STATS FROM badapple_classic
+# Re-using these median stats to do score normalization in badapple2
+# to ensure that our criteria for small vs large amounts of evidence remains consistent
+# (don't want adding new scaffolds w/ low n_ass_tested etc to alter other scaffold scores)
+BADAPPLE_CLASSIC_MEDIAN_NCPD_TESTED: 2
+BADAPPLE_CLASSIC_MEDIAN_NSUB_TESTED: 2
+BADAPPLE_CLASSIC_MEDIAN_NASS_TESTED: 633
+BADAPPLE_CLASSIC_MEDIAN_NSAM_TESTED: 773
