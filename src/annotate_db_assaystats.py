@@ -182,7 +182,7 @@ def AnnotateCompound(
                 assays[aid] = True
             else:
                 assays[aid] = True
-        elif outcome in (1, 3):  # tested inactive
+        else:  # tested inactive
             # Track tested but inactive assay
             if aid not in assays:
                 assays[aid] = False
