@@ -15,7 +15,7 @@ ASSAY_ID_TAG=$4
 DB_USER=$5
 DB_PASSWORD=$6
 REPO_DIR=$7
-AID_FILE=${8:-"")}
+AID_FILE=${8:-"NULL"}
 
 # cd to run scripts using relative path
 cd $REPO_DIR
