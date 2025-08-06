@@ -26,7 +26,7 @@ MLP Outcome codes:
    4 = unspecified
    5 = probe
    multiple, differing 1, 2 or 3 = discrepant
-   all outcome codes above considered as "tested" (including NULL, as this is what PubChem practices)
+   all outcome codes above considered as "tested" (including 4/NULL, as this is what PubChem practices)
    outcomes 2 and 5 considered "active"
 """
 
