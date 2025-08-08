@@ -53,8 +53,8 @@ REMOTE_FTP_DIR: "ftp.ncbi.nlm.nih.gov/pubchem/"
 DB_NAME: "badapple2"
 DB_SCHEMA: "public"
 DB_HOST: "localhost"
-DB_USER: "jack"
-DB_PASSWORD: "Fletcher12"
+DB_USER: "<your_usr>"
+DB_PASSWORD: "<your_pw>"
 
 # ASSAY PARAMS
 DATA_SOURCE_CATEGORY: "NIH Initiatives"
@@ -71,5 +71,5 @@ NASS_TESTED_MIN_VALUE: 50
 # (don't want adding new scaffolds w/ low n_ass_tested etc to alter other scaffold scores)
 BADAPPLE_CLASSIC_MEDIAN_NCPD_TESTED: 2
 BADAPPLE_CLASSIC_MEDIAN_NSUB_TESTED: 2
-BADAPPLE_CLASSIC_MEDIAN_NASS_TESTED: 633
+BADAPPLE_CLASSIC_MEDIAN_NASS_TESTED: 634
 BADAPPLE_CLASSIC_MEDIAN_NSAM_TESTED: 773
