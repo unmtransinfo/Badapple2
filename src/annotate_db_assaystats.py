@@ -1,7 +1,7 @@
 """
 @author: Jeremy Yang, Jack Ringer
 Date: 8/8/2024
-Description: (Based on: https://github.com/unmtransinfo/Badapple/blob/master/python/badapple_annotate_db_assaystats.py)
+Description: (Based on: https://github.com/unmtransinfo/Badapple/blob/master/python/badapple_assaystats_db_annotate.py)
 After badapple database has been otherwise fully populated, with:
    -> compound table (id, nass_tested, nass_active, nsam_tested, nsam_active )
    -> scaffold table (id, ... )
@@ -26,7 +26,8 @@ MLP Outcome codes:
    4 = unspecified
    5 = probe
    multiple, differing 1, 2 or 3 = discrepant
-   not 4 = tested
+   all outcome codes above considered as "tested" (including 4/NULL, as this is what PubChem practices)
+   outcomes 2 and 5 considered "active"
 """
 
 import argparse
@@ -39,8 +40,10 @@ import psycopg2.extras
 from utils.custom_logging import get_and_set_logger
 from utils.file_utils import read_aid_file
 
-
 #############################################################################
+ACTIVE_CODES = (2, 5)
+
+
 def AnnotateCompounds(
     db,
     dbschema,
@@ -172,7 +175,7 @@ def AnnotateCompound(
         wTested += 1
         substances[sid]["results"].append((aid, outcome))
 
-        if outcome in (2, 5):  # active or probe
+        if outcome in ACTIVE_CODES:  # active or probe
             wActive += 1
             if not substances[sid]["active"]:
                 substances[sid]["active"] = True
@@ -182,7 +185,7 @@ def AnnotateCompound(
                 assays[aid] = True
             else:
                 assays[aid] = True
-        elif outcome in (1, 3):  # tested inactive
+        else:  # tested inactive
             # Track tested but inactive assay
             if aid not in assays:
                 assays[aid] = False
@@ -401,22 +404,20 @@ def AnnotateScaffold(
     tested_compounds AS (
         SELECT DISTINCT cid
         FROM activity_data
-        WHERE outcome IN (1, 2, 3, 5)
     ),
     active_compounds AS (
         SELECT DISTINCT cid
         FROM activity_data
-        WHERE outcome IN (2, 5)
+        WHERE outcome IN {ACTIVE_CODES}
     ),
     tested_assays AS (
         SELECT DISTINCT aid
         FROM activity_data
-        WHERE outcome IN (1, 2, 3, 5)
     ),
     active_assays AS (
         SELECT DISTINCT aid
         FROM activity_data
-        WHERE outcome IN (2, 5)
+        WHERE outcome IN {ACTIVE_CODES}
     ),
     all_compound_data AS (
         SELECT c.cid
@@ -437,7 +438,7 @@ def AnnotateScaffold(
     active_assays_all AS (
         SELECT DISTINCT aid
         FROM activity_data_all
-        WHERE outcome IN (2, 5)
+        WHERE outcome IN {ACTIVE_CODES}
     ),
     total_results AS (
         SELECT COUNT(*) AS nres_total
