@@ -60,19 +60,20 @@ def AnnotateCompounds(
     n_res_total = 0  # total results (outcomes) processed
     n_write = 0  # total table rows modified
     n_err = 0
-    cur = db.cursor()
+    read_cur = db.cursor()
+    write_cur = db.cursor()
     sql = f"SELECT cid FROM {dbschema}.compound"
-    cur.execute(sql)
-    cpd_rowcount = cur.rowcount  # use for progress msgs
+    read_cur.execute(sql)
+    cpd_rowcount = read_cur.rowcount  # use for progress msgs
     logger.debug(f"cpd rowcount={cpd_rowcount}")
 
-    row = cur.fetchone()
+    row = read_cur.fetchone()
     n = 0
     t0 = time.time()
     while row is not None:
         n += 1
         if n <= n_skip:
-            row = cur.fetchone()
+            row = read_cur.fetchone()
             continue
         n_cpd_total += 1
         cid = row[0]
@@ -90,6 +91,7 @@ def AnnotateCompounds(
             n_err_this,
         ) = AnnotateCompound(
             cid,
+            write_cur,
             db,
             dbschema,
             dbschema_activity,
@@ -106,17 +108,18 @@ def AnnotateCompounds(
             logger.info(
                 f"n_cpd: {n_cpd_total} ; elapsed time: {time.time() - t0} ({100.0 * n_cpd_total / cpd_rowcount:.1f}% done)",
             )
-        row = cur.fetchone()
+        row = read_cur.fetchone()
         if n_max > 0 and n_cpd_total >= n_max:
             break
-    cur.close()
+    read_cur.close()
+    write_cur.close()
     db.close()
     return n_cpd_total, n_sub_total, n_res_total, n_write, n_err
 
 
 #############################################################################
 def AnnotateCompound(
-    cid, db, dbschema, dbschema_activity, assay_id_tag, assay_ids, no_write
+    cid, cur, db, dbschema, dbschema_activity, assay_id_tag, assay_ids, no_write
 ):
     """Annotate compound with assay statistics.
 
@@ -138,7 +141,6 @@ def AnnotateCompound(
     WHERE s.cid = %s
     """
 
-    cur = db.cursor()
     cur.execute(sql, (cid,))
 
     substances = {}
@@ -190,8 +192,6 @@ def AnnotateCompound(
             if aid not in assays:
                 assays[aid] = False
 
-    cur.close()
-
     # Calculate assay statistics
     aTested = len(assays)
     aActive = sum(1 for active in assays.values() if active)
@@ -214,12 +214,10 @@ def AnnotateCompound(
         WHERE cid = %s
         """
         try:
-            cur = db.cursor()
             cur.execute(
                 sql, (sTotal, sTested, sActive, aTested, aActive, wTested, wActive, cid)
             )
             db.commit()
-            cur.close()
             ok_write = True
         except Exception as e:
             logger.error(e)
@@ -258,20 +256,22 @@ def AnnotateScaffolds(
     n_write = 0  # total table rows modified
     n_err = 0
 
-    cur = db.cursor()
+    read_cur = db.cursor()
+    scaffold_read_cur = db.cursor()
+    scaffold_write_cur = db.cursor()
     sql = """SELECT id FROM {DBSCHEMA}.{SCAFFOLD_TABLE} ORDER BY id""".format(
         SCAFFOLD_TABLE=scaffold_table, DBSCHEMA=dbschema
     )
-    cur.execute(sql)
-    scaf_rowcount = cur.rowcount  # use for progress msgs
-    row = cur.fetchone()
+    read_cur.execute(sql)
+    scaf_rowcount = read_cur.rowcount  # use for progress msgs
+    row = read_cur.fetchone()
     n = 0
     t0 = time.time()
 
     while row is not None:
         n += 1
         if n <= n_skip:
-            row = cur.fetchone()
+            row = read_cur.fetchone()
             continue
         n_scaf_total += 1
         scaf_id = row[0]
@@ -293,6 +293,8 @@ def AnnotateScaffolds(
         ) = AnnotateScaffold(
             scaf_id,
             db,
+            scaffold_read_cur,
+            scaffold_write_cur,
             dbschema,
             dbschema_activity,
             assay_id_tag,
@@ -316,10 +318,12 @@ def AnnotateScaffolds(
                     100.0 * n_scaf_total / scaf_rowcount,
                 )
             )
-        row = cur.fetchone()
+        row = read_cur.fetchone()
         if n_max > 0 and n_scaf_total >= n_max:
             break
-    cur.close()
+    read_cur.close()
+    scaffold_read_cur.close()
+    scaffold_write_cur.close()
     db.close()
     return n_scaf_total, n_cpd_total, n_sub_total, n_res_total, n_write, n_err
 
@@ -328,6 +332,8 @@ def AnnotateScaffolds(
 def AnnotateScaffold(
     scaf_id,
     db,
+    read_cur,
+    write_cur,
     dbschema,
     dbschema_activity,
     assay_id_tag,
@@ -462,11 +468,8 @@ def AnnotateScaffold(
     # for scaf2activeaid table we want to be inclusive - ok to include results from less-seen compounds
     include_unfiltered_active_assays = write_scaf2activeaid and nass_tested_min > 1
     params = (scaf_id, nass_tested_min, scaf_id, include_unfiltered_active_assays)
-    cur = db.cursor()
-    cur.execute(sql, params)
-    result = cur.fetchone()
-    cur.close()
-
+    read_cur.execute(sql, params)
+    result = read_cur.fetchone()
     (
         cTotal,
         sTotal,
@@ -502,8 +505,7 @@ def AnnotateScaffold(
 
     if not no_write:
         try:
-            cur1 = db.cursor()
-            cur1.execute(
+            write_cur.execute(
                 update_sql,
                 (
                     cTotal or 0,
@@ -520,7 +522,6 @@ def AnnotateScaffold(
                 ),
             )
             db.commit()
-            cur1.close()
             ok_write = True
         except Exception as e:
             logger.error(e)
@@ -533,12 +534,10 @@ def AnnotateScaffold(
         and len(activeAssayIDs) > 0
     ):
         try:
-            cur1 = db.cursor()
             insert_query = "INSERT INTO scaf2activeaid (scafid, aid) VALUES (%s, %s)"
             data = [(scaf_id, aid) for aid in activeAssayIDs]
-            cur1.executemany(insert_query, data)
+            write_cur.executemany(insert_query, data)
             db.commit()
-            cur1.close()
         except Exception as e:
             logger.error(e)
             n_err += 1
