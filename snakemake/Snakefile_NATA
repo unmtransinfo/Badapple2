@@ -37,6 +37,9 @@ CREATE_ALT_SCAFFOLD_TABLE_JOB_FILE = (
 ANNOTATE_SCAFFOLDS_JOB_FILE = (
     "logs/NATA/annotate_alt_scaffold_stats/done_{NASS_TESTED_MIN}.txt"
 )
+INDEX_ALT_SCAFFOLD_TABLE_JOB_FILE = (
+    "logs/NATA/index_alt_scaffold_table/done_{NASS_TESTED_MIN}.txt"
+)
 ANNOTATE_SCORES_JOB_FILE = "logs/NATA/annotate_scores/done_{NASS_TESTED_MIN}.txt"
 FIGURES_DIR = os.path.join(config["OUTPUT_DIR"], "NAT{NASS_TESTED_MIN}")
 EXPORT_TABLE_TSV_FILE = os.path.join(
@@ -68,7 +71,7 @@ rule create_alt_scaffold_table:
         "benchmark/NATA/create_alt_scaffold_table/nat_{NASS_TESTED_MIN}.tsv"
     shell:
         """
-        psql -d {params.db_name} -c "CREATE TABLE {params.alt_table} as select * from scaffold;" 
+        psql -d {params.db_name} -c "CREATE TABLE IF NOT EXISTS {params.alt_table} AS SELECT * FROM SCAFFOLD;" 
         psql -d {params.db_name} -c "UPDATE {params.alt_table} SET (ncpd_total, ncpd_tested, ncpd_active)  = (NULL, NULL, NULL);" 
         psql -d {params.db_name} -c "UPDATE {params.alt_table} SET (nsub_total, nsub_tested, nsub_active)  = (NULL, NULL, NULL);" 
         psql -d {params.db_name} -c "UPDATE {params.alt_table} SET (nass_tested, nass_active)  = (NULL, NULL);" 
@@ -78,9 +81,29 @@ rule create_alt_scaffold_table:
         """
 
 
-rule annotate_alt_scaffold_stats:
+rule index_alt_scaffold_table:
     input:
         CREATE_ALT_SCAFFOLD_TABLE_JOB_FILE,
+    output:
+        touch(INDEX_ALT_SCAFFOLD_TABLE_JOB_FILE),
+    params:
+        db_name=config["DB_NAME"],
+        alt_table=lambda w: f"scaffold_NAT{w.NASS_TESTED_MIN}",
+    log:
+        "logs/NATA/index_alt_scaffold_table/nat_{NASS_TESTED_MIN}.log",
+    benchmark:
+        "benchmark/NATA/index_alt_scaffold_table/nat_{NASS_TESTED_MIN}.tsv"
+    shell:
+        """
+        psql -d {params.db_name} -c "CREATE INDEX {params.alt_table}_scafid_idx ON {params.alt_table} (id);" 
+        psql -d {params.db_name} -c "CREATE INDEX {params.alt_table}_smi_idx on {params.alt_table} (scafsmi);" 
+        > {log} 2>&1
+        """
+
+
+rule annotate_alt_scaffold_stats:
+    input:
+        INDEX_ALT_SCAFFOLD_TABLE_JOB_FILE,
     output:
         touch(ANNOTATE_SCAFFOLDS_JOB_FILE),
     params:
@@ -93,9 +116,9 @@ rule annotate_alt_scaffold_stats:
         scaffold_table=lambda w: f"scaffold_NAT{w.NASS_TESTED_MIN}",
         nass_tested_min=lambda w: w.NASS_TESTED_MIN,
     log:
-        "logs/NATA/annotate_scaffold_stats/nat_{NASS_TESTED_MIN}.log",
+        "logs/NATA/annotate_alt_scaffold_stats/nat_{NASS_TESTED_MIN}.log",
     benchmark:
-        "benchmark/NATA/annotate_scaffold_stats/nat_{NASS_TESTED_MIN}.tsv"
+        "benchmark/NATA/annotate_alt_scaffold_stats/nat_{NASS_TESTED_MIN}.tsv"
     shell:
         "python ../src/annotate_db_assaystats.py "
         "--annotate_scaffolds "
