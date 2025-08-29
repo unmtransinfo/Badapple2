@@ -1,8 +1,8 @@
 # Badapple2
+![badapple_logo](https://github.com/user-attachments/assets/9a9c9c88-c74e-486d-a282-75e8c41f0f93)
 
-Bioassay data associative promiscuity pattern learning engine V2.
 
-For smaller use cases one can use the Badapple2 web app: https://chiltepin.health.unm.edu/badapple2
+The Bioassay-Data Associative Promiscuity Pattern Learning Engine V2.
 
 ## About
 
@@ -12,6 +12,8 @@ The code contained in this repo is for building and analyzing the Badapple datab
 
 - API: https://github.com/unmtransinfo/Badapple2-API
 - UI: https://github.com/unmtransinfo/Badapple2-UI
+
+For small use cases (up to 100 compounds) one can use the Badapple2 web app: https://chiltepin.health.unm.edu/badapple2
 
 # Setup
 
