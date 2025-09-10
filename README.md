@@ -103,11 +103,11 @@ Part of the development of Badapple 2.0 (badapple2DB) involved comparing/analyzi
 
 ### badapple_classic vs badapple2
 
-| Notebook Link                                                                                                | Description                                                                                            |
-| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| [src/notebooks/badapple2-vs-badapple_classic.ipynb](src/notebooks/badapple2-vs-badapple_classic.ipynb)       | Comparison of scaffold pScores (and other important statistics) between badapple2 and badapple_classic |
-| [src/notebooks/badapple2-vs-classic_assay_annotations](src/notebooks/badapple2-vs-classic_assay_annotations) | Comparison of the assay annotations (from BARD) between badapple2 and badapple_classic/badapple        |
-| [src/notebooks/badapple2-vs-classic_targets](src/notebooks/badapple2-vs-classic_targets)                     | A comparison of the biological targets in badapple2 and badapple_classic/badapple                      |
+| Notebook Link                                                                                                            | Description                                                                                            |
+| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| [src/notebooks/badapple2-vs-badapple_classic.ipynb](src/notebooks/badapple2-vs-badapple_classic.ipynb)                   | Comparison of scaffold pScores (and other important statistics) between badapple2 and badapple_classic |
+| [src/notebooks/badapple2-vs-classic_assay_annotations.ipynb](src/notebooks/badapple2-vs-classic_assay_annotations.ipynb) | Comparison of the assay annotations (from BARD) between badapple2 and badapple_classic/badapple        |
+| [src/notebooks/badapple2-vs-classic_targets.ipynb](src/notebooks/badapple2-vs-classic_targets.ipynb)                     | A comparison of the biological targets in badapple2 and badapple_classic/badapple                      |
 
 - Additional scripts used to compare badapple2 and badapple_classic databases can be found here: [src/sql/](src/sql/).
 
@@ -119,8 +119,8 @@ Part of the development of Badapple 2.0 (badapple2DB) involved comparing/analyzi
 
 ### Other
 
-| Notebook/Workflow Link                                                   | Description                                                                                         |
-| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| [src/notebooks/worked_example.ipynb](src/notebooks/worked_example.ipynb) | A notebook with a worked example illustrating how Badapple computes the pScore of a given scaffold  |
-| [snakemake/Snakefile_NATA](snakemake/Snakefile_NATA)                     | Snakemake workflow used to evaluate different threshold of `nass_tested` when creating Badapple 2.0 |
-| [snakemake/Snakefile](snakemake/Snakefile)                               | Snakemake workflow used to create Badapple 2.0 from scratch                                         |
+| Notebook/Workflow Link                                                   | Description                                                                                                                                                                                |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [src/notebooks/worked_example.ipynb](src/notebooks/worked_example.ipynb) | A notebook with a worked example illustrating how Badapple computes the pScore of a given scaffold                                                                                         |
+| [snakemake/Snakefile_NATA](snakemake/Snakefile_NATA)                     | Snakemake workflow used to evaluate different thresholds of `nass_tested` when creating Badapple 2.0. This workflow was used to determine that a threshold of `nass_tested=50` reasonable. |
+| [snakemake/Snakefile](snakemake/Snakefile)                               | Snakemake workflow used to create Badapple 2.0 from scratch                                                                                                                                |
