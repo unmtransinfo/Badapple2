@@ -1,6 +1,6 @@
 # Badapple2
-![badapple_logo](https://github.com/user-attachments/assets/9a9c9c88-c74e-486d-a282-75e8c41f0f93)
 
+![badapple_logo](https://github.com/user-attachments/assets/9a9c9c88-c74e-486d-a282-75e8c41f0f93)
 
 The Bioassay-Data Associative Promiscuity Pattern Learning Engine V2.
 
@@ -13,7 +13,7 @@ The code contained in this repo is for building and analyzing the Badapple datab
 - API: https://github.com/unmtransinfo/Badapple2-API
 - UI: https://github.com/unmtransinfo/Badapple2-UI
 
-For small use cases (up to 100 compounds) one can use the Badapple2 web app: https://chiltepin.health.unm.edu/badapple2
+For small use cases (up to 100 compounds) one can use the Badapple2 web app: https://chiltepin.health.unm.edu/badapple2.
 
 # Setup
 
@@ -88,3 +88,39 @@ MacOS and Windows users will need need to modify the conda [environment.yml](env
    psql -d <DB_NAME> -c "GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO <username>"
    psql -d <DB_NAME> -c "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO <username>"
    ```
+
+## Results
+
+Part of the development of Badapple 2.0 (badapple2DB) involved comparing/analyzing several different databases. The subsections below will point you towards notebooks and workflows used for all of the major analyses within this work.
+
+### badapple vs badapple_classic
+
+| Notebook Link                                                                                                                                  | Description                                                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| [badapple1_comparison/src/notebooks/badapple-vs-badapple_classic.ipynb](badapple1_comparison/src/notebooks/badapple-vs-badapple_classic.ipynb) | Comparison of scaffold pScores (and other important statistics) between badapple and badapple_classic |
+
+- Additional scripts used to compare badapple and badapple_classic databases can be found here: [badapple1_comparison/src/sql/](badapple1_comparison/src/sql/).
+
+### badapple_classic vs badapple2
+
+| Notebook Link                                                                                                | Description                                                                                            |
+| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| [src/notebooks/badapple2-vs-badapple_classic.ipynb](src/notebooks/badapple2-vs-badapple_classic.ipynb)       | Comparison of scaffold pScores (and other important statistics) between badapple2 and badapple_classic |
+| [src/notebooks/badapple2-vs-classic_assay_annotations](src/notebooks/badapple2-vs-classic_assay_annotations) | Comparison of the assay annotations (from BARD) between badapple2 and badapple_classic/badapple        |
+| [src/notebooks/badapple2-vs-classic_targets](src/notebooks/badapple2-vs-classic_targets)                     | A comparison of the biological targets in badapple2 and badapple_classic/badapple                      |
+
+- Additional scripts used to compare badapple2 and badapple_classic databases can be found here: [src/sql/](src/sql/).
+
+### badapple2 Additional Analyses
+
+| Notebook Link                                                                            | Description                                                                                      |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| [src/notebooks/target_pscore_analysis.ipynb](src/notebooks/target_pscore_analysis.ipynb) | Analyzing how pScores compare to number of unique protein targets for each scaffold in badapple2 |
+
+### Other
+
+| Notebook/Workflow Link                                                   | Description                                                                                         |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| [src/notebooks/worked_example.ipynb](src/notebooks/worked_example.ipynb) | A notebook with a worked example illustrating how Badapple computes the pScore of a given scaffold  |
+| [snakemake/Snakefile_NATA](snakemake/Snakefile_NATA)                     | Snakemake workflow used to evaluate different threshold of `nass_tested` when creating Badapple 2.0 |
+| [snakemake/Snakefile](snakemake/Snakefile)                               | Snakemake workflow used to create Badapple 2.0 from scratch                                         |
