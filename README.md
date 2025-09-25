@@ -1,8 +1,8 @@
 # Badapple2
 
-![badapple_logo](https://github.com/user-attachments/assets/9a9c9c88-c74e-486d-a282-75e8c41f0f93)
+![badapple_logo](docs/badapple_logo.svg)
 
-The Bioassay-Data Associative Promiscuity Pattern Learning Engine V2.
+Bioassay-Data Associative Promiscuity Pattern Learning Engine V2.
 
 ## About
 
