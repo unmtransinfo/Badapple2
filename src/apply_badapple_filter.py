@@ -95,6 +95,9 @@ def passes_filter(
     if pd.isna(row[in_db_col]) or not (row[in_db_col]):
         return True  # no scaffold or scaffold was not in DB - no information so pass
 
+    if pd.isna(row[pscore_col]):
+        return True  # scaffold is in DB, but not enough evidence to assign a pScore so pass
+
     # assume we have inDrug and pScore info now
     if ignore_inDrug:
         return row[pscore_col] < pscore_max
