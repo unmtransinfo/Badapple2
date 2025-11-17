@@ -10,7 +10,7 @@ https://pubs.acs.org/doi/full/10.1021/acs.jcim.5c02297
 
 Badapple is a method for detecting likely promiscuous compounds via their associated scaffolds, using public bioassay data from [PubChem](https://pubchem.ncbi.nlm.nih.gov/).
 
-![abstract_img](docs/abstract_img.svg)
+![abstract_img](docs/abstract_img.jpg)
 
 For more information about Badapple please see the following papers:
 
