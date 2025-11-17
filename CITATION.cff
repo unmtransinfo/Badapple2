@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below. The underlying methodology is described in the paper below."
+title: "Badapple2"
+version: 2.0.0
+date-released: 2025-11-17
+url: "https://github.com/unmtransinfo/Badapple2"
+authors:
+    - family-names: "Ringer"
+      given-names: "John A."
+    - family-names: "Yang"
+      given-names: "Jeremy J."
+preferred-citation:
+  title: "Badapple 2.0: An Empirical Predictor of Compound Promiscuity, Updated, Modernized, and Enhanced for Explainability"
+  authors:
+    - family-names: "Ringer"
+      given-names: "John A."
+    - family-names: "Lambert"
+      given-names: "Christophe G."
+    - family-names: "Bradfute"
+      given-names: "Steven B."
+    - family-names: "Bologa"
+      given-names: "Cristian G."
+    - family-names: "Yang"
+      given-names: "Jeremy J."
+  type: article
+  doi: "10.1021/acs.jcim.5c02297"
+  url: "https://doi.org/10.1021/acs.jcim.5c02297"
+  journal: "Journal of Chemical Information and Modeling"
+  notes: "PMID: 41235766"
