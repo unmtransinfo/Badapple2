@@ -136,7 +136,7 @@ Part of the development of Badapple 2.0 (badapple2DB) involved comparing/analyzi
 
 ## Citation
 
-If you find Badapple useful please cite the our most recent paper:
+If you find Badapple useful please cite our most recent paper:
 
 ```
 @article{doi:10.1021/acs.jcim.5c02297,
