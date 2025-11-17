@@ -4,9 +4,18 @@
 
 Bioassay-Data Associative Promiscuity Pattern Learning Engine V2.
 
+https://pubs.acs.org/doi/full/10.1021/acs.jcim.5c02297
+
 ## About
 
-Badapple is a method for detecting likely promiscuous compounds via their associated scaffolds, using public bioassay data from [PubChem](https://pubchem.ncbi.nlm.nih.gov/). For more information please see the [About Page](https://chiltepin.health.unm.edu/badapple2/about.html).
+Badapple is a method for detecting likely promiscuous compounds via their associated scaffolds, using public bioassay data from [PubChem](https://pubchem.ncbi.nlm.nih.gov/).
+
+![abstract_img](docs/abstract_img.svg)
+
+For more information about Badapple please see the following papers:
+
+- [Badapple 2.0: An Empirical Predictor of Compound Promiscuity, Updated, Modernized, and Enhanced for Explainability](https://pubs.acs.org/doi/full/10.1021/acs.jcim.5c02297)
+- [Badapple: promiscuity patterns from noisy evidence](https://jcheminf.biomedcentral.com/articles/10.1186/s13321-016-0137-3)
 
 The code contained in this repo is for building and analyzing the Badapple databases. If you would like to view the code for the Badapple UI or API please visit the repos below:
 
@@ -124,3 +133,27 @@ Part of the development of Badapple 2.0 (badapple2DB) involved comparing/analyzi
 | [src/notebooks/worked_example.ipynb](src/notebooks/worked_example.ipynb) | A notebook with a worked example illustrating how Badapple computes the pScore of a given scaffold                                                                                            |
 | [snakemake/Snakefile_NATA](snakemake/Snakefile_NATA)                     | Snakemake workflow used to evaluate different thresholds of `nass_tested` when creating Badapple 2.0. This workflow was used to determine that a threshold of `nass_tested=50` is reasonable. |
 | [snakemake/Snakefile](snakemake/Snakefile)                               | Snakemake workflow used to create Badapple 2.0 from scratch                                                                                                                                   |
+
+## Citation
+
+If you find Badapple useful please cite the our most recent paper:
+
+```
+@article{doi:10.1021/acs.jcim.5c02297,
+         author = {Ringer, John A. and Lambert, Christophe G. and Bradfute, Steven B. and Bologa, Cristian G. and Yang, Jeremy J.},
+         title = {Badapple 2.0: An Empirical Predictor of Compound Promiscuity, Updated, Modernized, and Enhanced for Explainability},
+         journal = {Journal of Chemical Information and Modeling},
+         volume = {0},
+         number = {0},
+         pages = {null},
+         year = {0},
+         doi = {10.1021/acs.jcim.5c02297},
+         note = {PMID: 41235766},
+         URL = {
+                  https://doi.org/10.1021/acs.jcim.5c02297
+         },
+         eprint = {
+                  https://doi.org/10.1021/acs.jcim.5c02297
+         }
+        }
+```
