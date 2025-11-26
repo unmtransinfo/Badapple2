@@ -86,7 +86,7 @@ MacOS and Windows users will need need to modify the conda [environment.yml](env
    `sudo apt install postgresql-14-rdkit`
 2. (Option 1) Make your user a superuser prior to DB setup:
    1. Switch to postgres user: `(base) <username>@<computer>:~$ sudo -i -u postgres`
-   2. Make yourself a superuser: `psql -c "CREATE ROLE <username> WITH SUPERUSER PASSWORD '<password>'"`
+   2. Make yourself a superuser: `psql -c "CREATE USER <username> WITH SUPERUSER PASSWORD '<password>'"`
 3. (Option 2) If you don't want to make `<username>` a superuser, follow the steps below:
    1. When running DB setup commands, prepend `sudo -u postgres` to DB setup commands. For example, instead of `createdb <DB_NAME>` use `sudo -u postgres createdb <DB_NAME>`.
    2. After setting up the DB as `postgres` you can grant permissions to `<username>` to access the DB as `<username>` like so:
