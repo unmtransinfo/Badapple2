@@ -2,6 +2,8 @@
 
 This README provides instructions for setting up each DB using docker.
 
+Please note that these instructions are intended for local/development use. For using the DBs in a production environment, please see [Badapple2-API repo](https://github.com/unmtransinfo/Badapple2-API).
+
 ## Requirements
 
 You will need to install docker on your machine. See the following URL for more information:
@@ -13,14 +15,26 @@ https://docs.docker.com/engine/install/
    - Note: If you want to include the "activity" table in the DB, then change `PGDUMP_URL` to "https://unmtid-dbs.net/download/Badapple2/badapple_classic_full.pgdump"
 2. The badapple_classic DB can be setup using the following command:
 
-```
+```bash
 docker compose --env-file .env_BA_classic -f compose_BA_classic.yml up --build -d
+```
+
+It will take a few minutes to download the DB dump and restore it. You can monitor the progress by inspecting the logs:
+
+```bash
+docker compose --env-file .env_BA_classic -f compose_BA_classic.yml logs -f
 ```
 
 3. You can test that the DB is accessible using the following command (adjust the user/port if you've changed them):
 
-```
+```bash
 psql -d badapple_classic -p 5442 -U robin -h localhost
+```
+
+4. To shut down the DB, use the following command:
+
+```bash
+docker compose --env-file .env_BA_classic -f compose_BA_classic.yml down # add "-v" to remove volumes as well
 ```
 
 ## badapple2
@@ -29,14 +43,26 @@ psql -d badapple_classic -p 5442 -U robin -h localhost
    - Note: If you want to include the "activity" table in the DB, then change `PGDUMP_URL` to "https://unmtid-dbs.net/download/Badapple2/badapple2_full.pgdump"
 2. The badapple2 DB can be setup using the following command:
 
-```
+```bash
 docker compose --env-file .env_BA2 -f compose_BA2.yml up --build -d
+```
+
+It will take a few minutes to download the DB dump and restore it. You can monitor the progress by inspecting the logs:
+
+```bash
+docker compose --env-file .env_BA2 -f compose_BA2.yml logs -f
 ```
 
 3. You can test that the DB is accessible using the following command (adjust the user/port if you've changed them):
 
-```
+```bash
 psql -d badapple2 -p 5443 -U frog -h localhost
+```
+
+4. To shut down the DB, use the following command:
+
+```bash
+docker compose --env-file .env_BA2 -f compose_BA2.yml down # add "-v" to remove volumes as well
 ```
 
 ## Notes:
