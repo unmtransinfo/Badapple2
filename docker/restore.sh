@@ -4,10 +4,11 @@ set -e
 echo "Restoring database into '$DB_NAME'..."
 
 # Run restore as postgres superuser
+createdb -U "${POSTGRES_USER:-postgres}" -W ${DB_NAME}
 pg_restore \
   --no-owner \
   --no-privileges \
-  -U postgres \
+  -U "${POSTGRES_USER:-postgres}" \
   -d "$DB_NAME" \
   /tmp/restore.pgdump
 
@@ -17,7 +18,7 @@ echo "Restore complete."
 if [ -n "$DB_USER" ] && [ -n "$DB_PASSWORD" ]; then
   echo "Creating read-only user '$DB_USER'..."
 
-  psql -v ON_ERROR_STOP=1 -U postgres -d "$DB_NAME" <<-EOSQL
+  psql -v ON_ERROR_STOP=1 -U "${POSTGRES_USER:-postgres}" -d "$DB_NAME" <<-EOSQL
     -- Create the read-only user
     CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
 
