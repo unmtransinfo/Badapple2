@@ -5,6 +5,9 @@ on:
 
 env:
   IMAGE_NAME: unmtransinfo/badapple
+push:
+  branches:
+    - dockerfile_revised # temp for testing
 
 jobs:
   build-and-push:
