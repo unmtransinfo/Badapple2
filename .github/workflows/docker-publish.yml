@@ -2,9 +2,6 @@ name: Build and Push Docker Images
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - dockerfile_revised # temp for testing
 
 env:
   IMAGE_NAME: unmtransinfo/badapple
