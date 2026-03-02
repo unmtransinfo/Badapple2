@@ -1,4 +1,4 @@
-FROM rvianello/postgres-rdkit:16.2-2024.03.1
+FROM iskoldt/postgres16-rdkit:latest
 
 # URL to the pgdump file
 ARG PGDUMP_URL
