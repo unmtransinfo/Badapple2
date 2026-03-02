@@ -14,7 +14,7 @@ https://docs.docker.com/engine/install/
 2. The badapple_classic DB can be setup using the following command:
 
 ```
-docker compose --env-file ./docker/.env_BA_classic -f compose_BA_classic.yml up --build -d
+docker compose --env-file .env_BA_classic -f compose_BA_classic.yml up --build -d
 ```
 
 3. You can test that the DB is accessible using the following command (adjust the user/port if you've changed them):
@@ -30,7 +30,7 @@ psql -d badapple_classic -p 5443 -U robin -h localhost
 2. The badapple2 DB can be setup using the following command:
 
 ```
-docker compose --env-file ./docker/.env_BA2 -f compose_BA2.yml up --build -d
+docker compose --env-file .env_BA2 -f compose_BA2.yml up --build -d
 ```
 
 3. You can test that the DB is accessible using the following command (adjust the user/port if you've changed them):
