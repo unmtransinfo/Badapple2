@@ -6,23 +6,20 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - DB_PORT=${DB_PORT}
-        - DB_NAME=${DB_NAME}
-        - DB_USER=${DB_USER}
-        - DB_PASSWORD=${DB_PASSWORD}
-        - TZ=${TZ}
         - PGDUMP_URL=${PGDUMP_URL}
+        - POSTGRES_DB=${DB_NAME}
     env_file:
       - .env_BA2
     ports:
-      - "127.0.0.1:${DB_PORT}:${DB_PORT}"
+      - "127.0.0.1:${DB_PORT}:5432"
     environment:
       - DB_PORT=${DB_PORT}
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - TZ=${TZ}
-      - PGDUMP_URL=${PGDUMP_URL}
     volumes:
       - postgres_data_BA2:/var/lib/postgresql/data
 
