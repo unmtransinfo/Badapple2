@@ -2,12 +2,7 @@
 name: badapple_classic
 services:
   db:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - PGDUMP_URL=${PGDUMP_URL}
-        - POSTGRES_DB=${DB_NAME}
+    image: unmtransinfo/badapple:${IMAGE_TAG:-badapple_classic}
     env_file:
       - .env_BA_classic
     ports:

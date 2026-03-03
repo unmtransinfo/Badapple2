@@ -12,11 +12,11 @@ https://docs.docker.com/engine/install/
 ## badapple_classic
 
 1. (Optional) modify the [.env_BA_classic](.env_BA_classic) file to your desired requirements.
-   - Note: If you want to include the "activity" table in the DB, then change `PGDUMP_URL` to "https://unmtid-dbs.net/download/Badapple2/badapple_classic_full.pgdump"
+   - Note: If you want to include the "activity" table in the DB, then change `IMAGE_TAG` to `badapple_classic-full`
 2. The badapple_classic DB can be setup using the following command:
 
 ```bash
-docker compose --env-file .env_BA_classic -f compose_BA_classic.yml up --build -d
+docker compose --env-file .env_BA_classic -f compose_BA_classic.yml up -d
 ```
 
 It will take a few minutes to download the DB dump and restore it. You can monitor the progress by inspecting the logs:
@@ -40,11 +40,11 @@ docker compose --env-file .env_BA_classic -f compose_BA_classic.yml down # add "
 ## badapple2
 
 1. (Optional) modify the [.env_BA2](.env_BA2) file to your desired requirements.
-   - Note: If you want to include the "activity" table in the DB, then change `PGDUMP_URL` to "https://unmtid-dbs.net/download/Badapple2/badapple2_full.pgdump"
+   - Note: If you want to include the "activity" table in the DB, then change `IMAGE_TAG` to `badapple2-full`
 2. The badapple2 DB can be setup using the following command:
 
 ```bash
-docker compose --env-file .env_BA2 -f compose_BA2.yml up --build -d
+docker compose --env-file .env_BA2 -f compose_BA2.yml up -d
 ```
 
 It will take a few minutes to download the DB dump and restore it. You can monitor the progress by inspecting the logs:

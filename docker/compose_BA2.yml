@@ -2,12 +2,7 @@
 name: badapple2
 services:
   db:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - PGDUMP_URL=${PGDUMP_URL}
-        - POSTGRES_DB=${DB_NAME}
+    image: unmtransinfo/badapple:${IMAGE_TAG:-badapple2}
     env_file:
       - .env_BA2
     ports:
