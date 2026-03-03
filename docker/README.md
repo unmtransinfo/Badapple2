@@ -13,6 +13,7 @@ https://docs.docker.com/engine/install/
 
 1. (Optional) modify the [.env_BA_classic](.env_BA_classic) file to your desired requirements.
    - Note: If you want to include the "activity" table in the DB, then change `IMAGE_TAG` to `badapple_classic-full`
+   - The default Postgres settings are optimized for a 4-core system with 8GB of RAM and SSD storage. If you have more (or less) resources available, you can adjust the `PG_` settings to improve performance. You can use the [pgtune](https://pgtune.leopard.in.ua/) tool to generate new settings.
 2. The badapple_classic DB can be setup using the following command:
 
 ```bash
@@ -41,6 +42,7 @@ docker compose --env-file .env_BA_classic -f compose_BA_classic.yml down -v
 
 1. (Optional) modify the [.env_BA2](.env_BA2) file to your desired requirements.
    - Note: If you want to include the "activity" table in the DB, then change `IMAGE_TAG` to `badapple2-full`
+   - The default Postgres settings are optimized for a 4-core system with 8GB of RAM and SSD storage. If you have more (or less) resources available, you can adjust the `PG_` settings to improve performance. You can use the [pgtune](https://pgtune.leopard.in.ua/) tool to generate new settings.
 2. The badapple2 DB can be setup using the following command:
 
 ```bash
