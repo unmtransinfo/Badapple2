@@ -7,14 +7,6 @@ services:
       - .env_BA_classic
     ports:
       - "127.0.0.1:${DB_PORT}:5432"
-    environment:
-      - DB_PORT=${DB_PORT}
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - TZ=${TZ}
     volumes:
       - postgres_data_BA_classic:/var/lib/postgresql/data
     healthcheck:
@@ -26,6 +18,42 @@ services:
       interval: 60s
       timeout: 5s
       retries: 60
+    command:
+      - postgres
+      - -c
+      - max_connections=${PG_MAX_CONNECTIONS}
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS}
+      - -c
+      - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE}
+      - -c
+      - maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM}
+      - -c
+      - checkpoint_completion_target=${PG_CHECKPOINT_COMPLETION_TARGET}
+      - -c
+      - wal_buffers=${PG_WAL_BUFFERS}
+      - -c
+      - default_statistics_target=${PG_DEFAULT_STATISTICS_TARGET}
+      - -c
+      - random_page_cost=${PG_RANDOM_PAGE_COST}
+      - -c
+      - effective_io_concurrency=${PG_EFFECTIVE_IO_CONCURRENCY}
+      - -c
+      - work_mem=${PG_WORK_MEM}
+      - -c
+      - huge_pages=${PG_HUGE_PAGES}
+      - -c
+      - min_wal_size=${PG_MIN_WAL_SIZE}
+      - -c
+      - max_wal_size=${PG_MAX_WAL_SIZE}
+      - -c
+      - max_worker_processes=${PG_MAX_WORKER_PROCESSES}
+      - -c
+      - max_parallel_workers_per_gather=${PG_MAX_PARALLEL_WORKERS_PER_GATHER}
+      - -c
+      - max_parallel_workers=${PG_MAX_PARALLEL_WORKERS}
+      - -c
+      - max_parallel_maintenance_workers=${PG_MAX_PARALLEL_MAINTENANCE_WORKERS}
 
 volumes:
   postgres_data_BA_classic:
