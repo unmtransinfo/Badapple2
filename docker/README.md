@@ -31,10 +31,10 @@ docker compose --env-file .env_BA_classic -f compose_BA_classic.yml logs -f
 psql -d badapple_classic -p 5442 -U robin -h localhost
 ```
 
-4. To shut down the DB, use the following command:
+4. To shut down and remove the DB, use the following command:
 
 ```bash
-docker compose --env-file .env_BA_classic -f compose_BA_classic.yml down # add "-v" to remove volumes as well
+docker compose --env-file .env_BA_classic -f compose_BA_classic.yml down -v
 ```
 
 ## badapple2
@@ -59,10 +59,10 @@ docker compose --env-file .env_BA2 -f compose_BA2.yml logs -f
 psql -d badapple2 -p 5443 -U frog -h localhost
 ```
 
-4. To shut down the DB, use the following command:
+4. To shut down and remove the DB, use the following command:
 
 ```bash
-docker compose --env-file .env_BA2 -f compose_BA2.yml down # add "-v" to remove volumes as well
+docker compose --env-file .env_BA2 -f compose_BA2.yml down -v
 ```
 
 ## Notes:
