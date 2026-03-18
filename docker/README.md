@@ -72,7 +72,7 @@ docker compose --env-file .env_BA2 -f compose_BA2.yml down -v
 - Depending on your version of docker, you may need to use `docker-compose` instead of `docker compose`
 - Although generally it is best practice to use docker secrets for DB_PASSWORD, since:
 
-1. The provided compose files are intended for local use
-2. These databases have intentionally been made completely public
+      1. The provided compose files are intended for local use
+      2. These databases have intentionally been made completely public
 
-It is unnecessary in this case. The password is really just a config detail rather than security measure here.
+  It is unnecessary in this case. The password is really just a config detail rather than security measure here.
