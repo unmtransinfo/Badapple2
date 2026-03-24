@@ -5,3 +5,7 @@ This directory contains code/information which is not directly relevant to const
 ## [lilly-medchem-rules](lilly-medchem-rules) (IN PROGRESS)
 
 Analysis of Badapple vs [Lilly-Medchem-Rules](https://github.com/IanAWatson/Lilly-Medchem-Rules).
+
+## [neo4j](neo4j)
+
+Code for converting Badapple PostgreSQL databases into Neo4j graph DBs.
