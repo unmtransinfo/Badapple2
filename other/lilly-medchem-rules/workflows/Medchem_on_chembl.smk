@@ -24,11 +24,25 @@ rule download_chembl_file:
     output:
         config["chembl_smiles_file"],
     log:
-        "logs/download_gz_file/all.log",
+        "logs/download_chembl_file/all.log",
     benchmark:
-        "benchmark/download_gz_file/all.tsv"
+        "benchmark/download_chembl_file/all.tsv"
     params:
         URL=config["chembl_smiles_url"],
     shell:
         "wget {params.URL} -O {output} " 
         "> {log} 2>&1"
+
+# 2 and 3) analyze the chembl molecules, save to TSV
+rule apply_lilly_demerits:
+    input:
+        config["chembl_smiles_file"]
+    output:
+        config["lilly_demerits_file"]
+    log:
+        "logs/apply_lilly_demerits/all.log",
+    benchmark:
+        "benchmark/apply_lilly_demerits/all.tsv"
+    shell:
+        # TODO
+        
