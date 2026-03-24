@@ -48,16 +48,24 @@ rule unzip_chembl_file:
 
 
 # 3 and 4) analyze the chembl molecules, save to TSV
-"""
 rule apply_lilly_demerits:
     input:
         config["chembl_smiles_csv_file"]
     output:
-        config["lilly_demerits_file"]
+        config["lilly_demerits_tsv_file"]
     log:
         "logs/apply_lilly_demerits/all.log",
     benchmark:
         "benchmark/apply_lilly_demerits/all.tsv"
+    params:
+        smiles_col=config["chembl_csv_file_smiles_col"],
+        name_col=config["chembl_csv_file_name_col"]
     shell:
-        # TODO
-"""
+        "python ../src/apply_lilly_demerits.py "
+        "--input_dsv_file {input} "
+        "--output_tsv {output} "
+        "--smiles_column {params.smiles_col} "
+        "--name_column {params.name_col} "
+        "--iheader "
+        "--idelim , "
+        "> {log} 2>&1"
