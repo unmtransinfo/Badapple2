@@ -30,7 +30,7 @@ rule download_chembl_file:
     params:
         URL=config["chembl_smiles_url"],
     shell:
-        "wget {params.URL} -O {output} " 
+        "curl -L --output {output} {params.URL} "
         "> {log} 2>&1"
 
 # 2) Unzip the downloaded gz file
@@ -45,10 +45,10 @@ rule unzip_chembl_file:
         "benchmark/unzip_chembl_file/all.tsv"
     shell:
         "gunzip -c {input} > {output} "
-        "> {log} 2>&1"
 
 
 # 3 and 4) analyze the chembl molecules, save to TSV
+"""
 rule apply_lilly_demerits:
     input:
         config["chembl_smiles_csv_file"]
@@ -60,4 +60,4 @@ rule apply_lilly_demerits:
         "benchmark/apply_lilly_demerits/all.tsv"
     shell:
         # TODO
-        
+"""
