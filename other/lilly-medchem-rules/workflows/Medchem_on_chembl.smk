@@ -17,12 +17,12 @@ configfile: "config.yaml"
 
 rule all:
     input:
-        config["chembl_smiles_file"],
+        config["chembl_smiles_csv_file"],
 
 # 1) Download gz file
 rule download_chembl_file:
     output:
-        config["chembl_smiles_file"],
+        config["chembl_smiles_gz_file"],
     log:
         "logs/download_chembl_file/all.log",
     benchmark:
@@ -33,10 +33,25 @@ rule download_chembl_file:
         "wget {params.URL} -O {output} " 
         "> {log} 2>&1"
 
-# 2 and 3) analyze the chembl molecules, save to TSV
+# 2) Unzip the downloaded gz file
+rule unzip_chembl_file:
+    input:
+        config["chembl_smiles_gz_file"],
+    output:
+        config["chembl_smiles_csv_file"],
+    log:
+        "logs/unzip_chembl_file/all.log",
+    benchmark:
+        "benchmark/unzip_chembl_file/all.tsv"
+    shell:
+        "gunzip -c {input} > {output} "
+        "> {log} 2>&1"
+
+
+# 3 and 4) analyze the chembl molecules, save to TSV
 rule apply_lilly_demerits:
     input:
-        config["chembl_smiles_file"]
+        config["chembl_smiles_csv_file"]
     output:
         config["lilly_demerits_file"]
     log:
