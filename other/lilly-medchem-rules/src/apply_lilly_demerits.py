@@ -2,6 +2,7 @@ import argparse
 
 import pandas as pd
 from medchem.structural.lilly_demerits import LillyDemeritsFilters
+from rdkit import Chem
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -61,7 +62,7 @@ def read_df(fpath: str, delim: str, header: bool) -> pd.DataFrame:
 
 
 def main(args):
-    dfilters = LillyDemeritsFilters()
+    dfilters = LillyDemeritsFilters(allow_non_interesting=False)
     cpd_df = read_df(args.input_dsv_file, args.idelim, args.iheader)
     smiles_col_name = cpd_df.columns[args.smiles_column]
     names_col_name = cpd_df.columns[args.name_column]

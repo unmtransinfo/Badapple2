@@ -1,7 +1,13 @@
 chembl_smiles_url: https://raw.githubusercontent.com/unmtransinfo/Badapple2-API/main/benchmark/data/chembl_smiles.csv.gz
 chembl_smiles_gz_file: data/chembl_smiles.csv.gz
 chembl_smiles_csv_file: data/chembl_smiles.csv
-chembl_csv_file_name_col: 0
-chembl_csv_file_smiles_col: 1
+
+# for lilly demerits
+lilly_demerits_input_file: data/chembl_smiles.csv
+lilly_demerits_input_delim: ","
+lilly_demerits_input_name_col: 0
+lilly_demerits_input_smiles_col: 1
 lilly_demerits_tsv_file: data/chembl_lilly_demerits.csv
-lilly_demerits_n_jobs: 4
+lilly_demerits_n_jobs: 0
+
+# for badapple

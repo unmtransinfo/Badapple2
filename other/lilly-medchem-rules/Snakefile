@@ -18,7 +18,8 @@ min_version("6.0")
 configfile: "config.yaml"
 
 
-include: "workflows/Medchem_on_chembl.smk"
+include: "workflows/download_extract_chembl.smk"
+include: "workflows/apply_lilly_demerits.smk"
 
 
 rule all:
