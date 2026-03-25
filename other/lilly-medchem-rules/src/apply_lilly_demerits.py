@@ -62,17 +62,23 @@ def read_df(fpath: str, delim: str, header: bool) -> pd.DataFrame:
 
 
 def main(args):
-    dfilters = LillyDemeritsFilters(allow_non_interesting=False)
+    dfilters = LillyDemeritsFilters()
     cpd_df = read_df(args.input_dsv_file, args.idelim, args.iheader)
     smiles_col_name = cpd_df.columns[args.smiles_column]
     names_col_name = cpd_df.columns[args.name_column]
     cpd_df = cpd_df[[names_col_name, smiles_col_name]]
 
+    # note that Lilly Medchem rules expects input SMILES to be in Kekule form
+    cpd_df[smiles_col_name] = cpd_df[smiles_col_name].apply(
+        lambda smi: Chem.MolToSmiles(Chem.MolFromSmiles(smi), kekuleSmiles=True)
+    )
+
     res_df = dfilters(
-        mols=cpd_df[smiles_col_name].to_list(),
+        mols=cpd_df[smiles_col_name],
         progress=True,
         n_jobs=args.n_jobs,
     )
+    """
     res_df.drop(
         "smiles", axis=1, inplace=True
     )  # 'smiles' contains converted SMILES, 'mol' given SMILES
@@ -86,6 +92,7 @@ def main(args):
     if smiles_col_name != "smiles":
         # drop redundant col
         res_df.drop(smiles_col_name, axis=1, inplace=True)
+    """
     res_df.to_csv(args.output_tsv, sep="\t", index=False)
 
 
@@ -95,4 +102,5 @@ if __name__ == "__main__":
         epilog="",
     )
     args = parse_args(parser)
+    main(args)
     main(args)
