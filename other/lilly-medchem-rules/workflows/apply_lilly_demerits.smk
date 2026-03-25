@@ -12,7 +12,7 @@ rule apply_lilly_demerits:
     input:
         config["lilly_demerits_input_file"],
     output:
-        config["lilly_demerits_tsv_file"],
+        config["lilly_demerits_output_file"],
     log:
         "logs/apply_lilly_demerits/all.log",
     benchmark:

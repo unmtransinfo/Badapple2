@@ -20,8 +20,10 @@ configfile: "config.yaml"
 
 include: "workflows/download_extract_chembl.smk"
 include: "workflows/apply_lilly_demerits.smk"
+include: "workflows/apply_badapple.smk"
 
 
 rule all:
     input:
-        config["lilly_demerits_tsv_file"],
+        config["badapple_output_file"],
+        config["lilly_demerits_output_file"],

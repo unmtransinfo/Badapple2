@@ -7,7 +7,20 @@ lilly_demerits_input_file: data/chembl_smiles.csv
 lilly_demerits_input_delim: ","
 lilly_demerits_input_name_col: 0
 lilly_demerits_input_smiles_col: 1
-lilly_demerits_tsv_file: data/chembl_lilly_demerits.csv
 lilly_demerits_n_jobs: 0
 
+lilly_demerits_output_file: data/chembl_lilly_demerits.csv
+
 # for badapple
+# you will need to install the DB + API locally to run this workflow on large datasets (>10k mols): https://github.com/unmtransinfo/Badapple2-API?tab=readme-ov-file#setup-local-installation
+# if you have a small dataset you can set badapple_api_local_port to -1 to use the version on chiltepin
+badapple_input_file: data/chembl_smiles.csv
+badapple_input_delim: ","
+badapple_input_name_col: 0
+badapple_input_smiles_col: 1
+badapple_batch_size: 1000
+badapple_database: "badapple2"
+badapple_api_local_port: 8000
+badapple_max_rings: 5
+
+badapple_output_file: data/chembl_badapple.csv
