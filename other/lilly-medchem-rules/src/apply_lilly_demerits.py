@@ -2,7 +2,6 @@ import argparse
 
 import pandas as pd
 from medchem.structural.lilly_demerits import LillyDemeritsFilters
-from rdkit import Chem
 
 
 def parse_args(parser: argparse.ArgumentParser):
@@ -55,9 +54,9 @@ def parse_args(parser: argparse.ArgumentParser):
 def read_df(fpath: str, delim: str, header: bool) -> pd.DataFrame:
     # TODO: remove nrows, just using for testing
     if header:
-        df = pd.read_csv(fpath, sep=delim, nrows=1000)
+        df = pd.read_csv(fpath, sep=delim, nrows=10_000)
     else:
-        df = pd.read_csv(fpath, sep=delim, header=None, nrows=1000)
+        df = pd.read_csv(fpath, sep=delim, header=None, nrows=10_000)
     return df
 
 

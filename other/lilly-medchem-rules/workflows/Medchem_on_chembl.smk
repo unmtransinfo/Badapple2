@@ -47,7 +47,7 @@ rule unzip_chembl_file:
         "gunzip -c {input} > {output} "
 
 
-# 3 and 4) analyze the chembl molecules, save to TSV
+# 3 analyze the chembl molecules, save to TSV
 rule apply_lilly_demerits:
     input:
         config["chembl_smiles_csv_file"]
