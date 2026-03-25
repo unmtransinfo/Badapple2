@@ -73,27 +73,21 @@ def main(args):
         lambda smi: Chem.MolToSmiles(Chem.MolFromSmiles(smi), kekuleSmiles=True)
     )
 
-    res_df = dfilters(
+    result_df = dfilters(
         mols=cpd_df[smiles_col_name],
         progress=True,
         n_jobs=args.n_jobs,
     )
-    """
-    res_df.drop(
-        "smiles", axis=1, inplace=True
-    )  # 'smiles' contains converted SMILES, 'mol' given SMILES
-    res_df.rename(columns={"mol": "smiles"}, inplace=True)
-    res_df = res_df.merge(
-        cpd_df,
-        left_on="smiles",
-        right_on=smiles_col_name,
+    result_df = result_df.merge(
+        cpd_df[[names_col_name]],
+        left_index=True,
+        right_index=True,
         how="left",
     )
-    if smiles_col_name != "smiles":
-        # drop redundant col
-        res_df.drop(smiles_col_name, axis=1, inplace=True)
-    """
-    res_df.to_csv(args.output_tsv, sep="\t", index=False)
+    result_df.drop(
+        "mol", axis=1, inplace=True
+    )  # mol column gives same info as smiles col
+    result_df.to_csv(args.output_tsv, sep="\t", index=False)
 
 
 if __name__ == "__main__":
@@ -102,5 +96,4 @@ if __name__ == "__main__":
         epilog="",
     )
     args = parse_args(parser)
-    main(args)
     main(args)
