@@ -1,0 +1,26 @@
+"""
+@author Jack Ringer
+Date: 3/25/2026
+Description:
+Snakemake workflow which:
+1) Downloads a gz file containing the SMILES structures of all compounds in ChEMBL (version 35)
+2) Analyzes the dataset using:
+    - Medchem's implementation of Lilly demerits (https://github.com/datamol-io/medchem/tree/main/medchem/structural/lilly_demerits)
+    - Badapple 2.0
+3) Saves the results to a TSV file
+"""
+
+from snakemake.utils import min_version
+
+min_version("6.0")
+
+
+configfile: "config.yaml"
+
+
+include: "workflows/Medchem_on_chembl.smk"
+
+
+rule all:
+    input:
+        config["lilly_demerits_tsv_file"],
