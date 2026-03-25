@@ -17,7 +17,7 @@ configfile: "config.yaml"
 
 rule all:
     input:
-        config["chembl_smiles_csv_file"],
+        config["lilly_demerits_tsv_file"],
 
 # 1) Download gz file
 rule download_chembl_file:
@@ -59,7 +59,8 @@ rule apply_lilly_demerits:
         "benchmark/apply_lilly_demerits/all.tsv"
     params:
         smiles_col=config["chembl_csv_file_smiles_col"],
-        name_col=config["chembl_csv_file_name_col"]
+        name_col=config["chembl_csv_file_name_col"],
+        n_jobs=config["lilly_demerits_n_jobs"]
     shell:
         "python ../src/apply_lilly_demerits.py "
         "--input_dsv_file {input} "
@@ -68,4 +69,5 @@ rule apply_lilly_demerits:
         "--name_column {params.name_col} "
         "--iheader "
         "--idelim , "
+        "--n_jobs {params.n_jobs} "
         "> {log} 2>&1"

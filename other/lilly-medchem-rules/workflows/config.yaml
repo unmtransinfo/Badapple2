@@ -4,3 +4,4 @@ chembl_smiles_csv_file: data/chembl_smiles.csv
 chembl_csv_file_name_col: 0
 chembl_csv_file_smiles_col: 1
 lilly_demerits_tsv_file: data/chembl_lilly_demerits.csv
+lilly_demerits_n_jobs: 4

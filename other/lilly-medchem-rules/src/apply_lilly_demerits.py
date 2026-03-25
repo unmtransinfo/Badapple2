@@ -43,14 +43,21 @@ def parse_args(parser: argparse.ArgumentParser):
         default=argparse.SUPPRESS,
         help="Output TSV file, will include all info from input DSV as well as Badapple info (scafID, pScore, inDrug, etc)",
     )
+    parser.add_argument(
+        "--n_jobs",
+        type=int,
+        default=0,
+        help="Number of processes to use: 0 to force sequential, -1 to use all available",
+    )
     return parser.parse_args()
 
 
 def read_df(fpath: str, delim: str, header: bool) -> pd.DataFrame:
+    # TODO: remove nrows, just using for testing
     if header:
-        df = pd.read_csv(fpath, sep=delim)
+        df = pd.read_csv(fpath, sep=delim, nrows=1000)
     else:
-        df = pd.read_csv(fpath, sep=delim, header=None)
+        df = pd.read_csv(fpath, sep=delim, header=None, nrows=1000)
     return df
 
 
@@ -59,10 +66,27 @@ def main(args):
     cpd_df = read_df(args.input_dsv_file, args.idelim, args.iheader)
     smiles_col_name = cpd_df.columns[args.smiles_column]
     names_col_name = cpd_df.columns[args.name_column]
+    cpd_df = cpd_df[[names_col_name, smiles_col_name]]
+
     res_df = dfilters(
-        mols=[Chem.MolFromSmiles(smi) for smi in cpd_df[smiles_col_name].to_list()]
+        mols=cpd_df[smiles_col_name].to_list(),
+        progress=True,
+        n_jobs=args.n_jobs,
     )
-    pass
+    res_df.drop(
+        "smiles", axis=1, inplace=True
+    )  # 'smiles' contains converted SMILES, 'mol' given SMILES
+    res_df.rename(columns={"mol": "smiles"}, inplace=True)
+    res_df = res_df.merge(
+        cpd_df,
+        left_on="smiles",
+        right_on=smiles_col_name,
+        how="left",
+    )
+    if smiles_col_name != "smiles":
+        # drop redundant col
+        res_df.drop(smiles_col_name, axis=1, inplace=True)
+    res_df.to_csv(args.output_tsv, sep="\t", index=False)
 
 
 if __name__ == "__main__":
@@ -71,5 +95,4 @@ if __name__ == "__main__":
         epilog="",
     )
     args = parse_args(parser)
-    main(args)
     main(args)
